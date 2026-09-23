@@ -213,7 +213,7 @@ function diagramaArquitectura() {
   p.push(text(40, 690, '¿Por qué desacoplado?', { size: 17, weight: 700, anchor: 'start' }));
   cards.forEach(([t, lines, accent], i) => p.push(card({ x: 40 + i * 405, y: 708, w: 385, h: 132, title: t, lines, accent })));
 
-  return svgDoc(W, H, 'GeoCRM · Arquitectura', 'Frontend en un hosting web y backend en Supabase: desacoplados para bajar costos', p.join('\n'));
+  return svgDoc(W, H, 'Revela · Arquitectura', 'Frontend en un hosting web y backend en Supabase: desacoplados para bajar costos', p.join('\n'));
 }
 
 // ------------------------------------------------------------------ 1. Diagrama de componentes
@@ -343,7 +343,7 @@ function diagramaComponentes() {
     ].join('\n')
   );
 
-  return svgDoc(W, H, 'GeoCRM · Diagrama de componentes', 'Qué partes forman el sistema y cómo se comunican', p.join('\n'));
+  return svgDoc(W, H, 'Revela · Diagrama de componentes', 'Qué partes forman el sistema y cómo se comunican', p.join('\n'));
 }
 
 // ------------------------------------------------------------------ 2. Diagrama de estados del lead
@@ -442,7 +442,7 @@ function diagramaEstadosLead() {
   p.push(`<line x1="1180" y1="711" x2="1230" y2="711" stroke="${COLORS.red}" stroke-width="2"/>`);
   p.push(text(1240, 716, 'descarte del lead', { size: 12.5, fill: COLORS.muted, anchor: 'start' }));
 
-  return svgDoc(W, H, 'GeoCRM · Diagrama de estados del lead', 'Etapas del pipeline comercial, con probabilidad de cierre y SLA por etapa', p.join('\n'));
+  return svgDoc(W, H, 'Revela · Diagrama de estados del lead', 'Etapas del pipeline comercial, con probabilidad de cierre y SLA por etapa', p.join('\n'));
 }
 
 // ------------------------------------------------------------------ 3. Estados de las demás entidades
@@ -530,15 +530,15 @@ function diagramaEstadosEntidades() {
 
   p.push(text(W / 2, 848, 'Todas estas reglas están implementadas y cubiertas por pruebas automáticas (npm run test:tenant · test:e2e).', { size: 13, fill: COLORS.muted }));
 
-  return svgDoc(W, H, 'GeoCRM · Diagrama de estados de las entidades', 'Estados y transiciones del resto del sistema', p.join('\n'));
+  return svgDoc(W, H, 'Revela · Diagrama de estados de las entidades', 'Estados y transiciones del resto del sistema', p.join('\n'));
 }
 
 // ------------------------------------------------------------------ generación
 const diagramas = [
-  ['arquitectura-geocrm', diagramaArquitectura()],
-  ['componentes-geocrm', diagramaComponentes()],
-  ['estados-lead-geocrm', diagramaEstadosLead()],
-  ['estados-entidades-geocrm', diagramaEstadosEntidades()],
+  ['arquitectura-revela', diagramaArquitectura()],
+  ['componentes-revela', diagramaComponentes()],
+  ['estados-lead-revela', diagramaEstadosLead()],
+  ['estados-entidades-revela', diagramaEstadosEntidades()],
 ];
 
 for (const [nombre, svg] of diagramas) {

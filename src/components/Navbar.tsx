@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div className="min-w-0">
             <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
-              GeoCRM
+              Revela
               <span className="rounded-md border border-indigo-700 bg-indigo-950/60 px-2 py-0.5 text-xs font-semibold text-indigo-300">
                 Enterprise
               </span>

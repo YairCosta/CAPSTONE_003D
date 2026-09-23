@@ -1,6 +1,6 @@
 # Usuarios del CRM
 
-Quién puede crear, editar y desactivar a las personas que usan GeoCRM.
+Quién puede crear, editar y desactivar a las personas que usan Revela.
 
 ## Dos niveles distintos
 

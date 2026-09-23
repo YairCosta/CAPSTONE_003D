@@ -15,7 +15,7 @@ const CHROME_PATH = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/A
 
 const GEO = { manager: 'gerente@geodemo.cl', agent: 'vendedor@geodemo.cl' };
 const NORTE = { manager: 'gerente@nortedemo.cl', agent: 'vendedor@nortedemo.cl' };
-const ADMIN = 'admin@geocrm.cl';
+const ADMIN = 'admin@revelacrm.com';
 const Piloto = { manager: 'gerente@demo.revelacrm.com', agent: 'vendedor@demo.revelacrm.com' };
 // Usuario que crea el gerente de la empresa piloto durante la prueba
 const PILOTO_NEW_USER = { name: 'Persona E2E Piloto', email: 'usuario@piloto.demo', password: 'e2e12345' };
@@ -140,7 +140,7 @@ const login = async (email) => {
         formValid: form ? form.checkValidity() : null,
         invalidFields: [...document.querySelectorAll('input:invalid')].map((i) => `${i.id}: ${i.validationMessage}`),
         passwordLength: document.querySelector('#login-password')?.value.length ?? null,
-        sessionSaved: localStorage.getItem('geocrm-session'),
+        sessionSaved: localStorage.getItem('revela-session'),
         activeElement: document.activeElement?.id || document.activeElement?.tagName,
         events: window.__loginEvents ?? [],
       };
@@ -273,7 +273,7 @@ try {
   await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem('geocrm-theme', 'light');
+    localStorage.setItem('revela-theme', 'light');
   });
   await page.reload({ waitUntil: 'networkidle2' });
   await sleep(500);
@@ -444,7 +444,7 @@ try {
 
   // ================================================================ 5. Usuario base de Norte + asistente IA
   await logout();
-  const keysAfterLogout = await page.evaluate(() => Object.keys(sessionStorage).filter((k) => k.startsWith('geocrm-gemini-key')));
+  const keysAfterLogout = await page.evaluate(() => Object.keys(sessionStorage).filter((k) => k.startsWith('revela-gemini-key')));
   check('Al cerrar sesión se borra la clave personal de Gemini', keysAfterLogout.length === 0, `quedan: ${keysAfterLogout}`);
 
   await mustLogin(NORTE.agent);
@@ -526,7 +526,7 @@ try {
   check('Admin no ve el contenido de los leads de ningún CRM', noneOf(adminText, ['Antonia Morales Valdés', 'Rocío Aguilera', 'Lead Aislado A', 'Lead Aislado B']).length === 0);
 
   // Portabilidad: el administrador descarga el Excel de GeoDemo desde el panel
-  const downloadDir = mkdtempSync(join(tmpdir(), 'geocrm-export-'));
+  const downloadDir = mkdtempSync(join(tmpdir(), 'revela-export-'));
   const cdp = await page.createCDPSession();
   await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadDir });
   await domClick('button[aria-label="Exportar datos de Inmobiliaria & Retail GeoDemo"]');
@@ -539,7 +539,7 @@ try {
     await sleep(300);
     xlsxFile = readdirSync(downloadDir).find((f) => f.endsWith('.xlsx')) ?? '';
   }
-  check('Se descarga el Excel del CRM', /^geocrm-export_retail-geodemo_\d{4}-\d{2}-\d{2}\.xlsx$/.test(xlsxFile), xlsxFile || 'sin archivo');
+  check('Se descarga el Excel del CRM', /^revela-export_retail-geodemo_\d{4}-\d{2}-\d{2}\.xlsx$/.test(xlsxFile), xlsxFile || 'sin archivo');
   if (xlsxFile) {
     const files = unzipSync(new Uint8Array(readFileSync(join(downloadDir, xlsxFile))));
     const xml = Object.entries(files)
@@ -653,8 +653,8 @@ try {
   );
   check(
     'El gerente NO ve usuarios de otros CRMs ni al administrador de la plataforma',
-    noneOf(teamText, ['Andrea Torres', 'Carlos Mendoza', 'Paula Rojas', 'Administrador GeoCRM']).length === 0,
-    `Visibles: ${noneOf(teamText, ['Andrea Torres', 'Carlos Mendoza', 'Paula Rojas', 'Administrador GeoCRM'])}`
+    noneOf(teamText, ['Andrea Torres', 'Carlos Mendoza', 'Paula Rojas', 'Administrador Revela']).length === 0,
+    `Visibles: ${noneOf(teamText, ['Andrea Torres', 'Carlos Mendoza', 'Paula Rojas', 'Administrador Revela'])}`
   );
 
   await clickText('main button', 'Nuevo usuario');
@@ -929,7 +929,7 @@ try {
   check('La prueba se ejecutó completa', false, `${error.stack ?? String(error)}\n    Captura: ${shot}`);
 } finally {
   await page.evaluate(() => {
-    localStorage.removeItem('geocrm-session');
+    localStorage.removeItem('revela-session');
     sessionStorage.clear();
   }).catch(() => {});
   await browser.close();

@@ -1,4 +1,4 @@
-# GeoCRM · Evidencia de avance
+# Revela · Evidencia de avance
 
 **Estudiante:** Yair Costa · **Profesora:** Rocío Contreras · **Sección:** 003D
 **Proyecto:** CRM SaaS multi-tenant con inteligencia geográfica (Duoc UC)
@@ -51,21 +51,21 @@ Lo principal que falta es conectar la base de datos (hoy los datos viven en memo
 
 ## 2. Arquitectura
 
-![Arquitectura desacoplada](diagramas/arquitectura-geocrm.png)
+![Arquitectura desacoplada](diagramas/arquitectura-revela.png)
 
 Arquitectura desacoplada: el frontend se compila a archivos estáticos y se sube a un hosting web; el backend es Supabase (login, PostgreSQL + PostGIS, RLS y Edge Functions para el asistente IA y el tipo de cambio). Se eligió así para bajar costos y para que las claves de API nunca lleguen al navegador.
 
-Archivos: [`arquitectura-geocrm.png`](diagramas/arquitectura-geocrm.png) · [versión vectorial](diagramas/arquitectura-geocrm.svg)
+Archivos: [`arquitectura-revela.png`](diagramas/arquitectura-revela.png) · [versión vectorial](diagramas/arquitectura-revela.svg)
 
 ---
 
 ## 2.1 Diagrama de componentes
 
-![Diagrama de componentes](diagramas/componentes-geocrm.png)
+![Diagrama de componentes](diagramas/componentes-revela.png)
 
 Muestra las cuatro capas del sistema y cómo se comunican: el navegador (módulos de interfaz, lógica de negocio y datos), el servidor del asistente IA, la base de datos preparada en Supabase y los servicios externos. La línea punteada marca lo que está listo pero aún no conectado.
 
-Archivos: [`componentes-geocrm.png`](diagramas/componentes-geocrm.png) · [versión vectorial](diagramas/componentes-geocrm.svg)
+Archivos: [`componentes-revela.png`](diagramas/componentes-revela.png) · [versión vectorial](diagramas/componentes-revela.svg)
 
 ---
 
@@ -73,17 +73,17 @@ Archivos: [`componentes-geocrm.png`](diagramas/componentes-geocrm.png) · [versi
 
 ### 3.1 Estados del lead (pipeline comercial)
 
-![Diagrama de estados del lead](diagramas/estados-lead-geocrm.png)
+![Diagrama de estados del lead](diagramas/estados-lead-revela.png)
 
 Las 7 etapas con su probabilidad de cierre y su SLA, las transiciones que las disparan y las reglas por rol: **el usuario base solo avanza leads; retroceder es exclusivo de gerencia**, y la regla se aplica al guardar, no solo en la pantalla.
 
 ### 3.2 Estados de las demás entidades
 
-![Diagrama de estados de las entidades](diagramas/estados-entidades-geocrm.png)
+![Diagrama de estados de las entidades](diagramas/estados-entidades-revela.png)
 
 Empresas cliente y productos (activo / desactivado / eliminado), el CRM completo (activo / suspendido y plan Nacional / Internacional), el usuario del CRM (activo / desactivado y su perfil), la ubicación y el valor del lead, los seguimientos de la agenda (agendado / atrasado / atendido) y las entradas del historial de auditoría.
 
-La presentación de esta entrega está en [`Presentacion_GeoCRM_Avance.pptx`](Presentacion_GeoCRM_Avance.pptx).
+La presentación de esta entrega está en [`Presentacion_Revela_Avance.pptx`](Presentacion_Revela_Avance.pptx).
 
 ---
 

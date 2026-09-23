@@ -1,4 +1,4 @@
-# GeoCRM
+# Revela
 
 CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en un mapa por zona (comuna, distrito…), mide qué se vende y dónde, y opera en varios países. Tesis de Duoc UC; se pilotea con una empresa real.
 

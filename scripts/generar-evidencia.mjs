@@ -132,7 +132,7 @@ const paginaTerminal = (bloques) => {
   .desc { margin-left: auto; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; color: #94A3B8; }
   pre { margin: 0; padding: 14px 16px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: #CBD5E1; }
 </style></head><body>
-  <h1>Pruebas automáticas de GeoCRM</h1>
+  <h1>Pruebas automáticas de Revela</h1>
   <div class="sub">Salida real de los comandos, ejecutados el ${new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
   ${cuerpo}
 </body></html>`;
@@ -183,8 +183,8 @@ await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
 for (const [usuario, pestana, salida, seccion] of MODULOS) {
   await page.goto(APP_URL, { waitUntil: 'networkidle2' });
   await page.evaluate((u) => {
-    localStorage.setItem('geocrm-session', u);
-    localStorage.setItem('geocrm-theme', 'light');
+    localStorage.setItem('revela-session', u);
+    localStorage.setItem('revela-theme', 'light');
   }, usuario);
   await page.reload({ waitUntil: 'networkidle2' });
   await new Promise((r) => setTimeout(r, 1500));

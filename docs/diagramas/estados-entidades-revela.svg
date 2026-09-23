@@ -15,7 +15,7 @@
            <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
          </marker></defs>
 <rect width="1680" height="880" fill="#F8FAFC"/>
-<text x="840" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">GeoCRM · Diagrama de estados de las entidades</text>
+<text x="840" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revela · Diagrama de estados de las entidades</text>
 <text x="840" y="62" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Estados y transiciones del resto del sistema</text>
 <rect x="40" y="84" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
 <text x="60" y="116" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Empresa cliente y producto</text>

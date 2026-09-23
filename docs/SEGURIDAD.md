@@ -84,7 +84,7 @@ ese punto avisa y pide hacer los cambios a mano. No reemplaza a la auditoría: l
 
 ### A5 · La sesión es un id en `localStorage` — **aceptado mientras no haya base de datos**
 
-**Severidad: alta en producción, baja hoy.** `geocrm-session` guarda el id del usuario. Cualquiera con las
+**Severidad: alta en producción, baja hoy.** `revela-session` guarda el id del usuario. Cualquiera con las
 herramientas de desarrollo puede escribir ahí el id del administrador y entrar como él. Lo mismo vale para
 las contraseñas de demostración en `src/data/mockGeoData.ts`, que están en texto plano.
 

@@ -14,7 +14,7 @@ function aiAssistantApi(env: Record<string, string>): Plugin {
   })
 
   return {
-    name: 'geocrm-ai-assistant-api',
+    name: 'revela-ai-assistant-api',
     configureServer(server) {
       server.middlewares.use('/api/ai', middleware)
     },
@@ -28,7 +28,7 @@ function aiAssistantApi(env: Record<string, string>): Plugin {
 function exchangeRatesApi(): Plugin {
   const middleware = createRatesMiddleware()
   return {
-    name: 'geocrm-exchange-rates-api',
+    name: 'revela-exchange-rates-api',
     configureServer(server) {
       server.middlewares.use('/api/rates', middleware)
     },

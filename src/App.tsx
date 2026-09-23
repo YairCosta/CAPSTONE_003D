@@ -88,15 +88,15 @@ import { applyLeadValue } from './lib/catalog';
 import { CatalogInsights } from './components/CatalogInsights';
 import { SectionTabs } from './components/ui';
 
-const SESSION_KEY = 'geocrm-session';
-const THEME_KEY = 'geocrm-theme';
+const SESSION_KEY = 'revela-session';
+const THEME_KEY = 'revela-theme';
 // Los CRMs de prueba (GeoDemo, Norte, Sur) solo se cargan para npm run test:e2e, que abre la app con
 // ?pruebas en el servidor de desarrollo; nunca en la app compilada ni en el login.
 const initialData = demoDataFor(
   import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas')
 );
 
-const DISPLAY_CURRENCY_KEY = 'geocrm-display-currency';
+const DISPLAY_CURRENCY_KEY = 'revela-display-currency';
 
 const readStorage = (key: string) => {
   try {
@@ -319,7 +319,7 @@ export function App() {
     // Las claves personales de Gemini no pasan al siguiente usuario de este navegador
     try {
       Object.keys(sessionStorage)
-        .filter((key) => key.startsWith('geocrm-gemini-key'))
+        .filter((key) => key.startsWith('revela-gemini-key'))
         .forEach((key) => sessionStorage.removeItem(key));
     } catch {
       // sin almacenamiento de sesión

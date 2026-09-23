@@ -7,7 +7,7 @@ Si una empresa quiere cambiarse de CRM, el administrador de la plataforma le ent
 1. Ingresar como **administrador**.
 2. **Administración → CRMs por empresa → Exportar** en la fila de la empresa.
 3. Revisar el resumen (filas por hoja) y la advertencia de datos personales.
-4. **Descargar Excel** → `geocrm-export_<empresa>_<fecha>.xlsx`.
+4. **Descargar Excel** → `revela-export_<empresa>_<fecha>.xlsx`.
 5. Entregarlo a la empresa por un canal seguro. Queda registrada la última exportación (quién y cuándo).
 
 ## Contenido del archivo

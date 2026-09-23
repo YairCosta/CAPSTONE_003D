@@ -18,7 +18,7 @@ import { enabledCountriesOf, scopeActivities } from './tenantGuards.ts';
 import { isManualValue } from './catalog.ts';
 import { leadCurrency } from './currency.ts';
 
-export const EXPORT_FORMAT_VERSION = 'GeoCRM · exportación de datos v1';
+export const EXPORT_FORMAT_VERSION = 'Revela · exportación de datos v1';
 
 export type ExportCell = string | number | boolean | null;
 
@@ -496,7 +496,7 @@ export function buildTenantExport(input: TenantExportInput): TenantExport {
   };
 
   return {
-    fileName: `geocrm-export_${company.slug}_${slugDate(now)}.xlsx`,
+    fileName: `revela-export_${company.slug}_${slugDate(now)}.xlsx`,
     company,
     exportedAt,
     sheets: [readmeSheet, ...dataSheets, dictionarySheet],

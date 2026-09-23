@@ -65,7 +65,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, demoAccounts,
               <Globe className="h-7 w-7 text-[#fff]" />
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">GeoCRM</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">Revela</h1>
               <p className="text-[15px] text-slate-400">Captura y análisis geoestratégico de leads</p>
             </div>
           </div>

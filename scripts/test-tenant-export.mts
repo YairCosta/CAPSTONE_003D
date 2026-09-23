@@ -38,7 +38,7 @@ const exportFor = (companyId: string) =>
     catalog: mockCatalogItems,
     stageConfigs: defaultStageConfigs,
     territories: mockTerritories,
-    exportedBy: 'Administrador GeoCRM (admin@geocrm.cl)',
+    exportedBy: 'Administrador Revela (admin@revelacrm.com)',
     now: new Date('2026-09-16T12:00:00Z'),
   });
 
@@ -71,7 +71,7 @@ await test('GeoDemo: exporta todas sus filas (leads de Chile y Perú, empresas, 
   assert.equal(count('Actividades'), 6);
   assert.equal(count('Usuarios'), 3);
   assert.ok((count('Productos por lead') ?? 0) > 0);
-  assert.equal(geo.fileName, 'geocrm-export_retail-geodemo_2026-09-16.xlsx');
+  assert.equal(geo.fileName, 'revela-export_retail-geodemo_2026-09-16.xlsx');
 });
 
 await test('GeoDemo: el archivo NO contiene datos de Constructora Norte', () => {

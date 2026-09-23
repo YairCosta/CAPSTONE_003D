@@ -163,7 +163,7 @@ export function buildToolDeclarations(countries: ChatCountry[]): FunctionDeclara
 function buildSystemInstruction(context: ChatContext): string {
   const today = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
   return [
-    'Eres el asistente de prospección comercial de GeoCRM. Respondes siempre en español, de forma breve y clara.',
+    'Eres el asistente de prospección comercial de Revela. Respondes siempre en español, de forma breve y clara.',
     `Usuario: ${context.userName || 'usuario'}. Empresa (CRM): ${context.tenantName || 'sin nombre'}. Fecha: ${today}.`,
     'Reglas:',
     '- Para buscar empresas usa search_potential_leads. Nunca inventes empresas, teléfonos, correos ni direcciones.',

@@ -81,7 +81,7 @@ interface AiChatWidgetProps {
   onUpdateLeadStage: (args: Record<string, unknown>) => Record<string, unknown>;
 }
 
-const KEY_STORAGE = 'geocrm-gemini-key';
+const KEY_STORAGE = 'revela-gemini-key';
 
 // Resumen de una acción sobre el CRM para mostrarla en el chat. La búsqueda no deja rastro:
 // solo se anuncian los cambios y los errores.
@@ -119,7 +119,7 @@ interface PanelRect {
 
 type DragMode = 'move' | 'resize-nw' | 'resize-se';
 
-const LAYOUT_STORAGE = 'geocrm-ai-chat-layout';
+const LAYOUT_STORAGE = 'revela-ai-chat-layout';
 const MARGIN = 16;
 const MIN_W = 340;
 const MIN_H = 420;

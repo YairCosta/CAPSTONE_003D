@@ -72,7 +72,7 @@ export const mockCompany: Company = mockCompanies[0];
 
 // Credenciales solo para la demo local. En producción la autenticación la resuelve Supabase Auth.
 export const mockUsers: AppUser[] = [
-  { id: 'user-admin', companyId: null, fullName: 'Administrador GeoCRM', email: 'admin@geocrm.cl', password: 'dev-admin-solo-local', role: 'superadmin', isActive: true, createdAt: '2026-01-01T12:00:00Z' },
+  { id: 'user-admin', companyId: null, fullName: 'Administrador Revela', email: 'admin@revelacrm.com', password: 'dev-admin-solo-local', role: 'superadmin', isActive: true, createdAt: '2026-01-01T12:00:00Z' },
   { id: 'user-gerente-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Andrea Torres', email: 'gerente@geodemo.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-01-10T12:30:00Z' },
   { id: 'user-base-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Carlos Mendoza', email: 'vendedor@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-01-11T09:00:00Z' },
   { id: 'user-base2-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Luis Pérez', email: 'luis.perez@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: false, createdAt: '2026-02-01T09:00:00Z' },
@@ -86,7 +86,7 @@ export const mockUsers: AppUser[] = [
 
 // Accesos rápidos de la pantalla de login (solo demo)
 export const demoAccounts = [
-  { label: 'Administrador', company: 'Plataforma GeoCRM', email: 'admin@geocrm.cl', password: 'dev-admin-solo-local' },
+  { label: 'Administrador', company: 'Plataforma Revela', email: 'admin@revelacrm.com', password: 'dev-admin-solo-local' },
   { label: 'Gerente', company: 'Empresa Piloto', email: 'gerente@demo.revelacrm.com', password: 'dev-gerente-local' },
   { label: 'Usuario base', company: 'Empresa Piloto', email: 'vendedor@demo.revelacrm.com', password: 'dev-base-local' },
 ];

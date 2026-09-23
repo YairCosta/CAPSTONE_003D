@@ -1,4 +1,4 @@
-# Base de datos de GeoCRM
+# Base de datos de Revela
 
 Este documento es la **fuente de verdad** del modelo de datos: qué significa cada tabla, qué reglas nunca se rompen y cómo hacer cambios sin dañar datos. Antes de modificar la base (persona o IA), leer esto.
 

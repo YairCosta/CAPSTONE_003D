@@ -8,7 +8,7 @@ from matplotlib.patches import Ellipse, Rectangle, Circle
 
 plt.rcParams["font.family"] = ["Arial", "DejaVu Sans"]
 
-OUT_DIR = r"C:\Users\USUARIO\Desktop\GeoCRM\docs"
+OUT_DIR = r"C:\Users\USUARIO\Desktop\Revela\docs"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 W, H = 152, 130
@@ -82,7 +82,7 @@ def dependency(src, dst, label, label_offset=(0, 0)):
 BOX_X0, BOX_X1, BOX_Y0, BOX_Y1 = 24, 126, 15, 123
 ax.add_patch(Rectangle((BOX_X0, BOX_Y0), BOX_X1 - BOX_X0, BOX_Y1 - BOX_Y0, fill=False, edgecolor="black", lw=LW))
 ax.plot([BOX_X0, BOX_X1], [BOX_Y1 - 4.5, BOX_Y1 - 4.5], color="black", lw=LW)
-ax.text((BOX_X0 + BOX_X1) / 2, BOX_Y1 - 2.25, "GeoCRM", ha="center", va="center", fontsize=12.5, fontweight="bold")
+ax.text((BOX_X0 + BOX_X1) / 2, BOX_Y1 - 2.25, "Revela", ha="center", va="center", fontsize=12.5, fontweight="bold")
 
 COL_A = 44
 # Usuario base
@@ -148,8 +148,8 @@ ax.text(BOX_X0 + 21.5, LY - 5,
         "Todos los casos de uso requieren iniciar sesión.",
         fontsize=9.5, va="center")
 
-pdf_path = os.path.join(OUT_DIR, "diagrama-casos-de-uso-geocrm.pdf")
-png_path = os.path.join(OUT_DIR, "diagrama-casos-de-uso-geocrm.png")
+pdf_path = os.path.join(OUT_DIR, "diagrama-casos-de-uso-revela.pdf")
+png_path = os.path.join(OUT_DIR, "diagrama-casos-de-uso-revela.png")
 fig.savefig(pdf_path)
 fig.savefig(png_path, dpi=110)
 print(pdf_path)
