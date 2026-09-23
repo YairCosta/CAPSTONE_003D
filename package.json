@@ -1,0 +1,43 @@
+{
+  "name": "restaurant-manga",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test:tenant": "node --experimental-strip-types --no-warnings scripts/test-tenant-guards.mts",
+    "test:export": "node --experimental-strip-types --no-warnings scripts/test-tenant-export.mts",
+    "test:sql": "node scripts/test-migrations.mjs",
+    "diagramas": "node scripts/generar-diagramas.mjs",
+    "evidencia": "node scripts/generar-evidencia.mjs",
+    "test:e2e": "node scripts/e2e-tenant-isolation.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.22.0",
+    "@googlemaps/js-api-loader": "^2.1.1",
+    "@supabase/supabase-js": "^2.116.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.46.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "write-excel-file": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.66.2",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "libpg-query": "^18.1.5",
+    "oxlint": "^1.81.0",
+    "puppeteer-core": "^25.11.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
