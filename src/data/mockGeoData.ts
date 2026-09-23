@@ -5,8 +5,9 @@ import { FALLBACK_RATES, convert, currencyOfCountry, leadCurrency, roundForCurre
 export const TENANT_GEODEMO_ID = 'c1111111-2222-3333-4444-555555555555';
 export const TENANT_NORTE_ID = 'c2222222-3333-4444-5555-666666666666';
 export const TENANT_SUR_ID = 'c3333333-4444-5555-6666-777777777777';
-// CRM de la empresa con la que se pilotea la tesis (servicios para oficinas, opera en Chile y Perú)
-export const TENANT_PILOTO_ID = 'c4444444-5555-6666-7777-888888888888';
+// Cuenta de demostración pública (datos ficticios de una empresa de servicios y mobiliario para oficinas en Chile y Perú).
+// Es la que se abre desde la landing page; el CRM real de cada cliente se crea en producción.
+export const TENANT_DEMO_ID = 'c4444444-5555-6666-7777-888888888888';
 
 // Empresas dueñas de un CRM (tenants)
 export const mockCompanies: Company[] = [
@@ -25,9 +26,9 @@ export const mockCompanies: Company[] = [
     defaultZoom: 13,
   },
   {
-    id: TENANT_PILOTO_ID,
-    name: 'Empresa Piloto',
-    slug: 'piloto-group',
+    id: TENANT_DEMO_ID,
+    name: 'Revela Demo',
+    slug: 'revela-demo',
     taxId: '77.412.908-5',
     isActive: true,
     plan: 'international',
@@ -72,24 +73,43 @@ export const mockCompany: Company = mockCompanies[0];
 
 // Credenciales solo para la demo local. En producción la autenticación la resuelve Supabase Auth.
 export const mockUsers: AppUser[] = [
-  { id: 'user-admin', companyId: null, fullName: 'Administrador Revela', email: 'admin@revelacrm.com', password: 'dev-admin-solo-local', role: 'superadmin', isActive: true, createdAt: '2026-01-01T12:00:00Z' },
   { id: 'user-gerente-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Andrea Torres', email: 'gerente@geodemo.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-01-10T12:30:00Z' },
   { id: 'user-base-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Carlos Mendoza', email: 'vendedor@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-01-11T09:00:00Z' },
   { id: 'user-base2-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Luis Pérez', email: 'luis.perez@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: false, createdAt: '2026-02-01T09:00:00Z' },
-  { id: 'user-gerente-demo', companyId: TENANT_PILOTO_ID, fullName: 'Andrés Vega', email: 'gerente@demo.revelacrm.com', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-02-05T12:30:00Z' },
-  { id: 'user-base-demo-cl', companyId: TENANT_PILOTO_ID, fullName: 'Marcela Ortiz', email: 'vendedor@demo.revelacrm.com', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-02-06T09:00:00Z' },
-  { id: 'user-base-demo-pe', companyId: TENANT_PILOTO_ID, fullName: 'Diego Fuentes', email: 'vendedor2@demo.revelacrm.com', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-02-20T09:00:00Z' },
+  { id: 'user-gerente-demo', companyId: TENANT_DEMO_ID, fullName: 'Andrés Vega', email: 'gerente@demo.revelacrm.com', password: 'demo1234', role: 'manager', isActive: true, createdAt: '2026-02-05T12:30:00Z' },
+  { id: 'user-base-demo-cl', companyId: TENANT_DEMO_ID, fullName: 'Marcela Ortiz', email: 'vendedor@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-06T09:00:00Z' },
+  { id: 'user-base-demo-pe', companyId: TENANT_DEMO_ID, fullName: 'Diego Fuentes', email: 'vendedor2@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-20T09:00:00Z' },
   { id: 'user-gerente-norte', companyId: TENANT_NORTE_ID, fullName: 'Paula Rojas', email: 'gerente@nortedemo.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-03-02T13:00:00Z' },
   { id: 'user-base-norte', companyId: TENANT_NORTE_ID, fullName: 'Diego Fuentes', email: 'vendedor@nortedemo.cl', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-03-03T09:00:00Z' },
   { id: 'user-gerente-sur', companyId: TENANT_SUR_ID, fullName: 'Sofía Díaz', email: 'gerente@logisticasur.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-05-20T13:00:00Z' },
 ];
 
 // Accesos rápidos de la pantalla de login (solo demo)
+// Accesos que ofrece la pantalla de login: solo la cuenta de demostración.
 export const demoAccounts = [
-  { label: 'Administrador', company: 'Plataforma Revela', email: 'admin@revelacrm.com', password: 'dev-admin-solo-local' },
-  { label: 'Gerente', company: 'Empresa Piloto', email: 'gerente@demo.revelacrm.com', password: 'dev-gerente-local' },
-  { label: 'Usuario base', company: 'Empresa Piloto', email: 'vendedor@demo.revelacrm.com', password: 'dev-base-local' },
+  { label: 'Gerente', company: 'Revela Demo', email: 'gerente@demo.revelacrm.com', password: 'demo1234' },
+  { label: 'Usuario base', company: 'Revela Demo', email: 'vendedor@demo.revelacrm.com', password: 'demo1234' },
 ];
+
+// El administrador de plataforma no se ofrece en el login y solo existe en desarrollo: se agrega
+// aparte para que no viaje en la app compilada. En producción vive en Supabase Auth.
+export const platformAdminUser: AppUser = {
+  id: 'user-admin',
+  companyId: null,
+  fullName: 'Administrador Revela',
+  email: 'admin@revelacrm.com',
+  password: 'dev-admin-solo-local',
+  role: 'superadmin',
+  isActive: true,
+  createdAt: '2026-01-01T12:00:00Z',
+};
+
+export const platformAdminAccount = {
+  label: 'Administrador',
+  company: 'Plataforma Revela',
+  email: 'admin@revelacrm.com',
+  password: 'dev-admin-solo-local',
+};
 
 const account = (
   id: string,
@@ -123,15 +143,15 @@ export const mockClientAccounts: ClientAccount[] = [
   account('acc-p2', TENANT_GEODEMO_ID, 'Constructora Pacífico SAC', 'Construcción', 'Jorge Quispe', 'jquispe@pacifico.pe', '+51 912 345 678', true, 'PE', '20598765432'),
   account('acc-p3', TENANT_GEODEMO_ID, 'Andina Logística SAC', 'Logística', 'María Huamán', 'mhuaman@andinalog.pe', '+51 955 222 111', true, 'PE', '20455566677'),
   account('acc-p4', TENANT_GEODEMO_ID, 'Grupo Molina Retail SAC', 'Retail', 'Ana Torres Vega', 'atorres@molinaretail.pe', '+51 966 101 202', true, 'PE', '20600011122'),
-  // Empresa Piloto: empresas a las que presta servicios de oficinas
-  account('acc-g1', TENANT_PILOTO_ID, 'Clínica Vitacura Salud', 'Salud', 'Paulina Ibáñez', 'pibanez@clinicavitacura.cl', '+56 9 8821 4455', true, 'CL', '96.842.110-4'),
-  account('acc-g2', TENANT_PILOTO_ID, 'Centro Comercial Plaza Oriente', 'Comercio', 'Ignacio Bravo', 'ibravo@plazaoriente.cl', '+56 9 7712 8899', true, 'CL', '76.331.220-9'),
-  account('acc-g3', TENANT_PILOTO_ID, 'Banco Andes Sucursales', 'Banca', 'Carolina Peña', 'cpena@bancoandes.cl', '+56 9 6654 3321', true, 'CL', '97.004.000-5'),
-  account('acc-g4', TENANT_PILOTO_ID, 'Bodegas Central Express', 'Logística', 'Héctor Navarro', 'hnavarro@centralexpress.cl', '+56 9 5590 1122', true, 'CL', '76.998.554-2'),
-  account('acc-g5', TENANT_PILOTO_ID, 'Universidad del Valle Central', 'Educación', 'Marcela Zúñiga', 'mzuniga@uvcentral.cl', '+56 9 4412 0077', true, 'CL', '71.220.400-8'),
-  account('acc-g6', TENANT_PILOTO_ID, 'Corporación Salud Lima SAC', 'Salud', 'Diego Ramírez', 'dramirez@saludlima.pe', '+51 987 112 334', true, 'PE', '20512889904'),
-  account('acc-g7', TENANT_PILOTO_ID, 'Centro Comercial Surco Plaza SAC', 'Comercio', 'Patricia Chávez', 'pchavez@surcoplaza.pe', '+51 944 556 778', true, 'PE', '20603344551'),
-  account('acc-g8', TENANT_PILOTO_ID, 'Naviera Costa Verde SAC', 'Naviera', 'Álvaro Mendoza', 'amendoza@navieracostaverde.pe', '+51 933 220 118', true, 'PE', '20478822003'),
+  // Empresas cliente de la cuenta demo: a quienes presta servicios de administración, mantención y proyectos de oficinas
+  account('acc-g1', TENANT_DEMO_ID, 'Clínica Vitacura Salud', 'Salud', 'Paulina Ibáñez', 'pibanez@clinicavitacura.cl', '+56 9 8821 4455', true, 'CL', '96.842.110-4'),
+  account('acc-g2', TENANT_DEMO_ID, 'Centro Comercial Plaza Oriente', 'Comercio', 'Ignacio Bravo', 'ibravo@plazaoriente.cl', '+56 9 7712 8899', true, 'CL', '76.331.220-9'),
+  account('acc-g3', TENANT_DEMO_ID, 'Banco Andes Sucursales', 'Banca', 'Carolina Peña', 'cpena@bancoandes.cl', '+56 9 6654 3321', true, 'CL', '97.004.000-5'),
+  account('acc-g4', TENANT_DEMO_ID, 'Bodegas Central Express', 'Logística', 'Héctor Navarro', 'hnavarro@centralexpress.cl', '+56 9 5590 1122', true, 'CL', '76.998.554-2'),
+  account('acc-g5', TENANT_DEMO_ID, 'Universidad del Valle Central', 'Educación', 'Marcela Zúñiga', 'mzuniga@uvcentral.cl', '+56 9 4412 0077', true, 'CL', '71.220.400-8'),
+  account('acc-g6', TENANT_DEMO_ID, 'Corporación Salud Lima SAC', 'Salud', 'Diego Ramírez', 'dramirez@saludlima.pe', '+51 987 112 334', true, 'PE', '20512889904'),
+  account('acc-g7', TENANT_DEMO_ID, 'Centro Comercial Surco Plaza SAC', 'Comercio', 'Patricia Chávez', 'pchavez@surcoplaza.pe', '+51 944 556 778', true, 'PE', '20603344551'),
+  account('acc-g8', TENANT_DEMO_ID, 'Naviera Costa Verde SAC', 'Naviera', 'Álvaro Mendoza', 'amendoza@navieracostaverde.pe', '+51 933 220 118', true, 'PE', '20478822003'),
   account('acc-n1', TENANT_NORTE_ID, 'Minera Atacama Norte', 'Minería', 'Rocío Aguilera', 'raguilera@mineraatacama.cl', '+56 9 5511 2233'),
   account('acc-n2', TENANT_NORTE_ID, 'Hotel Costanera', 'Hotelería', 'Tomás Vidal', 'tvidal@hotelcostanera.cl', '+56 9 4422 1188'),
 ];
@@ -854,10 +874,10 @@ const baseLeads: Lead[] = [
   },
 
   // CONSTRUCTORA NORTE DEMO (otro tenant: sus datos no son visibles para GeoDemo)
-  // ---------------- Empresa Piloto (servicios para oficinas, Chile y Perú) ----------------
+  // ---------------- Cuenta demo (servicios para oficinas, Chile y Perú) ----------------
   {
     id: 'lead-g1',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'CL',
     fullName: 'Paulina Ibáñez',
     jobTitle: 'Jefa de Informática',
@@ -879,7 +899,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g2',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'CL',
     fullName: 'Ignacio Bravo',
     jobTitle: 'Gerente de Operaciones',
@@ -905,7 +925,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g3',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'CL',
     fullName: 'Carolina Peña',
     jobTitle: 'Subgerenta de Tecnología',
@@ -930,7 +950,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g4',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'CL',
     fullName: 'Héctor Navarro',
     jobTitle: 'Jefe de Operaciones',
@@ -954,7 +974,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g5',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'CL',
     fullName: 'Marcela Zúñiga',
     jobTitle: 'Directora de Tecnologías de la Información',
@@ -976,7 +996,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g6',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'PE',
     fullName: 'Diego Ramírez',
     jobTitle: 'Gerente de Administración',
@@ -998,7 +1018,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g7',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'PE',
     fullName: 'Patricia Chávez',
     jobTitle: 'Jefa de Operaciones',
@@ -1023,7 +1043,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g8',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'PE',
     fullName: 'Álvaro Mendoza',
     jobTitle: 'Dueño / Socio',
@@ -1045,7 +1065,7 @@ const baseLeads: Lead[] = [
   },
   {
     id: 'lead-g9',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     countryCode: 'PE',
     fullName: 'Rosa Anticona',
     jobTitle: 'Asistente de Administración',
@@ -1144,21 +1164,20 @@ export const mockCatalogItems: CatalogItem[] = [
   catalogItem('cat-support', TENANT_GEODEMO_ID, 'service', 'Soporte técnico mensual', 'SRV-SOP', 'Soporte', { CL: 5000, PE: 20 }, { billing: 'monthly' }),
   catalogItem('cat-layout', TENANT_GEODEMO_ID, 'service', 'Asesoría de layout comercial', 'SRV-LAY', 'Consultoría', { CL: 30000, PE: 120 }, { billing: 'one_time' }),
   catalogItem('cat-cash', TENANT_GEODEMO_ID, 'service', 'Mantención de cajas registradoras', 'SRV-CAJ', 'Soporte', { CL: 6000 }, { billing: 'monthly', isActive: false }),
-  // Empresa Piloto (Chile + Perú): servicios y mobiliario para oficinas.
-  // Sin CRM ni ERP en el catálogo: sus plataformas van incluidas para sus clientes y no se cobran.
-  catalogItem('cat-d-admin', TENANT_PILOTO_ID, 'service', 'Administración integral de oficinas', 'DEMO-ADM', 'Administración', { CL: 4200000, PE: 15500 }, { billing: 'monthly' }),
-  catalogItem('cat-d-mant', TENANT_PILOTO_ID, 'service', 'Mantención preventiva de instalaciones', 'DEMO-MPI', 'Mantención', { CL: 1450000, PE: 5300 }, { billing: 'monthly' }),
-  catalogItem('cat-d-limpieza', TENANT_PILOTO_ID, 'service', 'Limpieza y aseo de oficinas', 'DEMO-LIM', 'Mantención', { CL: 890000, PE: 3300 }, { billing: 'monthly' }),
-  catalogItem('cat-d-equipo', TENANT_PILOTO_ID, 'service', 'Equipo de proyectos dedicado', 'DEMO-EPD', 'Proyectos', { CL: 6500000, PE: 24000 }, { billing: 'monthly' }),
-  catalogItem('cat-d-remodel', TENANT_PILOTO_ID, 'service', 'Remodelación de oficinas (por etapa)', 'DEMO-REM', 'Proyectos', { CL: 9800000, PE: 36000 }, { billing: 'one_time' }),
-  catalogItem('cat-d-traslado', TENANT_PILOTO_ID, 'service', 'Traslado de oficinas', 'DEMO-TRA', 'Proyectos', { CL: 3200000, PE: 11800 }, { billing: 'one_time' }),
-  catalogItem('cat-d-diseno', TENANT_PILOTO_ID, 'service', 'Diseño de espacios de trabajo', 'DEMO-DIS', 'Diseño', { CL: 2600000, PE: 9600 }, { billing: 'one_time' }),
-  catalogItem('cat-d-asesoria', TENANT_PILOTO_ID, 'service', 'Asesoría mensual de uso de espacios', 'DEMO-AME', 'Diseño', { CL: 350000, PE: 1300 }, { billing: 'monthly' }),
-  catalogItem('cat-d-seguridad', TENANT_PILOTO_ID, 'service', 'Plan de seguridad y evacuación', 'DEMO-SEG', 'Seguridad', { CL: 2900000, PE: 10700 }, { billing: 'one_time' }),
-  catalogItem('cat-d-primeros', TENANT_PILOTO_ID, 'service', 'Capacitación en primeros auxilios', 'DEMO-CPA', 'Seguridad', { CL: 650000, PE: 2400 }, { billing: 'one_time' }),
-  catalogItem('cat-d-estacion', TENANT_PILOTO_ID, 'product', 'Estación de trabajo completa', 'DEMO-EST', 'Mobiliario', { CL: 890000, PE: 3300 }),
-  catalogItem('cat-d-sala', TENANT_PILOTO_ID, 'product', 'Sala de reuniones equipada', 'DEMO-SAL', 'Mobiliario', { CL: 1250000, PE: 4600 }),
-  catalogItem('cat-d-papel', TENANT_PILOTO_ID, 'product', 'Caja de papel carta (10 resmas)', 'DEMO-PAP', 'Insumos', { CL: 13500, PE: 50 }),
+  // Catálogo de la cuenta demo (Chile + Perú): administración, mantención, proyectos, diseño, seguridad, mobiliario e insumos.
+  catalogItem('cat-d-admin', TENANT_DEMO_ID, 'service', 'Administración integral de oficinas', 'DEMO-ADM', 'Administración', { CL: 4200000, PE: 15500 }, { billing: 'monthly' }),
+  catalogItem('cat-d-mant', TENANT_DEMO_ID, 'service', 'Mantención preventiva de instalaciones', 'DEMO-MPI', 'Mantención', { CL: 1450000, PE: 5300 }, { billing: 'monthly' }),
+  catalogItem('cat-d-limpieza', TENANT_DEMO_ID, 'service', 'Limpieza y aseo de oficinas', 'DEMO-LIM', 'Mantención', { CL: 890000, PE: 3300 }, { billing: 'monthly' }),
+  catalogItem('cat-d-equipo', TENANT_DEMO_ID, 'service', 'Equipo de proyectos dedicado', 'DEMO-EPD', 'Proyectos', { CL: 6500000, PE: 24000 }, { billing: 'monthly' }),
+  catalogItem('cat-d-remodel', TENANT_DEMO_ID, 'service', 'Remodelación de oficinas (por etapa)', 'DEMO-REM', 'Proyectos', { CL: 9800000, PE: 36000 }, { billing: 'one_time' }),
+  catalogItem('cat-d-traslado', TENANT_DEMO_ID, 'service', 'Traslado de oficinas', 'DEMO-TRA', 'Proyectos', { CL: 3200000, PE: 11800 }, { billing: 'one_time' }),
+  catalogItem('cat-d-diseno', TENANT_DEMO_ID, 'service', 'Diseño de espacios de trabajo', 'DEMO-DIS', 'Diseño', { CL: 2600000, PE: 9600 }, { billing: 'one_time' }),
+  catalogItem('cat-d-asesoria', TENANT_DEMO_ID, 'service', 'Asesoría mensual de uso de espacios', 'DEMO-AME', 'Diseño', { CL: 350000, PE: 1300 }, { billing: 'monthly' }),
+  catalogItem('cat-d-seguridad', TENANT_DEMO_ID, 'service', 'Plan de seguridad y evacuación', 'DEMO-SEG', 'Seguridad', { CL: 2900000, PE: 10700 }, { billing: 'one_time' }),
+  catalogItem('cat-d-primeros', TENANT_DEMO_ID, 'service', 'Capacitación en primeros auxilios', 'DEMO-CPA', 'Seguridad', { CL: 650000, PE: 2400 }, { billing: 'one_time' }),
+  catalogItem('cat-d-estacion', TENANT_DEMO_ID, 'product', 'Estación de trabajo completa', 'DEMO-EST', 'Mobiliario', { CL: 890000, PE: 3300 }),
+  catalogItem('cat-d-sala', TENANT_DEMO_ID, 'product', 'Sala de reuniones equipada', 'DEMO-SAL', 'Mobiliario', { CL: 1250000, PE: 4600 }),
+  catalogItem('cat-d-papel', TENANT_DEMO_ID, 'product', 'Caja de papel carta (10 resmas)', 'DEMO-PAP', 'Insumos', { CL: 13500, PE: 50 }),
   // Constructora Norte (Chile)
   catalogItem('cat-n-concrete', TENANT_NORTE_ID, 'product', 'Hormigón premezclado (m³)', 'HOR-M3', 'Materiales', { CL: 60000 }),
   catalogItem('cat-n-scaffold', TENANT_NORTE_ID, 'product', 'Andamio modular', 'AND-01', 'Equipos', { CL: 12000 }),
@@ -1219,11 +1238,11 @@ const withItems = (lead: Lead): Lead => {
 export const mockLeads: Lead[] = baseLeads.map(withItems);
 
 export const mockActivities: LeadActivity[] = [
-  // Empresa Piloto: compromisos de seguimiento repartidos en el tiempo para ver la agenda
+  // Cuenta demo: compromisos de seguimiento repartidos en el tiempo para ver la agenda
   {
     id: 'act-g1',
     leadId: 'lead-g3',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     channel: 'email',
     outcome: 'requested_quote',
     contactName: 'Carolina Peña',
@@ -1235,7 +1254,7 @@ export const mockActivities: LeadActivity[] = [
   {
     id: 'act-g2',
     leadId: 'lead-g4',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     channel: 'call',
     outcome: 'interested',
     contactName: 'Héctor Navarro',
@@ -1247,7 +1266,7 @@ export const mockActivities: LeadActivity[] = [
   {
     id: 'act-g3',
     leadId: 'lead-g8',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     channel: 'whatsapp',
     outcome: 'rescheduled',
     contactName: 'Álvaro Mendoza',
@@ -1259,7 +1278,7 @@ export const mockActivities: LeadActivity[] = [
   {
     id: 'act-g4',
     leadId: 'lead-g7',
-    companyId: TENANT_PILOTO_ID,
+    companyId: TENANT_DEMO_ID,
     channel: 'meeting',
     outcome: 'paid',
     contactName: 'Patricia Chávez',
@@ -1330,9 +1349,9 @@ export const mockActivities: LeadActivity[] = [
   }
 ];
 
-// La app muestra solo el CRM de Empresa Piloto. GeoDemo, Constructora Norte y Logística Sur son datos
-// de prueba: las pruebas de aislamiento necesitan otros CRMs para comprobar que nada se cruza.
-export const APP_TENANT_IDS: string[] = [TENANT_PILOTO_ID];
+// La app muestra solo la cuenta demo. GeoDemo, Constructora Norte y Logística Sur son datos de
+// prueba: las pruebas de aislamiento necesitan otros CRMs para comprobar que nada se cruza.
+export const APP_TENANT_IDS: string[] = [TENANT_DEMO_ID];
 
 export interface DemoData {
   companies: Company[];
@@ -1343,15 +1362,21 @@ export interface DemoData {
   catalog: CatalogItem[];
 }
 
-export const demoDataFor = (includeTestTenants: boolean): DemoData => {
+export interface DemoDataOptions {
+  /** CRMs de prueba para el aislamiento (solo en desarrollo, con ?pruebas) */
+  testTenants?: boolean;
+  /** Usuarios que solo existen en desarrollo, como el administrador de plataforma */
+  extraUsers?: AppUser[];
+}
+
+export const demoDataFor = ({ testTenants = false, extraUsers = [] }: DemoDataOptions = {}): DemoData => {
   const keep = (companyId: string | null | undefined) =>
-    includeTestTenants || companyId == null || APP_TENANT_IDS.includes(companyId);
+    testTenants || companyId == null || APP_TENANT_IDS.includes(companyId);
   const leads = mockLeads.filter((l) => keep(l.companyId));
   const leadIds = new Set(leads.map((l) => l.id));
   return {
     companies: mockCompanies.filter((c) => keep(c.id)),
-    // companyId null = administrador de la plataforma, que existe siempre
-    users: mockUsers.filter((u) => keep(u.companyId)),
+    users: [...extraUsers, ...mockUsers.filter((u) => keep(u.companyId))],
     accounts: mockClientAccounts.filter((a) => keep(a.companyId)),
     leads,
     // Algunas actividades antiguas no traen companyId: se decide por su lead

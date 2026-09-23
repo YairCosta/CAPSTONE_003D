@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Globe, Eye, EyeOff, LogIn, Sun, Moon, AlertTriangle, ShieldCheck, Briefcase, UserRound } from 'lucide-react';
+import { RevelaLogo } from './RevelaLogo';
+import { Eye, EyeOff, LogIn, Sun, Moon, AlertTriangle, ShieldCheck, Briefcase, UserRound } from 'lucide-react';
 import { inputClass, labelClass, primaryButton } from '../lib/styles';
 
 interface DemoAccount {
@@ -62,7 +63,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, demoAccounts,
         <section>
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 shadow-md">
-              <Globe className="h-7 w-7 text-[#fff]" />
+              <RevelaLogo className="h-7 w-7 text-[#fff]" />
             </div>
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">Revela</h1>

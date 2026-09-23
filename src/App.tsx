@@ -49,7 +49,9 @@ import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from './lib
 import { AI_WRITE_LIMIT_ERROR, MAX_AI_WRITES_PER_SESSION, safeForModel } from './lib/aiSafety';
 import type { ZoneMetric } from './lib/metrics';
 import { KpiSearchBar, applyKpiFilters, emptyKpiFilters, type KpiFilters } from './components/KpiSearchBar';
-import { mockTerritories, defaultStageConfigs, demoAccounts, demoDataFor } from './data/mockGeoData';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
+import { validatePasswordChange } from './lib/passwords';
+import { mockTerritories, defaultStageConfigs, demoAccounts, platformAdminAccount, platformAdminUser, demoDataFor } from './data/mockGeoData';
 import type {
   AppUser,
   AuditEntry,
@@ -92,9 +94,12 @@ const SESSION_KEY = 'revela-session';
 const THEME_KEY = 'revela-theme';
 // Los CRMs de prueba (GeoDemo, Norte, Sur) solo se cargan para npm run test:e2e, que abre la app con
 // ?pruebas en el servidor de desarrollo; nunca en la app compilada ni en el login.
-const initialData = demoDataFor(
-  import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas')
-);
+// El administrador de plataforma solo existe en desarrollo: al construir, esta rama se elimina y
+// su cuenta no queda en los archivos publicados. En producción vive en Supabase Auth.
+const initialData = demoDataFor({
+  testTenants: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas'),
+  extraUsers: import.meta.env.DEV ? [platformAdminUser] : [],
+});
 
 const DISPLAY_CURRENCY_KEY = 'revela-display-currency';
 
@@ -167,6 +172,7 @@ export function App() {
   const [selectedTerritoryId, setSelectedTerritoryId] = useState<string | null>(null);
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [kpiFilters, setKpiFilters] = useState<KpiFilters>(emptyKpiFilters);
   const [kpiView, setKpiView] = useState<'zones' | 'catalog'>('zones');
   // Plan Internacional: países elegidos en la barra de países (null = todos los habilitados)
@@ -1075,12 +1081,35 @@ export function App() {
     });
   };
 
+  // ---------- Contraseña propia ----------
+  // Cada persona cambia la suya: ni el gerente ni la plataforma pueden verla ni fijarla por ella.
+  const handleChangeOwnPassword = (current: string, next: string, confirm: string): string | null => {
+    const stored = users.find((u) => u.id === currentUser?.id);
+    if (!stored) return 'No se encontró tu usuario.';
+    const invalid = validatePasswordChange(stored.password, { current, next, confirm });
+    if (invalid) return invalid;
+
+    setUsers((prev) => prev.map((u) => (u.id === stored.id ? { ...u, password: next } : u)));
+    // La auditoría deja constancia del hecho, nunca de la contraseña
+    if (stored.companyId) {
+      record({
+        companyId: stored.companyId,
+        action: 'update',
+        entity: 'user',
+        entityId: stored.id,
+        entityLabel: stored.fullName,
+        summary: 'Cambió su propia contraseña',
+      });
+    }
+    return null;
+  };
+
   // ---------- Login ----------
   if (!currentUser || !isSessionValid) {
     return (
       <LoginScreen
         onLogin={handleLogin}
-        demoAccounts={demoAccounts}
+        demoAccounts={import.meta.env.DEV ? [...demoAccounts, platformAdminAccount] : demoAccounts}
         notice={sessionUserId ? 'Tu sesión se cerró porque el usuario o su CRM fue desactivado.' : null}
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -1194,6 +1223,7 @@ export function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onLogout={handleLogout}
+        onChangePassword={() => setIsPasswordModalOpen(true)}
         displayCurrency={currentUser.role === 'superadmin' ? undefined : displayCurrency}
         onDisplayCurrencyChange={changeDisplayCurrency}
         rates={exchange.rates}
@@ -1419,6 +1449,14 @@ export function App() {
           onSaveLead={handleAiSaveLead}
           onFindLeads={handleAiFindLeads}
           onUpdateLeadStage={handleAiUpdateLeadStage}
+        />
+      )}
+
+      {isPasswordModalOpen && (
+        <ChangePasswordModal
+          userName={currentUser.fullName}
+          onClose={() => setIsPasswordModalOpen(false)}
+          onSubmit={handleChangeOwnPassword}
         />
       )}
     </div>

@@ -4,7 +4,8 @@ CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en 
 (comuna, distrito…), mide qué se vende y dónde, y opera en varios países.
 
 Proyecto de tesis de Ingeniería en Informática, Duoc UC (sección 003D).
-Se pilotea con **Empresa Piloto**, empresa de servicios que opera en Chile y Perú.
+Se pilotea con **Empresa Piloto**, empresa de servicios que opera en Chile y Perú. La aplicación
+trae una **cuenta de demostración** con datos ficticios, pensada para quien llega desde la landing.
 
 ## Qué hace
 
@@ -43,9 +44,11 @@ Cuentas de demostración (solo local):
 
 | Perfil | Email | Contraseña |
 |---|---|---|
-| Gerente | gerente@demo.revelacrm.com | dev-gerente-local |
-| Usuario base | vendedor@demo.revelacrm.com | dev-base-local |
-| Administrador | admin@revelacrm.com | dev-admin-solo-local |
+| Gerente | gerente@demo.revelacrm.com | demo1234 |
+| Usuario base | vendedor@demo.revelacrm.com | demo1234 |
+
+La cuenta de administrador de plataforma solo existe en desarrollo y no viaja en la aplicación
+publicada: en producción vive en Supabase Auth.
 
 Para el asistente de IA hace falta un archivo `.env.local` con `GEMINI_API_KEY`
 (ver `.env.example`). Ese archivo nunca se sube al repositorio.
@@ -62,7 +65,7 @@ npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
 ## Documentación
 
 En [`docs/`](docs/): base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación,
-auditoría, usuarios, asistente de IA, seguridad y los diagramas de arquitectura, componentes y
+auditoría, usuarios, asistente de IA, seguridad, cumplimiento de la Ley 21.719, pagos y los diagramas de arquitectura, componentes y
 estados.
 
 ## Estado

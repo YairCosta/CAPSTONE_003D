@@ -1,7 +1,7 @@
 import React from 'react';
+import { RevelaLogo } from './RevelaLogo';
 import {
   Plus,
-  Globe,
   BarChart3,
   Kanban,
   PhoneCall,
@@ -11,6 +11,7 @@ import {
   Briefcase,
   ShieldCheck,
   History,
+  KeyRound,
   LogOut,
 } from 'lucide-react';
 import type { AppUser, Company } from '../types/crm';
@@ -40,6 +41,7 @@ interface NavbarProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onLogout: () => void;
+  onChangePassword?: () => void;
   // Moneda con la que se ve todo el CRM (solo para mostrar: los montos se guardan en su moneda)
   displayCurrency?: CurrencyCode;
   onDisplayCurrencyChange?: (currency: CurrencyCode) => void;
@@ -66,6 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme,
   onToggleTheme,
   onLogout,
+  onChangePassword,
   displayCurrency,
   onDisplayCurrencyChange,
   rates,
@@ -77,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex w-full items-center justify-between gap-4 px-6 py-3.5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 shadow-md shadow-indigo-600/30">
-            <Globe className="h-6 w-6 text-[#fff]" />
+            <RevelaLogo className="h-6 w-6 text-[#fff]" />
           </div>
           <div className="min-w-0">
             <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
@@ -164,6 +167,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <p className="text-[15px] font-semibold text-slate-100">{user.fullName}</p>
               <p className="text-sm text-slate-400">{ROLE_LABEL[user.role]}</p>
             </div>
+            {onChangePassword && (
+              <button
+                type="button"
+                onClick={onChangePassword}
+                title="Cambiar mi contraseña"
+                aria-label="Cambiar mi contraseña"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+              >
+                <KeyRound className="h-5 w-5" />
+              </button>
+            )}
             <button
               type="button"
               onClick={onLogout}

@@ -16,9 +16,9 @@ const CHROME_PATH = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/A
 const GEO = { manager: 'gerente@geodemo.cl', agent: 'vendedor@geodemo.cl' };
 const NORTE = { manager: 'gerente@nortedemo.cl', agent: 'vendedor@nortedemo.cl' };
 const ADMIN = 'admin@revelacrm.com';
-const Piloto = { manager: 'gerente@demo.revelacrm.com', agent: 'vendedor@demo.revelacrm.com' };
-// Usuario que crea el gerente de la empresa piloto durante la prueba
-const PILOTO_NEW_USER = { name: 'Persona E2E Piloto', email: 'usuario@piloto.demo', password: 'e2e12345' };
+const DEMO = { manager: 'gerente@demo.revelacrm.com', agent: 'vendedor@demo.revelacrm.com' };
+// Usuario que crea el gerente de la cuenta demo durante la prueba
+const DEMO_NEW_USER = { name: 'Persona E2E Demo', email: 'persona.e2e@demo.revelacrm.com', password: 'e2e12345' };
 
 // Datos que solo existen en cada CRM (mock + los que crea la prueba)
 const GEO_ONLY = ['Antonia Morales Valdés', 'Consultora Andes', 'Vitacura Holdings', 'Holding Vitacura', 'Carlos Mendoza'];
@@ -70,9 +70,9 @@ const PASSWORDS = {
   [GEO.agent]: 'dev-base-local',
   [NORTE.manager]: 'dev-gerente-local',
   [NORTE.agent]: 'dev-base-local',
-  [Piloto.manager]: 'dev-gerente-local',
-  [Piloto.agent]: 'dev-base-local',
-  [PILOTO_NEW_USER.email]: PILOTO_NEW_USER.password,
+  [DEMO.manager]: 'demo1234',
+  [DEMO.agent]: 'demo1234',
+  [DEMO_NEW_USER.email]: DEMO_NEW_USER.password,
 };
 
 // Escribe en un input controlado por React y dispara el evento de cambio
@@ -255,14 +255,14 @@ const collectTenantText = async ({ manager, skipAudit = false }) => {
 const noneOf = (text, words) => words.filter((w) => text.includes(w));
 
 try {
-  // Sin ?pruebas la app es la del piloto: solo el CRM de Empresa Piloto
+  // Sin ?pruebas la app es la pública: solo la cuenta de demostración
   await page.goto(APP_URL, { waitUntil: 'networkidle2' });
   await page.evaluate(() => sessionStorage.clear());
   await page.reload({ waitUntil: 'networkidle2' });
   const loginTexto = await page.evaluate(() => document.body.innerText);
   check(
-    'El login normal solo ofrece cuentas de Empresa Piloto (y el administrador)',
-    loginTexto.includes('Empresa Piloto') && noneOf(loginTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).length === 0,
+    'El login normal solo ofrece la cuenta de demostración',
+    loginTexto.includes('Revela Demo') && noneOf(loginTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).length === 0,
     noneOf(loginTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).join(', ')
   );
   const sinPruebas = await login(GEO.manager);
@@ -641,7 +641,7 @@ try {
 
   // ================================================================ 8b. El gerente administra los usuarios de SU CRM
   await logout();
-  await mustLogin(Piloto.manager);
+  await mustLogin(DEMO.manager);
   await tab('Gerencia');
   await clickText('main button', 'Usuarios');
   await sleep(500);
@@ -659,29 +659,29 @@ try {
 
   await clickText('main button', 'Nuevo usuario');
   await sleep(400);
-  await typeInto('#tu-name', PILOTO_NEW_USER.name);
-  await typeInto('#tu-email', PILOTO_NEW_USER.email);
-  await typeInto('#tu-password', PILOTO_NEW_USER.password);
+  await typeInto('#tu-name', DEMO_NEW_USER.name);
+  await typeInto('#tu-email', DEMO_NEW_USER.email);
+  await typeInto('#tu-password', DEMO_NEW_USER.password);
   await clickText('button', 'Crear usuario');
   await sleep(600);
-  check('El gerente crea un usuario de su CRM', (await mainText()).includes(PILOTO_NEW_USER.name));
+  check('El gerente crea un usuario de su CRM', (await mainText()).includes(DEMO_NEW_USER.name));
 
   await tab('Auditoría');
   await sleep(400);
-  check('La creación del usuario queda en la auditoría', (await mainText()).includes(PILOTO_NEW_USER.name));
+  check('La creación del usuario queda en la auditoría', (await mainText()).includes(DEMO_NEW_USER.name));
 
   // El usuario nuevo puede entrar...
   await logout();
-  const nuevoLogin = await login(PILOTO_NEW_USER.email);
+  const nuevoLogin = await login(DEMO_NEW_USER.email);
   check('El usuario recién creado puede iniciar sesión', nuevoLogin.ok, nuevoLogin.alert);
 
   // ...y deja de poder hacerlo cuando el gerente lo desactiva
   await logout();
-  await mustLogin(Piloto.manager);
+  await mustLogin(DEMO.manager);
   await tab('Gerencia');
   await clickText('main button', 'Usuarios');
   await sleep(500);
-  await domClick(`button[role=switch][aria-label="Desactivar a ${PILOTO_NEW_USER.name}"]`);
+  await domClick(`button[role=switch][aria-label="Desactivar a ${DEMO_NEW_USER.name}"]`);
   await sleep(500);
   const selfSwitchDisabled = await page.$eval(
     'button[role=switch][aria-label="No puedes desactivar tu propio usuario"]',
@@ -690,11 +690,54 @@ try {
   check('El gerente no puede desactivarse a sí mismo', selfSwitchDisabled);
 
   await logout();
-  const bloqueado = await login(PILOTO_NEW_USER.email);
+  const bloqueado = await login(DEMO_NEW_USER.email);
   check('Un usuario desactivado ya no puede entrar', !bloqueado.ok, bloqueado.alert.slice(0, 120));
 
+  // ================================================================ 8b-ter. Cada persona cambia su contraseña
+  // La plataforma nunca fija ni ve la contraseña de un usuario (Ley 21.719: seguridad y confidencialidad)
+  await mustLogin(DEMO.manager);
+  await domClick('button[aria-label="Cambiar mi contraseña"]');
+  await sleep(300);
+  await typeInto('#cc-actual', PASSWORDS[DEMO.manager]);
+  await typeInto('#cc-nueva', 'corta1');
+  await typeInto('#cc-confirmar', 'corta1');
+  await clickText('button', 'Guardar contraseña');
+  await sleep(300);
+  const errorCorta = await page.evaluate(() => document.querySelector('[role=alert]')?.textContent ?? '');
+  check('Rechaza una contraseña nueva demasiado corta', errorCorta.includes('al menos'), errorCorta);
+
+  const NUEVA_CLAVE = 'revela2026seguro';
+  await typeInto('#cc-nueva', NUEVA_CLAVE);
+  await typeInto('#cc-confirmar', NUEVA_CLAVE);
+  await clickText('button', 'Guardar contraseña');
+  await sleep(400);
+  check(
+    'El gerente cambia su propia contraseña',
+    (await page.evaluate(() => document.querySelector('[role=status]')?.textContent ?? '')).includes('quedó cambiada')
+  );
+  await clickText('button', 'Listo');
+  await sleep(200);
+
+  await logout();
+  const conClaveVieja = await login(DEMO.manager);
+  check('La contraseña anterior deja de servir', !conClaveVieja.ok, conClaveVieja.alert.slice(0, 120));
+  PASSWORDS[DEMO.manager] = NUEVA_CLAVE;
+  await mustLogin(DEMO.manager);
+  check('Entra con la contraseña nueva', true);
+
+  // El cambio queda en la auditoría, sin guardar la contraseña
+  await tab('Auditoría');
+  await sleep(400);
+  const auditoriaClave = await mainText();
+  check(
+    'La auditoría registra el cambio de contraseña sin exponerla',
+    auditoriaClave.includes('Cambió su propia contraseña') && !auditoriaClave.includes(NUEVA_CLAVE),
+    auditoriaClave.slice(0, 200).replace(/\s+/g, ' ')
+  );
+  await logout();
+
   // ================================================================ 8b-bis. Varios contactos en un mismo lead
-  await mustLogin(Piloto.manager);
+  await mustLogin(DEMO.manager);
   await tab('Gerencia');
   await clickText('main button', 'Contactos');
   await sleep(500);
