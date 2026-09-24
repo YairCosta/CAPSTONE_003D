@@ -1,0 +1,15 @@
+{
+  "case_id": "revela-2026-09",
+  "created_at_utc_system_clock": "2026-09-24T00:14:15.690347+00:00",
+  "scenario": 2,
+  "organization": "Revela (Yair Costa)",
+  "clients": [],
+  "authority_verified": false,
+  "read_only_default": true,
+  "production_data_allowed": false,
+  "legal_status_verified_at": null,
+  "custodian": null,
+  "scope": [],
+  "exclusions": [],
+  "warning": "Do not store secrets or unnecessary personal data in this case."
+}

@@ -3,11 +3,15 @@
 // Con el plan Internacional, además, un dato solo puede pertenecer a un país habilitado para su CRM.
 // En producción, la misma garantía la aplica la base de datos con RLS y triggers (ver supabase/migrations).
 
-import type { AppUser, CatalogItem, ClientAccount, Company, Lead, LeadActivity, LeadContact, LeadItem, NewAppUser, StageConfig } from '../types/crm';
+import type { AppUser, CatalogItem, ClientAccount, Company, ConsentStatus, Lead, LeadActivity, LeadContact, LeadDataOrigin, LeadItem, NewAppUser, StageConfig } from '../types/crm';
 import { isCountryCode, type CountryCode } from '../data/countries.ts';
 import { applyLeadValue } from './catalog.ts';
 import { isAllowedLeadCurrency } from './currency.ts';
 import { MAX_LEAD_CONTACTS } from './contacts.ts';
+import { anonymizeLead, isAnonymized, openPrivacyRequest, resolvePrivacyRequest, type NewPrivacyRequest, type PrivacyDecision } from './privacy.ts';
+
+const CONSENT_VALUES: ConsentStatus[] = ['granted', 'not_requested', 'refused', 'withdrawn'];
+const ORIGIN_VALUES: LeadDataOrigin[] = ['form', 'call', 'event', 'referral', 'public', 'ai'];
 
 export const isManager = (user: AppUser | null) => user?.role === 'manager';
 export const isSuperadmin = (user: AppUser | null) => user?.role === 'superadmin';
@@ -177,10 +181,35 @@ export function sanitizeLeadUpdate(
     !updated.assignedTerritoryId ||
     territories.some((t) => t.territoryId === updated.assignedTerritoryId && t.countryCode === updated.countryCode);
 
+  // Un lead anonimizado no vuelve a tener datos personales: la edición no puede re-identificarlo.
+  const anonimizado = isAnonymized(existing);
+  const personales: Partial<Lead> = anonimizado
+    ? {
+        fullName: existing.fullName,
+        jobTitle: existing.jobTitle,
+        email: existing.email,
+        phone: existing.phone,
+        rawAddress: existing.rawAddress,
+        normalizedAddress: existing.normalizedAddress,
+        notes: existing.notes,
+        contacts: [],
+      }
+    : {};
+
   return applyLeadValue({
     ...updated,
     commercialStatus: stageAllowed ? updated.commercialStatus : existing.commercialStatus,
     currency,
+    // Origen y consentimiento: valores conocidos o se conserva lo anterior
+    dataOrigin: ORIGIN_VALUES.includes(updated.dataOrigin as LeadDataOrigin) ? updated.dataOrigin : existing.dataOrigin,
+    consentStatus: CONSENT_VALUES.includes(updated.consentStatus as ConsentStatus)
+      ? updated.consentStatus
+      : existing.consentStatus,
+    consentAt: updated.consentStatus !== existing.consentStatus ? updated.consentAt : existing.consentAt,
+    noContact: Boolean(updated.noContact) || anonimizado,
+    // La solicitud del titular y la anonimización solo cambian por su flujo propio, nunca editando
+    privacyRequest: existing.privacyRequest,
+    anonymizedAt: existing.anonymizedAt,
     contacts: sanitizeLeadContacts(updated.contacts, existing.id),
     items: sanitizeLeadItems(updated.items, catalog, tenantId),
     id: existing.id,
@@ -196,7 +225,54 @@ export function sanitizeLeadUpdate(
           longitude: undefined,
           geocodingStatus: 'manual_review' as const,
         }),
+    ...personales,
   });
+}
+
+// ------------------------------------------------------------------ derechos del titular
+// Una solicitud la puede abrir cualquier perfil del CRM (quien atiende al titular), pero solo el
+// gerente la resuelve: aprobarla borra datos personales y eso no se deshace.
+export const canResolvePrivacyRequest = (role: AppUser['role'] | null) => role === 'manager';
+
+export function requestLeadPrivacy(
+  existing: Lead | undefined,
+  tenantId: string | null,
+  data: NewPrivacyRequest
+): Lead | null {
+  if (!tenantId || !existing || existing.companyId !== tenantId) return null;
+  if (existing.privacyRequest?.status === 'pending' || isAnonymized(existing)) return null;
+  if (!data.reason || !data.requestedBy) return null;
+  if (data.reason === 'other' && !data.detail?.trim()) return null;
+  return openPrivacyRequest(existing, data);
+}
+
+export function resolveLeadPrivacy(
+  existing: Lead | undefined,
+  tenantId: string | null,
+  role: AppUser['role'] | null,
+  decision: PrivacyDecision
+): Lead | null {
+  if (!tenantId || !existing || existing.companyId !== tenantId) return null;
+  if (!canResolvePrivacyRequest(role)) return null;
+  if (existing.privacyRequest?.status !== 'pending') return null;
+  return resolvePrivacyRequest(existing, decision);
+}
+
+/** Marca o quita la oposición a ser contactado (art. 8). Un lead anonimizado no vuelve atrás. */
+export function setLeadNoContact(
+  existing: Lead | undefined,
+  tenantId: string | null,
+  noContact: boolean
+): Lead | null {
+  if (!tenantId || !existing || existing.companyId !== tenantId) return null;
+  if (isAnonymized(existing) && !noContact) return null;
+  return { ...existing, noContact };
+}
+
+/** Anonimización directa, solo para el vencimiento del plazo de conservación. */
+export function anonymizeLeadOfTenant(existing: Lead | undefined, tenantId: string | null, at: string): Lead | null {
+  if (!tenantId || !existing || existing.companyId !== tenantId || isAnonymized(existing)) return null;
+  return anonymizeLead(existing, at);
 }
 
 // Edición de empresa cliente: solo del propio tenant, sin moverla a otro y en un país habilitado

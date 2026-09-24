@@ -1,4 +1,5 @@
 import type { Lead, LeadActivity, ContactChannel } from '../types/crm';
+import { canContact } from './privacy.ts';
 
 // Agenda de seguimientos: reúne en un solo lugar los "próximo contacto agendado" que hoy
 // quedan escondidos dentro de cada bitácora. Sin esto hay que abrir lead por lead para
@@ -46,6 +47,8 @@ const bucketFor = (date: Date, now: Date): FollowUpBucket => {
 // Compromiso vigente de un lead: el de su última interacción. Si después se registró otro
 // contacto, el compromiso anterior ya fue atendido y deja de aparecer.
 // Los leads ganados y perdidos quedan fuera: no hay nada que seguir.
+// Tampoco aparece quien se opuso, revocó su consentimiento o tiene una solicitud pendiente:
+// la agenda no puede empujar a contactar a alguien que pidió lo contrario (Ley 21.719, arts. 8 y 8 ter).
 export function pendingFollowUps(leads: Lead[], activities: LeadActivity[], now: Date = new Date()): FollowUp[] {
   const ultimaPorLead = new Map<string, LeadActivity>();
   for (const act of activities) {
@@ -56,6 +59,7 @@ export function pendingFollowUps(leads: Lead[], activities: LeadActivity[], now:
   const resultado: FollowUp[] = [];
   for (const lead of leads) {
     if (lead.commercialStatus === 'won' || lead.commercialStatus === 'lost') continue;
+    if (!canContact(lead)) continue;
     const ultima = ultimaPorLead.get(lead.id);
     if (!ultima?.nextFollowUpDate) continue;
     const fecha = new Date(ultima.nextFollowUpDate);

@@ -1,0 +1,2 @@
+flow_id,organization,client,service,purpose,decision_maker,means_decision_maker,outsourcer_role,client_role,recipient_role,processor,subprocessor,own_use,documented_instructions,contract_ref,legal_review,status,evidence_ids,notes
+FLOW-001,[ENTIDAD],[CLIENTE],[SERVICIO],[FINALIDAD],[QUIEN_DECIDE_FINALIDAD],[QUIEN_DECIDE_MEDIOS],[RESPONSABLE_ENCARGADO_PENDIENTE],[ROL_CLIENTE],[ROL_RECEPTOR],[PROVEEDOR],[SUBPROVEEDOR],no,[INSTRUCCION],[CONTRATO],[REVISOR],HECHO_PENDIENTE,[IDS],[NOTAS]

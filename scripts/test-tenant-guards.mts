@@ -18,7 +18,13 @@ import {
   validateNewUser,
   validateNewTeamUser,
   sanitizeTeamUserUpdate,
+  canResolvePrivacyRequest,
+  requestLeadPrivacy,
+  resolveLeadPrivacy,
+  setLeadNoContact,
+  anonymizeLeadOfTenant,
 } from '../src/lib/tenantGuards.ts';
+import { blockedReason, canContact, isAnonymized, isBlocked } from '../src/lib/privacy.ts';
 import { MAX_LEAD_CONTACTS } from '../src/lib/contacts.ts';
 import { countsByDay, monthGrid, pendingFollowUps } from '../src/lib/agenda.ts';
 import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from '../src/lib/aiLeadMatch.ts';
@@ -740,6 +746,155 @@ test('stageConfigsForTenant: cada CRM tiene su propia configuración', () => {
 test('newId: 20.000 IDs generados seguidos sin colisiones', () => {
   const ids = new Set(Array.from({ length: 20000 }, () => newId('lead')));
   assert.equal(ids.size, 20000);
+});
+
+// ------------------------------------------------------------------ derechos del titular (Ley 21.719)
+const solicitud = { reason: 'erasure' as const, requestedBy: 'Agente', at: '2026-09-24T12:00:00Z' };
+
+test('Privacidad: una solicitud pendiente bloquea el lead y lo saca de la agenda y del asistente', () => {
+  const base = lead('l-priv', A);
+  const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
+  assert.equal(isBlocked(conSolicitud), true);
+  assert.equal(canContact(conSolicitud), false);
+  assert.match(blockedReason(conSolicitud) ?? '', /solicitud/i);
+  // La agenda no propone un lead bloqueado aunque tenga compromiso agendado
+  const actividad = {
+    id: 'a1',
+    leadId: 'l-priv',
+    companyId: A,
+    channel: 'call' as const,
+    outcome: 'interested' as const,
+    summary: 'x',
+    nextFollowUpDate: '2026-09-25T12:00:00Z',
+    agentName: 'Agente',
+    createdAt: '2026-09-24T10:00:00Z',
+  };
+  assert.equal(pendingFollowUps([conSolicitud], [actividad], new Date('2026-09-24T12:00:00Z')).length, 0);
+  assert.equal(pendingFollowUps([base], [actividad], new Date('2026-09-24T12:00:00Z')).length, 1);
+});
+
+test('Privacidad: la solicitud no cruza de CRM y no se duplica', () => {
+  const base = lead('l-priv2', A);
+  assert.equal(requestLeadPrivacy(base, B, solicitud), null);
+  assert.equal(requestLeadPrivacy(base, null, solicitud), null);
+  const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
+  assert.equal(requestLeadPrivacy(conSolicitud, A, solicitud), null);
+  // El motivo "otro" exige detalle
+  assert.equal(requestLeadPrivacy(base, A, { ...solicitud, reason: 'other' }), null);
+  assert.ok(requestLeadPrivacy(base, A, { ...solicitud, reason: 'other', detail: 'lo pidió por correo' }));
+});
+
+test('Privacidad: solo el gerente resuelve la solicitud', () => {
+  const conSolicitud = requestLeadPrivacy(lead('l-priv3', A), A, solicitud)!;
+  const decision = { approve: true, decidedBy: 'Gerente', at: '2026-09-24T13:00:00Z' };
+  assert.equal(canResolvePrivacyRequest('agent'), false);
+  assert.equal(canResolvePrivacyRequest(null), false);
+  assert.equal(canResolvePrivacyRequest('manager'), true);
+  assert.equal(resolveLeadPrivacy(conSolicitud, A, 'agent', decision), null);
+  assert.equal(resolveLeadPrivacy(conSolicitud, A, 'superadmin', decision), null);
+  assert.equal(resolveLeadPrivacy(conSolicitud, B, 'manager', decision), null);
+  assert.ok(resolveLeadPrivacy(conSolicitud, A, 'manager', decision));
+});
+
+test('Privacidad: aprobar borra los datos personales y conserva la operación comercial', () => {
+  const base = lead('l-priv4', A, {
+    fullName: 'Carolina Peña',
+    email: 'carolina@empresa.cl',
+    phone: '+56 9 1111 1111',
+    jobTitle: 'Gerenta',
+    notes: 'Prefiere que la llamen por la tarde',
+    contacts: [{ id: 'c1', fullName: 'Otro contacto' }],
+    estimatedDealValue: 1200000,
+    commercialStatus: 'won',
+    assignedTerritoryId: 'cl-vitacura',
+  });
+  const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
+  const resuelto = resolveLeadPrivacy(conSolicitud, A, 'manager', {
+    approve: true,
+    decidedBy: 'Gerente',
+    at: '2026-09-24T13:00:00Z',
+  })!;
+
+  // Se van los datos personales
+  assert.equal(resuelto.email, undefined);
+  assert.equal(resuelto.phone, undefined);
+  assert.equal(resuelto.jobTitle, undefined);
+  assert.equal(resuelto.notes, undefined);
+  assert.deepEqual(resuelto.contacts, []);
+  assert.ok(!resuelto.fullName.includes('Carolina'));
+  // Se queda la operación: el CRM sigue cuadrando
+  assert.equal(resuelto.estimatedDealValue, 1200000);
+  assert.equal(resuelto.commercialStatus, 'won');
+  assert.equal(resuelto.assignedTerritoryId, 'cl-vitacura');
+  assert.equal(isAnonymized(resuelto), true);
+  assert.equal(canContact(resuelto), false);
+  // Y la decisión queda registrada en el propio lead
+  assert.equal(resuelto.privacyRequest?.status, 'approved');
+  assert.equal(resuelto.privacyRequest?.decidedBy, 'Gerente');
+});
+
+test('Privacidad: rechazar desbloquea y deja constancia del motivo', () => {
+  const conSolicitud = requestLeadPrivacy(lead('l-priv5', A), A, solicitud)!;
+  const resuelto = resolveLeadPrivacy(conSolicitud, A, 'manager', {
+    approve: false,
+    decidedBy: 'Gerente',
+    note: 'No se pudo verificar la identidad',
+    at: '2026-09-24T13:00:00Z',
+  })!;
+  assert.equal(isBlocked(resuelto), false);
+  assert.equal(canContact(resuelto), true);
+  assert.equal(resuelto.privacyRequest?.status, 'rejected');
+  assert.equal(resuelto.privacyRequest?.decisionNote, 'No se pudo verificar la identidad');
+});
+
+test('Privacidad: un lead anonimizado no se puede re-identificar editándolo', () => {
+  const anonimo = anonymizeLeadOfTenant(lead('l-priv6', A, { email: 'a@b.cl' }), A, '2026-09-24T13:00:00Z')!;
+  const intento = sanitizeLeadUpdate(
+    anonimo,
+    { ...anonimo, fullName: 'Nombre recuperado', email: 'a@b.cl', phone: '+56 9 2222 2222', notes: 'vuelve' },
+    A,
+    [],
+    ['CL'],
+    ZONES,
+    [],
+    'manager'
+  )!;
+  assert.ok(!intento.fullName.includes('recuperado'));
+  assert.equal(intento.email, undefined);
+  assert.equal(intento.phone, undefined);
+  assert.equal(intento.notes, undefined);
+  assert.equal(intento.noContact, true);
+  // Y tampoco se puede volver a marcar como contactable
+  assert.equal(setLeadNoContact(intento, A, false), null);
+});
+
+test('Privacidad: la oposición y la revocación bloquean el contacto', () => {
+  const opuesto = setLeadNoContact(lead('l-priv7', A), A, true)!;
+  assert.equal(canContact(opuesto), false);
+  assert.match(blockedReason(opuesto) ?? '', /no ser contactado/i);
+  assert.equal(canContact(lead('l-priv8', A, { consentStatus: 'refused' })), false);
+  assert.equal(canContact(lead('l-priv9', A, { consentStatus: 'withdrawn' })), false);
+  assert.equal(canContact(lead('l-priv10', A, { consentStatus: 'granted' })), true);
+});
+
+test('Privacidad: el origen y el consentimiento solo aceptan valores conocidos', () => {
+  const base = lead('l-priv11', A, { dataOrigin: 'form', consentStatus: 'granted' });
+  const sucio = sanitizeLeadUpdate(
+    base,
+    { ...base, dataOrigin: 'inventado' as never, consentStatus: 'quizás' as never },
+    A,
+    [],
+    ['CL'],
+    ZONES,
+    [],
+    'manager'
+  )!;
+  assert.equal(sucio.dataOrigin, 'form');
+  assert.equal(sucio.consentStatus, 'granted');
+  // La solicitud pendiente tampoco se puede inventar desde una edición normal
+  const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
+  const editado = sanitizeLeadUpdate(conSolicitud, { ...conSolicitud, privacyRequest: undefined }, A, [], ['CL'], ZONES, [], 'manager')!;
+  assert.equal(editado.privacyRequest?.status, 'pending');
 });
 
 // ------------------------------------------------------------------ reporte

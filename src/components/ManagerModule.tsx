@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import type { AppUser, CatalogItem, ClientAccount, Lead, LeadContact, NewAppUser, NewCatalogItem, TerritoryMetric } from '../types/crm';
+import type { AppUser, CatalogItem, ClientAccount, Lead, LeadContact, NewAppUser, NewCatalogItem, PrivacyRequestReason, TerritoryMetric } from '../types/crm';
 import { TeamUsersSection } from './TeamUsersSection';
 import { LeadContactsEditor } from './LeadContactsEditor';
 import { CatalogManager } from './CatalogManager';
 import { LeadItemsEditor } from './LeadItemsEditor';
 import { fromDraftItems, itemsSubtotal, toDraftItems, type DraftLeadItem } from '../lib/catalog';
 import { extraContactsCount, leadTitle } from '../lib/contacts';
+import { blockedReason, isAnonymized, isBlocked } from '../lib/privacy';
+import { PrivacyDecisionModal, PrivacyRequestModal } from './PrivacyRequestModal';
 import { convert, leadCurrenciesFor, leadCurrency, roundForCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
 import {
@@ -21,6 +23,8 @@ import {
   Trash2,
   Boxes,
   Users2,
+  FileDown,
+  ShieldAlert,
 } from 'lucide-react';
 import { locateInCommune } from '../lib/geocoding';
 import { COUNTRIES, zoneLabelFor, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
@@ -68,6 +72,11 @@ interface ManagerModuleProps {
   onUpdateAccount: (account: ClientAccount) => void;
   onDeleteAccount: (accountId: string) => void;
   onUpdateLead: (lead: Lead) => void;
+  // Derechos del titular sobre sus datos (Ley 21.719)
+  canResolvePrivacy: boolean;
+  onRequestPrivacy: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
+  onResolvePrivacy: (leadId: string, approve: boolean, note: string) => void;
+  onDownloadSubjectReport: (leadId: string) => void;
 }
 
 export const ManagerModule: React.FC<ManagerModuleProps> = ({
@@ -89,6 +98,10 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
   onUpdateAccount,
   onDeleteAccount,
   onUpdateLead,
+  canResolvePrivacy,
+  onRequestPrivacy,
+  onResolvePrivacy,
+  onDownloadSubjectReport,
 }) => {
   const [section, setSection] = useState<Section>('accounts');
   const queueCount = leads.filter((l) => !hasCommune(l)).length;
@@ -131,6 +144,10 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
           currencies={leadCurrenciesFor(enabledCountries)}
           catalog={catalog}
           onUpdateLead={onUpdateLead}
+          canResolvePrivacy={canResolvePrivacy}
+          onRequestPrivacy={onRequestPrivacy}
+          onResolvePrivacy={onResolvePrivacy}
+          onDownloadSubjectReport={onDownloadSubjectReport}
         />
       )}
       {section === 'catalog' && (
@@ -594,6 +611,10 @@ function ContactsSection({
   currencies,
   catalog,
   onUpdateLead,
+  canResolvePrivacy,
+  onRequestPrivacy,
+  onResolvePrivacy,
+  onDownloadSubjectReport,
 }: {
   leads: Lead[];
   accounts: ClientAccount[];
@@ -602,9 +623,17 @@ function ContactsSection({
   currencies: CurrencyCode[];
   catalog: CatalogItem[];
   onUpdateLead: (lead: Lead) => void;
+  // Derechos del titular sobre sus datos (Ley 21.719)
+  canResolvePrivacy: boolean;
+  onRequestPrivacy: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
+  onResolvePrivacy: (leadId: string, approve: boolean, note: string) => void;
+  onDownloadSubjectReport: (leadId: string) => void;
 }) {
   const showCountry = countries.length > 1;
   const zoneLabel = zoneLabelFor(countries);
+  // Solicitudes del titular: registrar una (cualquier perfil) y resolverla (solo gerencia)
+  const [requesting, setRequesting] = useState<Lead | null>(null);
+  const [deciding, setDeciding] = useState<Lead | null>(null);
   const [query, setQuery] = useState('');
   const [accountFilter, setAccountFilter] = useState('all');
   const [editing, setEditing] = useState<Lead | null>(null);
@@ -698,6 +727,13 @@ function ContactsSection({
                           +{extraContactsCount(lead)} {extraContactsCount(lead) === 1 ? 'contacto más' : 'contactos más'}
                         </div>
                       )}
+                      {blockedReason(lead) && (
+                        <div className="mt-1">
+                          <Pill tone={isAnonymized(lead) ? 'slate' : isBlocked(lead) ? 'amber' : 'red'}>
+                            {isAnonymized(lead) ? 'Datos eliminados' : isBlocked(lead) ? 'Bloqueado' : 'No contactar'}
+                          </Pill>
+                        </div>
+                      )}
                     </td>
                     <td className={`${tableCell} text-slate-300`}>
                       {accountName(lead.clientAccountId) ?? lead.companyName ?? (
@@ -711,7 +747,7 @@ function ContactsSection({
                       <div className="text-sm text-slate-400">{lead.phone || 'Sin teléfono'}</div>
                     </td>
                     <td className={tableCell}>
-                      <div className="max-w-xs truncate text-slate-300" title={lead.rawAddress}>
+                      <div className="max-w-[11rem] truncate text-slate-300" title={lead.rawAddress}>
                         {lead.rawAddress}
                       </div>
                       <div className="mt-0.5">
@@ -723,15 +759,52 @@ function ContactsSection({
                       </div>
                     </td>
                     <td className={`${tableCell} text-right`}>
-                      <button
-                        type="button"
-                        onClick={() => setEditing(lead)}
-                        aria-label={`Editar a ${lead.fullName}`}
-                        title="Editar"
-                        className={`${secondaryButton} px-2.5 py-2 text-sm`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onDownloadSubjectReport(lead.id)}
+                          aria-label={`Descargar los datos de ${lead.fullName}`}
+                          title="Descargar sus datos (derecho de acceso y portabilidad)"
+                          className={`${secondaryButton} px-2 py-2 text-sm`}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </button>
+                        {isBlocked(lead) ? (
+                          canResolvePrivacy && (
+                            <button
+                              type="button"
+                              onClick={() => setDeciding(lead)}
+                              aria-label={`Resolver la solicitud de ${lead.fullName}`}
+                              title="Resolver la solicitud del titular"
+                              className="cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/10 px-2 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-500/20"
+                            >
+                              <ShieldAlert className="h-4 w-4" />
+                            </button>
+                          )
+                        ) : (
+                          !isAnonymized(lead) && (
+                            <button
+                              type="button"
+                              onClick={() => setRequesting(lead)}
+                              aria-label={`Registrar solicitud del titular de ${lead.fullName}`}
+                              title="El titular pide algo sobre sus datos"
+                              className={`${secondaryButton} px-2 py-2 text-sm`}
+                            >
+                              <ShieldAlert className="h-4 w-4" />
+                            </button>
+                          )
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEditing(lead)}
+                          aria-label={`Editar a ${lead.fullName}`}
+                          title="Editar"
+                          className={`${secondaryButton} px-2 py-2 text-sm`}
+                          disabled={isBlocked(lead)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -739,6 +812,25 @@ function ContactsSection({
             </tbody>
           </table>
         </div>
+      )}
+
+      {requesting && (
+        <PrivacyRequestModal
+          lead={requesting}
+          onClose={() => setRequesting(null)}
+          onSubmit={(reason, detail) => onRequestPrivacy(requesting.id, reason, detail)}
+        />
+      )}
+
+      {deciding && (
+        <PrivacyDecisionModal
+          lead={deciding}
+          onClose={() => setDeciding(null)}
+          onDecide={(approve, note) => {
+            onResolvePrivacy(deciding.id, approve, note);
+            setDeciding(null);
+          }}
+        />
       )}
 
       {editing && (

@@ -18,6 +18,7 @@ import { COUNTRIES } from '../data/countries.ts';
 import { formatMoney, leadCurrency } from './currency.ts';
 import { isManualValue, itemsSubtotal } from './catalog.ts';
 import { contactLine } from './contacts.ts';
+import { CONSENT_LABEL, ORIGIN_LABEL } from './privacy.ts';
 
 export const ACTION_LABEL: Record<AuditAction, string> = {
   create: 'Creó',
@@ -93,6 +94,13 @@ export const leadFields = (ctx: AuditContext): FieldDef<Lead>[] => [
   { key: 'rawAddress', label: 'Dirección', value: (l) => l.rawAddress },
   { key: 'assignedTerritoryId', label: 'Zona', value: (l) => ctx.zoneName(l.assignedTerritoryId) },
   { key: 'notes', label: 'Notas', value: (l) => l.notes },
+  { key: 'dataOrigin', label: 'Origen del dato', value: (l) => (l.dataOrigin ? ORIGIN_LABEL[l.dataOrigin] : 'No registrado') },
+  {
+    key: 'consentStatus',
+    label: 'Autorización del titular',
+    value: (l) => (l.consentStatus ? CONSENT_LABEL[l.consentStatus] : 'No registrada'),
+  },
+  { key: 'noContact', label: 'No contactar', value: (l) => yesNo(Boolean(l.noContact)) },
   {
     key: 'items',
     label: 'Productos y servicios',

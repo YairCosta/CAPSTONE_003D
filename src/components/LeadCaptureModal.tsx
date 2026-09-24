@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import type { CatalogItem, ClientAccount, CommercialStatus, Lead } from '../types/crm';
+import type { CatalogItem, ClientAccount, CommercialStatus, ConsentStatus, Lead, LeadDataOrigin } from '../types/crm';
 import { LeadItemsEditor } from './LeadItemsEditor';
 import { fromDraftItems, itemsSubtotal, type DraftLeadItem } from '../lib/catalog';
 import { X, UserPlus, MapPin, Loader2, Save, AlertTriangle } from 'lucide-react';
 import { locateInCommune } from '../lib/geocoding';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
+import { ORIGIN_LABEL } from '../lib/privacy';
 import { COUNTRIES, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
 import { convert, leadCurrenciesFor, roundForCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
@@ -74,6 +75,9 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
   const [isManualValue, setIsManualValue] = useState(false);
   // Moneda en que se negocia: parte con la del país y puede cambiarse a otra del CRM o a dólar
   const [currency, setCurrency] = useState<CurrencyCode>(COUNTRIES[defaultCountry].currency);
+  // Ley 21.719: hay que poder decir de dónde salió el dato y qué respondió la persona
+  const [dataOrigin, setDataOrigin] = useState<LeadDataOrigin>('form');
+  const [consentStatus, setConsentStatus] = useState<ConsentStatus>('not_requested');
   const { rates } = useMoney();
   const currencies = leadCurrenciesFor(countries);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -204,6 +208,10 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
       commercialStatus,
       ...leadValue(),
       rawAddress: rawAddress.trim(),
+      dataOrigin,
+      consentStatus,
+      consentAt: new Date().toISOString(),
+      noContact: consentStatus === 'refused',
       ...locateInCommune(communeId, rawAddress),
     });
 
@@ -446,6 +454,46 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                 </select>
               </div>
             </div>
+
+            {/* Origen del dato y respuesta del titular (Ley 21.719, arts. 12 a 14 ter) */}
+            <fieldset className="rounded-xl border border-slate-700 bg-slate-950/40 p-3">
+              <legend className="px-1 text-sm font-bold uppercase tracking-wide text-slate-400">
+                Datos personales
+              </legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="cap-origin" className={labelClass}>¿De dónde salió este contacto?</label>
+                  <select
+                    id="cap-origin"
+                    value={dataOrigin}
+                    onChange={(e) => setDataOrigin(e.target.value as LeadDataOrigin)}
+                    className={inputClass}
+                  >
+                    {(Object.keys(ORIGIN_LABEL) as LeadDataOrigin[]).map((key) => (
+                      <option key={key} value={key}>{ORIGIN_LABEL[key]}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="cap-consent" className={labelClass}>¿Autoriza que guardemos sus datos?</label>
+                  <select
+                    id="cap-consent"
+                    value={consentStatus}
+                    onChange={(e) => setConsentStatus(e.target.value as ConsentStatus)}
+                    className={inputClass}
+                    aria-describedby="cap-consent-ayuda"
+                  >
+                    <option value="not_requested">Aún no se le pregunta</option>
+                    <option value="granted">Sí, autoriza</option>
+                    <option value="refused">No autoriza</option>
+                  </select>
+                </div>
+              </div>
+              <p id="cap-consent-ayuda" className="mt-2 text-sm text-slate-400">
+                Si la persona no autoriza, el lead se guarda marcado como <strong>no contactar</strong> para
+                poder acreditar su decisión, y no aparecerá en la agenda ni para el asistente.
+              </p>
+            </fieldset>
 
             <LeadItemsEditor
               idPrefix="cap"

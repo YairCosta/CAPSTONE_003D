@@ -819,6 +819,110 @@ try {
     (await mainText()).slice(0, 200).replace(/\s+/g, ' ')
   );
 
+  // ============================================ 8b-quater. Derechos del titular (Ley 21.719)
+  // El titular pide que borren sus datos: el lead se bloquea, el gerente resuelve y los datos
+  // personales desaparecen sin romper las métricas del CRM.
+  await tab('Registro de contacto');
+  await sleep(500);
+  const agendaAntes = await mainText();
+  check(
+    'Antes de la solicitud, el lead aparece en la agenda',
+    agendaAntes.includes('Naviera Costa Verde'),
+    agendaAntes.slice(0, 200).replace(/\s+/g, ' ')
+  );
+
+  await tab('Gerencia');
+  await clickText('main button', 'Contactos');
+  await sleep(500);
+  await page.evaluate(() => {
+    const fila = [...document.querySelectorAll('main tbody tr')].find((tr) => tr.innerText.includes('Álvaro Mendoza'));
+    if (!fila) throw new Error('No se encontró el lead de Naviera Costa Verde');
+    fila.querySelector('button[aria-label^="Registrar solicitud"]').click();
+  });
+  await sleep(400);
+  await typeInto('#sp-detail', 'Pidió por correo que borráramos sus datos');
+  await clickText('button', 'Registrar solicitud');
+  await sleep(700);
+
+  const filaBloqueada = await page.evaluate(
+    () => [...document.querySelectorAll('main tbody tr')].find((tr) => tr.innerText.includes('Álvaro Mendoza'))?.innerText ?? ''
+  );
+  check(
+    'La solicitud del titular bloquea el lead',
+    /bloqueado/i.test(filaBloqueada),
+    filaBloqueada.replace(/\s+/g, ' ').slice(0, 160)
+  );
+  const edicionBloqueada = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('main tbody tr')]
+        .find((tr) => tr.innerText.includes('Álvaro Mendoza'))
+        ?.querySelector('button[aria-label^="Editar"]')?.disabled ?? false
+  );
+  check('Un lead bloqueado no se puede editar', edicionBloqueada);
+
+  await tab('Registro de contacto');
+  await sleep(500);
+  check(
+    'Un lead bloqueado sale de la agenda',
+    !(await mainText()).includes('Naviera Costa Verde'),
+    (await mainText()).slice(0, 200).replace(/\s+/g, ' ')
+  );
+
+  // El gerente resuelve: aprobar borra los datos personales y conserva la operación
+  await tab('Gerencia');
+  await clickText('main button', 'Contactos');
+  await sleep(500);
+  await page.evaluate(() => {
+    const fila = [...document.querySelectorAll('main tbody tr')].find((tr) => tr.innerText.includes('Álvaro Mendoza'));
+    fila.querySelector('button[aria-label^="Resolver la solicitud"]').click();
+  });
+  await sleep(400);
+  check('La resolución advierte que el borrado no se puede deshacer', (await bodyText()).includes('No se puede deshacer'));
+  await typeInto('#sp-note', 'Identidad verificada por correo');
+  await clickText('button', 'Aprobar y eliminar');
+  await sleep(800);
+
+  const trasBorrar = await page.evaluate(() => ({
+    quedaLaPersona: document.querySelector('main').innerText.includes('Álvaro Mendoza'),
+    quedaElCorreo: document.querySelector('main').innerText.includes('amendoza@navieracostaverde.pe'),
+    filaAnonima:
+      [...document.querySelectorAll('main tbody tr')].find((tr) => tr.innerText.includes('Titular eliminado'))?.innerText ?? '',
+  }));
+  check(
+    'Aprobar la solicitud borra los datos personales del titular',
+    !trasBorrar.quedaLaPersona && !trasBorrar.quedaElCorreo && trasBorrar.filaAnonima.includes('Datos eliminados'),
+    JSON.stringify(trasBorrar).slice(0, 220)
+  );
+  check(
+    'La operación comercial se conserva tras el borrado',
+    trasBorrar.filaAnonima.includes('Naviera Costa Verde'),
+    trasBorrar.filaAnonima.replace(/\s+/g, ' ').slice(0, 160)
+  );
+
+  await tab('Auditoría');
+  await sleep(500);
+  const auditoriaPrivacidad = await mainText();
+  check(
+    'El borrado queda en la auditoría sin exponer los datos borrados',
+    auditoriaPrivacidad.includes('Solicitud aprobada') && !auditoriaPrivacidad.includes('amendoza@navieracostaverde.pe'),
+    auditoriaPrivacidad.slice(0, 200).replace(/\s+/g, ' ')
+  );
+
+  // La captura pregunta de dónde salió el dato y si la persona autoriza
+  await clickText('header button', 'Capturar Lead');
+  await sleep(600);
+  const capturaPrivacidad = await page.evaluate(() => ({
+    origen: [...(document.querySelector('#cap-origin')?.options ?? [])].map((o) => o.text).join(' | '),
+    consentimiento: [...(document.querySelector('#cap-consent')?.options ?? [])].map((o) => o.text).join(' | '),
+  }));
+  check(
+    'La captura pide el origen del dato y la autorización del titular',
+    capturaPrivacidad.origen.includes('Formulario web') && capturaPrivacidad.consentimiento.includes('No autoriza'),
+    JSON.stringify(capturaPrivacidad).slice(0, 200)
+  );
+  await clickText('button', 'Cancelar');
+  await sleep(300);
+
   // ================================================================ 8c. Los KPI siguen al pipeline
   await tab('KPI y Mapa');
   const kpiAntes = await mainText();

@@ -16,6 +16,7 @@ import { COUNTRIES } from '../data/countries';
 import { AgendaPanel } from './AgendaPanel';
 import { pendingFollowUps } from '../lib/agenda';
 import { contactsOf, extraContactsCount, leadSubtitle, leadTitle } from '../lib/contacts';
+import { blockedReason, canContact } from '../lib/privacy';
 import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
 import { Modal } from './ui';
@@ -171,7 +172,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
             className="w-full rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
           >
             <option value="">-- Ver Bitácora Global (Todos los Leads) --</option>
-            {leads.map((lead) => (
+            {leads.filter(canContact).map((lead) => (
               <option key={lead.id} value={lead.id}>
                 {/* Se busca por empresa antes que por persona: es como se acuerda el vendedor del lead */}
                 {lead.companyName ?? 'Persona natural'} · {lead.fullName}
@@ -197,6 +198,11 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
             </div>
             {leadSubtitle(currentLead) && (
               <div className="text-[13px] text-slate-400">{leadSubtitle(currentLead)}</div>
+            )}
+            {blockedReason(currentLead) && (
+              <p role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[13px] text-amber-200">
+                {blockedReason(currentLead)}: no registres nuevos contactos con esta persona.
+              </p>
             )}
             {leadContacts.length > 1 && (
               <div className="text-[13px] text-indigo-300">

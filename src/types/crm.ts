@@ -89,6 +89,33 @@ export interface Lead {
   // Productos y servicios del negocio. Con ítems, el valor se calcula solo salvo que se edite a mano.
   items?: LeadItem[];
   valueSource?: LeadValueSource;
+  // ---- Datos personales: de dónde salió el dato y qué pidió el titular (Ley 21.719) ----
+  dataOrigin?: LeadDataOrigin;
+  consentStatus?: ConsentStatus;
+  consentAt?: string; // cuándo se registró la respuesta del titular
+  noContact?: boolean; // se opuso a ser contactado (art. 8)
+  privacyRequest?: PrivacyRequest; // pendiente = tratamiento bloqueado (art. 8 ter)
+  anonymizedAt?: string; // sus datos personales fueron eliminados (art. 7)
+}
+
+// De dónde salió el dato: la ley pide poder decir el origen de lo que se guarda
+export type LeadDataOrigin = 'form' | 'call' | 'event' | 'referral' | 'public' | 'ai';
+
+// Qué respondió el titular cuando se le preguntó si autoriza que se guarden sus datos
+export type ConsentStatus = 'granted' | 'not_requested' | 'refused' | 'withdrawn';
+
+export type PrivacyRequestReason = 'erasure' | 'no_consent' | 'wrong_data' | 'other';
+
+// Solicitud del titular sobre sus datos. La resuelve el gerente del CRM.
+export interface PrivacyRequest {
+  reason: PrivacyRequestReason;
+  detail?: string;
+  requestedBy: string;
+  requestedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  decidedBy?: string;
+  decidedAt?: string;
+  decisionNote?: string;
 }
 
 // Origen del valor estimado: calculado desde los ítems o ingresado manualmente

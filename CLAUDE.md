@@ -27,7 +27,8 @@ No se pueden debilitar sin decirlo explícitamente:
 6. **Asistente de IA:** solo puede buscar, crear, actualizar y mover leads de etapa; **nunca borrar nada**, ni tocar usuarios, empresas, catálogo, etapas, auditoría ni exportación. Toda herramienta nueva que escriba en el CRM se documenta en `docs/SEGURIDAD.md` y pasa por los guards, nunca directo al estado.
 7. **Secretos:** las claves (Gemini, Places, Supabase service_role) viven en `.env.local`, nunca en el bundle ni en el repositorio. Nunca escribir en el código una clave que el usuario pegue en el chat.
 8. **Datos personales:** el CRM guarda nombres, emails y teléfonos (Ley 21.719 en Chile, vigente el 01-12-2026). Nada de exponerlos fuera de su CRM ni en registros de log. Ver `docs/LEY_21719.md`.
-9. **Contraseñas:** solo su dueño la cambia (`src/lib/passwords.ts`); nunca aparecen en la auditoría, la exportación ni la interfaz, y en producción las guarda Supabase Auth con hash. Los pagos y el alta de clientes siguen `docs/PAGOS.md`: ni contraseñas ni datos de tarjeta pasan por Revela.
+9. **Derechos del titular:** un lead con solicitud pendiente queda bloqueado; "no contactar", revocación y anonimización se respetan en agenda, registro de contacto y asistente (`src/lib/privacy.ts`). Anonimizar borra datos personales y conserva la operación; **nunca se re-identifica** desde la edición. Solo el gerente resuelve una solicitud. Ver `docs/LEY_21719.md` y el expediente `docs/cumplimiento/`.
+10. **Contraseñas:** solo su dueño la cambia (`src/lib/passwords.ts`); nunca aparecen en la auditoría, la exportación ni la interfaz, y en producción las guarda Supabase Auth con hash. Los pagos y el alta de clientes siguen `docs/PAGOS.md`: ni contraseñas ni datos de tarjeta pasan por Revela.
 
 ## Dónde está cada cosa
 
@@ -38,7 +39,7 @@ No se pueden debilitar sin decirlo explícitamente:
 | `src/data/` | Registro de países (`countries.ts`) y datos de ejemplo (`mockGeoData.ts`) |
 | `server/` | Proxy del asistente IA (Gemini) y API de tipos de cambio, dentro de Vite |
 | `supabase/migrations/` | Esquema de la base de datos |
-| `docs/` | Base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia y diagramas |
+| `docs/` | Base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
 | `scripts/` | Pruebas de aislamiento, exportación y punta a punta |
 
 La lógica que se pueda probar sin navegador va en `src/lib/` como función pura, no dentro de un componente.

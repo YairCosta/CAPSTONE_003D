@@ -44,6 +44,9 @@ import {
   stageConfigsForTenant,
   validateNewTeamUser,
   validateNewUser,
+  canResolvePrivacyRequest,
+  requestLeadPrivacy,
+  resolveLeadPrivacy,
 } from './lib/tenantGuards';
 import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from './lib/aiLeadMatch';
 import { AI_WRITE_LIMIT_ERROR, MAX_AI_WRITES_PER_SESSION, safeForModel } from './lib/aiSafety';
@@ -51,6 +54,9 @@ import type { ZoneMetric } from './lib/metrics';
 import { KpiSearchBar, applyKpiFilters, emptyKpiFilters, type KpiFilters } from './components/KpiSearchBar';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { validatePasswordChange } from './lib/passwords';
+import { REQUEST_REASON_LABEL, blockedReason, canContact } from './lib/privacy';
+import { buildSubjectExport } from './lib/subjectExport';
+import { leadTitle } from './lib/contacts';
 import { mockTerritories, defaultStageConfigs, demoAccounts, platformAdminAccount, platformAdminUser, demoDataFor } from './data/mockGeoData';
 import type {
   AppUser,
@@ -64,6 +70,7 @@ import type {
   NewAppUser,
   NewCatalogItem,
   NewCompany,
+  PrivacyRequestReason,
   StageConfig,
 } from './types/crm';
 import { ROLE_LABEL, ROLE_TABS, authenticate, canCaptureLeads, canMoveLeadBackwards, canRevertChanges, type ActiveTab } from './lib/permissions';
@@ -508,7 +515,8 @@ export function App() {
       return { ok: false, error: `El país "${String(args.country)}" no está habilitado para este CRM.` };
     }
 
-    const matches = findLeadMatches(tenantLeads, { query, countryCode });
+    // Los leads bloqueados, anonimizados o con oposición del titular no se le muestran al asistente
+    const matches = findLeadMatches(tenantLeads.filter(canContact), { query, countryCode });
     if (matches.length === 0) {
       return { ok: true, matches: [], message: `No hay ningún lead en el CRM que coincida con "${query}".` };
     }
@@ -531,6 +539,9 @@ export function App() {
     const lead = tenantLeads.find((l) => l.id === leadId);
     if (!lead) {
       return { ok: false, error: 'No existe un lead con ese ID en este CRM. Usa find_leads_in_crm para obtener el ID correcto.' };
+    }
+    if (!canContact(lead)) {
+      return { ok: false, error: `No se puede trabajar este lead: ${blockedReason(lead) ?? 'el titular ejerció sus derechos sobre sus datos'}.` };
     }
 
     const status = AI_STATUS[normalize(typeof args.status === 'string' ? args.status : '')];
@@ -649,6 +660,10 @@ export function App() {
       commercialStatus: status,
       estimatedDealValue: Number.isFinite(estimated) && estimated > 0 ? estimated : 0,
       rawAddress,
+      // El asistente busca en fuentes públicas: queda declarado y sin consentimiento del titular
+      dataOrigin: 'ai',
+      consentStatus: 'not_requested',
+      consentAt: now,
       ...location,
     });
     if (!leadId) return { ok: false, error: 'No se pudo crear el lead.' };
@@ -1081,6 +1096,75 @@ export function App() {
     });
   };
 
+  // ---------- Derechos del titular sobre sus datos (Ley 21.719) ----------
+  // Cualquier perfil registra la solicitud; desde ahí el lead queda bloqueado. Solo el gerente la
+  // resuelve, y aprobarla borra los datos personales sin deshacer la operación comercial.
+  const handleRequestPrivacy = (leadId: string, reason: PrivacyRequestReason, detail: string): string | null => {
+    const lead = allLeads.find((l) => l.id === leadId);
+    const safe = requestLeadPrivacy(lead, tenantId, {
+      reason,
+      detail,
+      requestedBy: currentUser?.fullName ?? 'Sin identificar',
+      at: new Date().toISOString(),
+    });
+    if (!safe) return 'No se pudo registrar la solicitud: ya hay una pendiente o el lead no admite cambios.';
+    setAllLeads((prev) => prev.map((l) => (l.id === safe.id ? safe : l)));
+    record({
+      companyId: safe.companyId,
+      action: 'update',
+      entity: 'lead',
+      entityId: safe.id,
+      entityLabel: leadTitle(safe),
+      summary: `Solicitud del titular registrada: ${REQUEST_REASON_LABEL[reason]}. El lead queda bloqueado.`,
+    });
+    return null;
+  };
+
+  const handleResolvePrivacy = (leadId: string, approve: boolean, note: string) => {
+    const lead = allLeads.find((l) => l.id === leadId);
+    const safe = resolveLeadPrivacy(lead, tenantId, currentUser?.role ?? null, {
+      approve,
+      decidedBy: currentUser?.fullName ?? 'Sin identificar',
+      note,
+      at: new Date().toISOString(),
+    });
+    if (!safe) return;
+    setAllLeads((prev) => prev.map((l) => (l.id === safe.id ? safe : l)));
+    record({
+      companyId: safe.companyId,
+      action: 'update',
+      entity: 'lead',
+      entityId: safe.id,
+      entityLabel: leadTitle(safe),
+      summary: approve
+        ? 'Solicitud aprobada: se eliminaron los datos personales del titular y se conservó la operación'
+        : 'Solicitud rechazada: el lead vuelve a quedar disponible',
+    });
+  };
+
+  // Informe con todo lo que el CRM guarda de una persona (derechos de acceso y portabilidad)
+  const handleDownloadSubjectReport = async (leadId: string) => {
+    const lead = allLeads.find((l) => l.id === leadId);
+    if (!lead || !currentCompany || !currentUser) return;
+    const informe = buildSubjectExport({
+      company: currentCompany,
+      lead,
+      activities: allActivities.filter((a) => a.leadId === lead.id),
+      stageConfigs,
+      territories: mockTerritories,
+      requestedBy: currentUser.fullName,
+    });
+    await downloadTenantExport(informe);
+    record({
+      companyId: lead.companyId,
+      action: 'export',
+      entity: 'lead',
+      entityId: lead.id,
+      entityLabel: leadTitle(lead),
+      summary: 'Se descargó el informe de datos del titular',
+    });
+  };
+
   // ---------- Contraseña propia ----------
   // Cada persona cambia la suya: ni el gerente ni la plataforma pueden verla ni fijarla por ella.
   const handleChangeOwnPassword = (current: string, next: string, confirm: string): string | null => {
@@ -1351,6 +1435,10 @@ export function App() {
             onUpdateAccount={handleUpdateAccount}
             onDeleteAccount={handleDeleteAccount}
             onUpdateLead={handleUpdateLead}
+            canResolvePrivacy={canResolvePrivacyRequest(currentUser.role)}
+            onRequestPrivacy={handleRequestPrivacy}
+            onResolvePrivacy={handleResolvePrivacy}
+            onDownloadSubjectReport={handleDownloadSubjectReport}
           />
         )}
 
