@@ -91,14 +91,23 @@ real de Gemini en `.env.example`; se reemplazó antes del primer commit y se pid
 voluntario y no se ha evaluado; no hay delegado designado.
 **Remediación:** decidir antes del piloto con datos reales.
 
+### AC-01 · Corregido · El flujo de derechos no alcanzaba a quien atiende al titular
+**Hecho:** la primera versión dejó la solicitud solo en Gerencia, módulo que el usuario base no ve.
+**Corregido el 24-09-2026:** el usuario base registra la solicitud desde Registro de contacto y el
+gerente la resuelve. Ver [`autorrevision-auditor.md`](autorrevision-auditor.md).
+
 ## Plan de remediación
 
-### 7 días — lo que se puede hacer en el producto
-- H-01: origen y consentimiento en la captura y en la ficha del lead.
-- H-03: solicitud de supresión con causal, aprobación del gerente y anonimización.
-- H-04: marca de "no contactar" con efecto en agenda, asistente y captura.
-- H-08: bloqueo temporal mientras la solicitud está pendiente.
-- Informe por titular (arts. 5 y 9), descargable.
+### 7 días — hecho el 24-09-2026
+- H-01: origen y consentimiento en la captura y en la ficha del lead. ✅
+- H-03: solicitud de supresión con causal, aprobación del gerente y anonimización. ✅
+- H-04: marca de "no contactar" con efecto en agenda, asistente y captura. ✅
+- H-08: bloqueo temporal mientras la solicitud está pendiente. ✅
+- Informe por titular (arts. 5 y 9), descargable. ✅
+- Separación de funciones: el usuario base pide, la gerencia resuelve. ✅
+- Portal fiscalizador de solo lectura en el panel de administración. ✅
+
+Todo queda en estado `CODIGO_NO_DESPLEGADO`: falta la migración y el despliegue.
 
 ### 30 días — papeles y decisiones
 - H-02 y H-07: contrato de encargo y política de privacidad, con abogado.

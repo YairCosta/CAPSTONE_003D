@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import type { AppUser, Company, Lead, NewAppUser, NewCompany, UserRole } from '../types/crm';
-import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale } from 'lucide-react';
 import type { TenantExport } from '../lib/tenantExport';
 import { ROLE_LABEL } from '../lib/permissions';
 import { COUNTRIES, COUNTRY_CODES, type CountryCode } from '../data/countries';
 import { enabledCountriesOf } from '../lib/tenantGuards';
 import { CountryFlag } from './CountryFlag';
+import { ComplianceModule } from './ComplianceModule';
 import {
   cardClass,
   formatDate,
@@ -18,7 +19,7 @@ import {
 } from '../lib/styles';
 import { ActiveSwitch, Modal, PageHeader, Pill, SectionTabs, type PillTone } from './ui';
 
-type Section = 'tenants' | 'users';
+type Section = 'tenants' | 'users' | 'compliance';
 
 const ROLE_TONE: Record<UserRole, PillTone> = { agent: 'slate', manager: 'indigo', superadmin: 'amber' };
 
@@ -42,6 +43,10 @@ interface AdminModuleProps {
   // Portabilidad: resumen previo y descarga del Excel con los datos de un CRM
   getExportPreview: (companyId: string) => TenantExport | null;
   onExportCompany: (companyId: string) => Promise<void>;
+  // Portal fiscalizador: expediente de cumplimiento en solo lectura, con registro de accesos
+  currentUserName: string;
+  complianceAccessLog: { at: string; who: string; what: string }[];
+  onComplianceAccess: (what: string) => void;
 }
 
 export const AdminModule: React.FC<AdminModuleProps> = (props) => {
@@ -78,10 +83,19 @@ export const AdminModule: React.FC<AdminModuleProps> = (props) => {
         tabs={[
           { id: 'tenants', label: 'CRMs por empresa', icon: Building2, count: companies.length },
           { id: 'users', label: 'Usuarios', icon: Users, count: users.length },
+          { id: 'compliance', label: 'Portal fiscalizador', icon: Scale },
         ]}
       />
 
-      {section === 'tenants' ? <TenantsSection {...props} /> : <UsersSection {...props} />}
+      {section === 'tenants' && <TenantsSection {...props} />}
+      {section === 'users' && <UsersSection {...props} />}
+      {section === 'compliance' && (
+        <ComplianceModule
+          viewerName={props.currentUserName}
+          accessLog={props.complianceAccessLog}
+          onRecordAccess={props.onComplianceAccess}
+        />
+      )}
     </div>
   );
 };

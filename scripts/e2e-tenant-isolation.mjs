@@ -923,6 +923,84 @@ try {
   await clickText('button', 'Cancelar');
   await sleep(300);
 
+  // ======================= 8b-quinquies. El usuario base pide, la gerencia resuelve
+  // Separación de funciones: quien atiende al titular registra la solicitud, pero no puede
+  // borrar por su cuenta. Un empleado solo no puede vaciar la base.
+  await logout();
+  await mustLogin(DEMO.agent);
+  const pestanasAgente = await page.evaluate(() =>
+    [...document.querySelectorAll('nav button')].map((b) => b.textContent.trim()).join(' | ')
+  );
+  check(
+    'El usuario base no entra a Gerencia ni a la auditoría',
+    !pestanasAgente.includes('Gerencia') && !pestanasAgente.includes('Auditoría'),
+    pestanasAgente
+  );
+
+  await tab('Registro de contacto');
+  await sleep(500);
+  await tagElement(() => document.querySelector('main select'), 'e2e-priv-lead');
+  await selectByText('#e2e-priv-lead', 'Rosa Anticona', true);
+  await sleep(400);
+  await clickText('main button', 'El titular pide algo sobre sus datos');
+  await sleep(400);
+  await typeInto('#sp-detail', 'Llamó pidiendo que no guardemos sus datos');
+  await clickText('button', 'Registrar solicitud');
+  await sleep(700);
+  const trasPedirAgente = await mainText();
+  check(
+    'El usuario base registra la solicitud del titular',
+    /solicitud del titular pendiente|bloqueado/i.test(trasPedirAgente),
+    trasPedirAgente.slice(0, 220).replace(/\s+/g, ' ')
+  );
+  const opcionesTrasBloqueo = await page.evaluate(
+    () => [...(document.querySelector('#e2e-priv-lead')?.options ?? [])].map((o) => o.text).join(' | ')
+  );
+  check(
+    'El lead bloqueado sale del selector de contacto del usuario base',
+    !opcionesTrasBloqueo.includes('Rosa Anticona'),
+    opcionesTrasBloqueo.slice(0, 200)
+  );
+
+  await logout();
+  await mustLogin(DEMO.manager);
+  await tab('Gerencia');
+  await clickText('main button', 'Contactos');
+  await sleep(500);
+  const gerenteVeSolicitud = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('main tbody tr')]
+        .find((tr) => tr.innerText.includes('Rosa Anticona'))
+        ?.querySelector('button[aria-label^="Resolver la solicitud"]') !== null
+  );
+  check('Solo la gerencia ve el botón para resolver la solicitud', gerenteVeSolicitud);
+  await logout();
+
+  // ======================= 8b-sexies. Portal fiscalizador en el panel de administración
+  await mustLogin(ADMIN);
+  await clickText('main button', 'Portal fiscalizador');
+  await sleep(700);
+  const portal = await mainText();
+  check(
+    'El portal fiscalizador muestra la matriz completa y su advertencia',
+    portal.includes('No acredita cumplimiento') &&
+      portal.includes('Disposiciones evaluadas') &&
+      /Sin evaluar\s*\n?\s*0/.test(portal),
+    portal.slice(0, 240).replace(/\s+/g, ' ')
+  );
+  check(
+    'El portal fiscalizador no expone datos personales de ningún CRM',
+    !/@demo\.revelacrm|@piloto|Rosa Anticona|Carolina Peña|\+56 9|\+51 9/.test(portal),
+    portal.slice(0, 200).replace(/\s+/g, ' ')
+  );
+  check(
+    'El portal fiscalizador publica el manifiesto con hashes',
+    portal.includes('Manifiesto del expediente') && /[0-9a-f]{16}…/.test(portal),
+    portal.slice(-400).replace(/\s+/g, ' ')
+  );
+  await logout();
+  await mustLogin(DEMO.manager);
+
   // ================================================================ 8c. Los KPI siguen al pipeline
   await tab('KPI y Mapa');
   const kpiAntes = await mainText();

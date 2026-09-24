@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Lead, LeadActivity, ContactChannel, ContactOutcome, CommercialStatus } from '../types/crm';
+import type { Lead, LeadActivity, ContactChannel, ContactOutcome, CommercialStatus, PrivacyRequestReason } from '../types/crm';
 import {
   Phone,
   MessageSquare,
@@ -10,7 +10,8 @@ import {
   Clock,
   UserPlus,
   Send,
-  MapPin
+  MapPin,
+  ShieldAlert
 } from 'lucide-react';
 import { COUNTRIES } from '../data/countries';
 import { AgendaPanel } from './AgendaPanel';
@@ -20,6 +21,7 @@ import { blockedReason, canContact } from '../lib/privacy';
 import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
 import { Modal } from './ui';
+import { PrivacyRequestModal } from './PrivacyRequestModal';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
 
 interface ContactModuleProps {
@@ -30,6 +32,8 @@ interface ContactModuleProps {
   // Agregar otra persona del mismo lead sin salir del módulo
   onAddContact: (leadId: string, contact: { fullName: string; jobTitle?: string; email?: string; phone?: string }) => void;
   onSelectLead: (leadId: string) => void;
+  // El titular pidió algo sobre sus datos: cualquier perfil lo registra, solo gerencia lo resuelve
+  onRequestPrivacy?: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
   agentName?: string;
   showCountry?: boolean; // plan Internacional: muestra el país de cada lead
 }
@@ -41,6 +45,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
   onAddActivity,
   onAddContact,
   onSelectLead,
+  onRequestPrivacy,
   agentName: currentAgentName = 'Carlos Mendoza',
   showCountry = false,
 }) => {
@@ -61,6 +66,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
   const [filterChannel, setFilterChannel] = useState<string>('all');
   const [panel, setPanel] = useState<'agenda' | 'history'>('agenda');
   const [addingContact, setAddingContact] = useState(false);
+  const [requestingPrivacy, setRequestingPrivacy] = useState<Lead | null>(null);
 
   const currentLead = leads.find((l) => l.id === activeLeadId);
   // Resumen para la pestaña Agenda: cuántos seguimientos hay y cuántos están atrasados
@@ -212,6 +218,16 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
                   .map((c) => c.fullName)
                   .join(', ')}
               </div>
+            )}
+            {onRequestPrivacy && (
+              <button
+                type="button"
+                onClick={() => setRequestingPrivacy(currentLead)}
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[13px] font-semibold text-amber-300 transition hover:bg-amber-500/20"
+              >
+                <ShieldAlert className="h-4 w-4" />
+                El titular pide algo sobre sus datos
+              </button>
             )}
             <button
               type="button"
@@ -388,6 +404,14 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
           </button>
         </form>
       </div>
+
+      {requestingPrivacy && onRequestPrivacy && (
+        <PrivacyRequestModal
+          lead={requestingPrivacy}
+          onClose={() => setRequestingPrivacy(null)}
+          onSubmit={(reason, detail) => onRequestPrivacy(requestingPrivacy.id, reason, detail)}
+        />
+      )}
 
       {addingContact && currentLead && (
         <NewContactModal

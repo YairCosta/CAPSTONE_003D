@@ -180,6 +180,8 @@ export function App() {
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  // Portal fiscalizador: quién vio o descargó el expediente. En producción es una tabla que solo se agrega.
+  const [complianceAccessLog, setComplianceAccessLog] = useState<{ at: string; who: string; what: string }[]>([]);
   const [kpiFilters, setKpiFilters] = useState<KpiFilters>(emptyKpiFilters);
   const [kpiView, setKpiView] = useState<'zones' | 'catalog'>('zones');
   // Plan Internacional: países elegidos en la barra de países (null = todos los habilitados)
@@ -1096,6 +1098,12 @@ export function App() {
     });
   };
 
+  const recordComplianceAccess = (what: string) =>
+    setComplianceAccessLog((prev) => [
+      { at: new Date().toISOString(), who: currentUser?.fullName ?? 'Sin identificar', what },
+      ...prev,
+    ]);
+
   // ---------- Derechos del titular sobre sus datos (Ley 21.719) ----------
   // Cualquier perfil registra la solicitud; desde ahí el lead queda bloqueado. Solo el gerente la
   // resuelve, y aprobarla borra los datos personales sin deshacer la operación comercial.
@@ -1485,6 +1493,7 @@ export function App() {
             onAddActivity={handleAddActivity}
             onAddContact={handleAddLeadContact}
             onSelectLead={setSelectedLeadIdForContact}
+            onRequestPrivacy={handleRequestPrivacy}
             agentName={currentUser.fullName}
             showCountry={isMultiCountry}
           />
@@ -1501,6 +1510,9 @@ export function App() {
             onUpdateCompany={handleUpdateCompany}
             getExportPreview={buildCompanyExport}
             onExportCompany={handleExportCompany}
+            currentUserName={currentUser.fullName}
+            complianceAccessLog={complianceAccessLog}
+            onComplianceAccess={recordComplianceAccess}
             onCreateUser={handleCreateUser}
             onUpdateUser={handleUpdateUser}
           />

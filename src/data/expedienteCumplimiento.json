@@ -1,0 +1,1392 @@
+{
+  "aviso": "Vista de solo lectura del expediente de cumplimiento. No acredita cumplimiento, no es una certificación de la Agencia y no reemplaza asesoría jurídica.",
+  "caso": {
+    "id": "revela-2026-09",
+    "entidad": "Revela (Yair Costa)",
+    "escenario": 2,
+    "creadoUtc": "2026-09-24T00:14:15.690347+00:00",
+    "corteUtc": "2026-09-24T00:00:00Z",
+    "custodio": "Yair Costa",
+    "datosProductivos": false
+  },
+  "vigencia": {
+    "norma": "Ley 19.628 modificada por la Ley 21.719",
+    "estado": "enacted_not_effective",
+    "vigenciaGeneral": "2026-12-01",
+    "nota": "El Boletín 18.623-07 propone postergarla al 01-12-2027 y sigue en tramitación: no se aplica."
+  },
+  "resumen": {
+    "disposiciones": 93,
+    "sinEvaluar": 0,
+    "porEstado": [
+      {
+        "clave": "NO_APLICA_JUSTIFICADO",
+        "total": 51
+      },
+      {
+        "clave": "DOCUMENTADO_SIN_IMPLEMENTAR",
+        "total": 15
+      },
+      {
+        "clave": "CODIGO_NO_DESPLEGADO",
+        "total": 13
+      },
+      {
+        "clave": "REQUIERE_CRITERIO_JURIDICO",
+        "total": 7
+      },
+      {
+        "clave": "NO_IMPLEMENTADO",
+        "total": 6
+      },
+      {
+        "clave": "CONFIGURADO_NO_PROBADO",
+        "total": 1
+      }
+    ],
+    "porAplicabilidad": [
+      {
+        "clave": "APLICA",
+        "total": 33
+      },
+      {
+        "clave": "NO_APLICA",
+        "total": 28
+      },
+      {
+        "clave": "APLICA_MONITOREO",
+        "total": 16
+      },
+      {
+        "clave": "MONITOREO",
+        "total": 16
+      }
+    ]
+  },
+  "disposiciones": [
+    {
+      "id": "L19628-A1",
+      "provision": "Ley 19.628 art. 1",
+      "resumen": "Objeto, ámbito material y exclusiones",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Revela trata datos personales de personas de contacto de empresas cliente (leads) y de usuarios del CRM. No hay excepción aplicable.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/SCOPE.md",
+      "riesgo": "Falta declarar el ámbito en la política pública.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A1BIS",
+      "provision": "Ley 19.628 art. 1 bis",
+      "resumen": "Ámbito territorial",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Responsable domiciliado en Chile; titulares en Chile y Perú. Tratamiento en la nube fuera de Chile (pendiente de elegir región).",
+      "evidencia": "docs/cumplimiento/revela-2026-09/role-matrix.csv",
+      "riesgo": "Perú aplica además su propia ley; no evaluada en este expediente.",
+      "claim": "REQUIERE_CRITERIO_JURIDICO",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A2",
+      "provision": "Ley 19.628 art. 2",
+      "resumen": "Definiciones legales",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Diccionario de datos del CRM definido en el código y en docs/BASE_DE_DATOS.md; distingue datos de la empresa cliente y de la persona de contacto.",
+      "evidencia": "src/types/crm.ts; docs/BASE_DE_DATOS.md",
+      "riesgo": "Falta marcar explícitamente qué campos son datos personales.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A3",
+      "provision": "Ley 19.628 art. 3",
+      "resumen": "Principios de tratamiento",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Principios cubiertos parcialmente: finalidad y minimización por diseño; seguridad por aislamiento; responsabilidad por auditoría inalterable. Sin transparencia publicada ni base declarada por finalidad.",
+      "evidencia": "src/lib/tenantGuards.ts; src/lib/audit.ts; scripts/test-tenant-isolation.mts",
+      "riesgo": "Licitud, lealtad y transparencia no acreditadas: no hay aviso ni base registrada.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A4",
+      "provision": "Ley 19.628 art. 4",
+      "resumen": "Derechos del titular: acceso, rectificación, supresión, oposición, portabilidad y bloqueo; carácter personal, intransferible e irrenunciable",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "El producto permite ejercer acceso, rectificación, supresión, oposición, bloqueo y portabilidad. Quien atiende al titular (usuario base) registra la solicitud desde Registro de contacto; solo el gerente la resuelve. Falta el canal público para que el titular los pida directamente.",
+      "evidencia": "src/lib/privacy.ts; src/components/PrivacyRequestModal.tsx; test:tenant (8 pruebas); e2e: 'El usuario base registra la solicitud del titular'",
+      "riesgo": "Sin canal publicado, el titular depende de avisarle a la empresa cliente.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A5",
+      "provision": "Ley 19.628 art. 5",
+      "resumen": "Derecho de acceso",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Informe por titular implementado: un archivo con sus datos, el origen, su autorización y todas las interacciones registradas. La descarga queda en la auditoría.",
+      "evidencia": "src/lib/subjectExport.ts; e2e: descarga desde Gerencia > Contactos",
+      "riesgo": "Falta registrar la solicitud que lo origina y el plazo de respuesta.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A6",
+      "provision": "Ley 19.628 art. 6",
+      "resumen": "Derecho de rectificación y comunicación de la rectificación",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Rectificación disponible: toda ficha es editable y el cambio queda en la auditoría. Falta comunicar la rectificación a terceros a quienes se hayan cedido datos (hoy no hay cesiones).",
+      "evidencia": "src/components/ManagerModule.tsx; src/lib/audit.ts",
+      "riesgo": "Falta registrar la solicitud que originó la corrección.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A7",
+      "provision": "Ley 19.628 art. 7",
+      "resumen": "Derecho de supresión y excepciones",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Supresión implementada como anonimización aprobada por el gerente: se borran nombre, cargo, email, teléfono, dirección, notas y otros contactos, y se conserva la operación comercial. No es reversible ni re-identificable desde la edición.",
+      "evidencia": "src/lib/privacy.ts (anonymizeLead); test:tenant; e2e: 'Aprobar la solicitud borra los datos personales'",
+      "riesgo": "Falta el plazo de conservación que dispare la anonimización automática.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A8",
+      "provision": "Ley 19.628 art. 8",
+      "resumen": "Derecho de oposición",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Oposición implementada: el lead marcado como 'no contactar' sale de la agenda, del selector de registro de contacto y del asistente de IA. Lo mismo ocurre si el titular no autoriza o revoca.",
+      "evidencia": "src/lib/privacy.ts (canContact); src/lib/agenda.ts; src/App.tsx (asistente); test:tenant; e2e",
+      "riesgo": "Falta el canal por el que el propio titular manifieste la oposición.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A8BIS",
+      "provision": "Ley 19.628 art. 8 bis",
+      "resumen": "Decisiones individuales automatizadas y elaboración de perfiles",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "El asistente de IA sugiere y ejecuta acciones bajo confirmación humana; no produce decisiones con efectos jurídicos ni evaluación de perfiles del titular. Coincidencia difusa de nombres = asistencia, no decisión.",
+      "evidencia": "src/lib/aiLeadMatch.ts; docs/SEGURIDAD.md",
+      "riesgo": "Si se agregara scoring automático de leads, la disposición pasa a aplicar de lleno.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A8TER",
+      "provision": "Ley 19.628 art. 8 ter",
+      "resumen": "Derecho de bloqueo temporal del tratamiento",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Bloqueo implementado: desde que se registra la solicitud y hasta que el gerente la resuelve, el lead no se edita, no aparece en la agenda ni para el asistente, y se muestra como bloqueado.",
+      "evidencia": "src/lib/privacy.ts (isBlocked); test:tenant; e2e: 'Un lead bloqueado no se puede editar'",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A9",
+      "provision": "Ley 19.628 art. 9",
+      "resumen": "Portabilidad de datos",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Portabilidad cubierta en dos niveles: exportación del CRM completo y, desde ahora, informe individual del titular en formato estructurado y reutilizable.",
+      "evidencia": "src/lib/subjectExport.ts; src/lib/tenantExport.ts; scripts/test-tenant-export.mts",
+      "riesgo": "Falta entregar el informe por un canal autenticado.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A10",
+      "provision": "Ley 19.628 art. 10",
+      "resumen": "Reglas comunes y mecanismos para ejercer derechos",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "No hay mecanismo gratuito, expedito y permanente para ejercer derechos ni dirección de contacto publicada.",
+      "evidencia": "",
+      "riesgo": "Alto.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A11",
+      "provision": "Ley 19.628 art. 11",
+      "resumen": "Procedimiento, plazos, respuesta, bloqueo y propagación",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "Sin procedimiento, sin plazos, sin autenticación del solicitante y sin propagación a copias ni respaldos.",
+      "evidencia": "",
+      "riesgo": "Alto: el artículo exige autenticar la solicitud según modalidades de la Agencia.",
+      "claim": "TEXTUAL_MANDATE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A12",
+      "provision": "Ley 19.628 art. 12",
+      "resumen": "Consentimiento y revocación",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "La captura registra el origen del dato y la respuesta del titular (autoriza, no autoriza, aún no se pregunta), con fecha, y queda en la auditoría. Si no autoriza, el lead nace marcado como 'no contactar'.",
+      "evidencia": "src/components/LeadCaptureModal.tsx; src/lib/privacy.ts; src/lib/audit.ts; e2e: 'La captura pide el origen del dato'",
+      "riesgo": "El texto del aviso al titular y la base jurídica siguen pendientes de revisión legal.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A13",
+      "provision": "Ley 19.628 art. 13",
+      "resumen": "Otras fuentes de licitud",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "El tratamiento comercial B2B podría apoyarse en interés legítimo o en la ejecución de un contrato, pero no está analizado por finalidad ni documentado.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/surface-purpose-basis.csv",
+      "riesgo": "La base debe decidirla un abogado, no el software.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14",
+      "provision": "Ley 19.628 art. 14",
+      "resumen": "Obligaciones generales del responsable",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Deberes cubiertos en parte por diseño (seguridad, trazabilidad, separación de funciones entre quien pide y quien resuelve) y documentados en docs/ y en el expediente, sin registro de tratamiento aprobado formalmente ni responsable designado.",
+      "evidencia": "docs/LEY_21719.md; docs/cumplimiento/revela-2026-09/rat.csv",
+      "riesgo": "Falta aprobar el RAT y fijar su revisión periódica.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14BIS",
+      "provision": "Ley 19.628 art. 14 bis",
+      "resumen": "Secreto y confidencialidad",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Secreto sostenido por aislamiento entre CRMs, roles y ausencia de contraseñas en auditoría y exportación. Verificado con 43 pruebas de aislamiento y 86 punta a punta en desarrollo.",
+      "evidencia": "src/lib/tenantGuards.ts; src/lib/passwords.ts; scripts/e2e-tenant-isolation.mjs",
+      "riesgo": "Falta el deber de secreto por escrito para quien opere la plataforma.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14TER",
+      "provision": "Ley 19.628 art. 14 ter",
+      "resumen": "Información y transparencia pública permanente",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "No hay política de privacidad publicada ni información permanente sobre tratamientos, finalidades ni canal de derechos.",
+      "evidencia": "",
+      "riesgo": "Alto: es exigible de forma permanente y pública.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14QUATER",
+      "provision": "Ley 19.628 art. 14 quáter",
+      "resumen": "Protección de datos desde el diseño y por defecto",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Privacidad desde el diseño acreditada en parte: aislamiento por defecto, mínimo privilegio, IA sin acceso a email ni teléfono, administrador fuera del paquete publicado.",
+      "evidencia": "src/lib/aiSafety.ts; src/App.tsx; dist/ (build verificado)",
+      "riesgo": "Por defecto todavía se capturan todos los campos aunque no sean necesarios.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14QUINQUIES",
+      "provision": "Ley 19.628 art. 14 quinquies",
+      "resumen": "Medidas de seguridad basadas en riesgo y acreditación de funcionamiento",
+      "aplicabilidad": "APLICA",
+      "estado": "CONFIGURADO_NO_PROBADO",
+      "hechos": "Medidas técnicas existen en el código y en las migraciones (RLS, triggers, roles). No hay ambiente productivo donde acreditar su funcionamiento.",
+      "evidencia": "supabase/migrations/; scripts/test-migrations.mjs",
+      "riesgo": "El funcionamiento real solo se acredita tras el despliegue.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14SEXIES",
+      "provision": "Ley 19.628 art. 14 sexies",
+      "resumen": "Registro y reporte de vulneraciones de seguridad",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Procedimiento de brechas escrito en docs/LEY_21719.md. No hay registro de incidentes, ni canal, ni responsable, ni prueba.",
+      "evidencia": "docs/LEY_21719.md",
+      "riesgo": "Alto: el plazo corre desde que se conoce la vulneración.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A14SEPTIES",
+      "provision": "Ley 19.628 art. 14 septies",
+      "resumen": "Estándares diferenciados de información y seguridad",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "Revela sería empresa de menor tamaño; los estándares diferenciados dependen de criterios de la Agencia aún no dictados.",
+      "evidencia": "",
+      "riesgo": "Monitorear instrucciones de la Agencia.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A15",
+      "provision": "Ley 19.628 art. 15",
+      "resumen": "Cesión de datos personales",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Al corte no hay cesión de datos a terceros: cada CRM queda dentro de su tenant y no se comparten datos entre clientes.",
+      "evidencia": "scripts/e2e-tenant-isolation.mjs",
+      "riesgo": "Si se agrega enriquecimiento de datos o venta de bases, la disposición aplica.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A15BIS",
+      "provision": "Ley 19.628 art. 15 bis",
+      "resumen": "Tratamiento por mandatario o encargado",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "Revela actúa como encargado de las empresas cliente y como contratante de subencargados (Supabase, Google, Esri). No hay contrato de encargo ni instrucciones documentadas.",
+      "evidencia": "docs/PAGOS.md",
+      "riesgo": "Alto: es el contrato que ordena toda la relación con los clientes.",
+      "claim": "TEXTUAL_MANDATE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A15TER",
+      "provision": "Ley 19.628 art. 15 ter",
+      "resumen": "Evaluación de impacto previa para alto riesgo",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "Hay dos elementos que pueden gatillar evaluación de impacto: geolocalización de contactos y uso de IA sobre datos del CRM.",
+      "evidencia": "docs/SEGURIDAD.md",
+      "riesgo": "Decidir con criterio jurídico si corresponde EIPD antes del piloto real.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16",
+      "provision": "Ley 19.628 art. 16",
+      "resumen": "Regla general para datos personales sensibles",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "El modelo de datos no contempla campos sensibles. El indicador 'salud' del escaneo corresponde al rubro de empresas cliente ficticias, no a datos de salud de personas.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/triage.md",
+      "riesgo": "Control preventivo: no agregar campos libres que induzcan datos sensibles.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16BIS",
+      "provision": "Ley 19.628 art. 16 bis",
+      "resumen": "Datos de salud y perfil biológico humano",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan datos de salud, perfil biológico ni biométricos.",
+      "evidencia": "src/types/crm.ts",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16TER",
+      "provision": "Ley 19.628 art. 16 ter",
+      "resumen": "Datos biométricos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan datos de salud, perfil biológico ni biométricos.",
+      "evidencia": "src/types/crm.ts",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16QUATER",
+      "provision": "Ley 19.628 art. 16 quáter",
+      "resumen": "Datos de niños, niñas y adolescentes",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "El CRM es B2B y no está dirigido a niños, niñas ni adolescentes.",
+      "evidencia": "",
+      "riesgo": "Control preventivo: advertirlo en la política.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16QUINQUIES",
+      "provision": "Ley 19.628 art. 16 quinquies",
+      "resumen": "Fines históricos, estadísticos, científicos y de investigación de interés público",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No hay tratamiento con fines históricos, estadísticos ni de investigación de interés público.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A16SEXIES",
+      "provision": "Ley 19.628 art. 16 sexies",
+      "resumen": "Datos de geolocalización",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "El producto geocodifica la dirección del lead y la muestra en un mapa. Para una empresa es dato de contacto; para una persona natural puede constituir geolocalización.",
+      "evidencia": "src/lib/geocoding.ts; src/components/GeoStrategicMap.tsx",
+      "riesgo": "Alto si se capturan personas naturales: exige informar finalidad y minimizar precisión.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A17",
+      "provision": "Ley 19.628 art. 17",
+      "resumen": "Tratamiento de obligaciones económicas, financieras, bancarias o comerciales",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan obligaciones económicas impagas ni datos de morosidad. El monto del lead es una oportunidad comercial de la empresa cliente, no una deuda del titular.",
+      "evidencia": "src/types/crm.ts",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A18",
+      "provision": "Ley 19.628 art. 18",
+      "resumen": "Limitaciones del régimen de obligaciones económicas y su comunicación",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan obligaciones económicas impagas ni datos de morosidad. El monto del lead es una oportunidad comercial de la empresa cliente, no una deuda del titular.",
+      "evidencia": "src/types/crm.ts",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A19",
+      "provision": "Ley 19.628 art. 19",
+      "resumen": "Actualización de antecedentes sobre obligaciones pagadas o extinguidas",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan obligaciones económicas impagas ni datos de morosidad. El monto del lead es una oportunidad comercial de la empresa cliente, no una deuda del titular.",
+      "evidencia": "src/types/crm.ts",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A20",
+      "provision": "Ley 19.628 art. 20",
+      "resumen": "Licitud del tratamiento por órganos públicos dentro de su competencia",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A21",
+      "provision": "Ley 19.628 art. 21",
+      "resumen": "Principios, derechos y deberes aplicables a órganos públicos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A22",
+      "provision": "Ley 19.628 art. 22",
+      "resumen": "Comunicación de datos por órganos públicos y publicidad de convenios",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A23",
+      "provision": "Ley 19.628 art. 23",
+      "resumen": "Ejercicio de derechos ante órganos públicos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A24",
+      "provision": "Ley 19.628 art. 24",
+      "resumen": "Regímenes especiales de solicitud de información",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A25",
+      "provision": "Ley 19.628 art. 25",
+      "resumen": "Datos sobre infracciones y sanciones",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se tratan datos de infracciones ni sanciones.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A26",
+      "provision": "Ley 19.628 art. 26",
+      "resumen": "Regulación complementaria del tratamiento por órganos públicos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A27",
+      "provision": "Ley 19.628 art. 27",
+      "resumen": "Supuestos habilitantes para transferencias internacionales",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "Los datos se alojarán en Supabase y se procesan con servicios de Google (Gemini, Places) y Esri, todos fuera de Chile. No hay mecanismo de transferencia documentado ni región elegida.",
+      "evidencia": "docs/diagramas/componentes-revela.svg",
+      "riesgo": "Alto: es condición previa al despliegue.",
+      "claim": "TEXTUAL_MANDATE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A28",
+      "provision": "Ley 19.628 art. 28",
+      "resumen": "Adecuación, garantías, instrumentos y autorización para transferencias",
+      "aplicabilidad": "APLICA",
+      "estado": "NO_IMPLEMENTADO",
+      "hechos": "Los datos se alojarán en Supabase y se procesan con servicios de Google (Gemini, Places) y Esri, todos fuera de Chile. No hay mecanismo de transferencia documentado ni región elegida.",
+      "evidencia": "docs/diagramas/componentes-revela.svg",
+      "riesgo": "Alto: es condición previa al despliegue.",
+      "claim": "TEXTUAL_MANDATE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A29",
+      "provision": "Ley 19.628 art. 29",
+      "resumen": "Fiscalización y suspensión de transferencias",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la fiscalización de la Agencia sobre transferencias. Se monitorea; no genera control propio hasta que exista transferencia operativa.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30",
+      "provision": "Ley 19.628 art. 30",
+      "resumen": "Creación y objeto de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30BIS",
+      "provision": "Ley 19.628 art. 30 bis",
+      "resumen": "Funciones y atribuciones de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30TER",
+      "provision": "Ley 19.628 art. 30 ter",
+      "resumen": "Dirección superior de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30QUATER",
+      "provision": "Ley 19.628 art. 30 quáter",
+      "resumen": "Integración y funcionamiento del Consejo Directivo",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30QUINQUIES",
+      "provision": "Ley 19.628 art. 30 quinquies",
+      "resumen": "Inhabilidades e incompatibilidades de consejeros",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30SEXIES",
+      "provision": "Ley 19.628 art. 30 sexies",
+      "resumen": "Remoción y cesación de consejeros",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30SEPTIES",
+      "provision": "Ley 19.628 art. 30 septies",
+      "resumen": "Remuneración de consejeros",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30OCTIES",
+      "provision": "Ley 19.628 art. 30 octies",
+      "resumen": "Estatutos de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A30NONIES",
+      "provision": "Ley 19.628 art. 30 nonies",
+      "resumen": "Funciones del presidente del Consejo Directivo",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A31",
+      "provision": "Ley 19.628 art. 31",
+      "resumen": "Coordinación institucional de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A32",
+      "provision": "Ley 19.628 art. 32",
+      "resumen": "Personal, régimen y fiscalización de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A32BIS",
+      "provision": "Ley 19.628 art. 32 bis",
+      "resumen": "Patrimonio de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A33",
+      "provision": "Ley 19.628 art. 33",
+      "resumen": "Régimen general de responsabilidad",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A34",
+      "provision": "Ley 19.628 art. 34",
+      "resumen": "Clasificación general de infracciones",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A34BIS",
+      "provision": "Ley 19.628 art. 34 bis",
+      "resumen": "Infracciones leves",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A34TER",
+      "provision": "Ley 19.628 art. 34 ter",
+      "resumen": "Infracciones graves",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A34QUATER",
+      "provision": "Ley 19.628 art. 34 quáter",
+      "resumen": "Infracciones gravísimas",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A35",
+      "provision": "Ley 19.628 art. 35",
+      "resumen": "Sanciones y medidas de subsanación",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A36",
+      "provision": "Ley 19.628 art. 36",
+      "resumen": "Atenuantes y agravantes",
+      "aplicabilidad": "APLICA",
+      "estado": "CODIGO_NO_DESPLEGADO",
+      "hechos": "Evidencia de diligencia disponible y consultable: el expediente completo se publica en un portal fiscalizador de solo lectura dentro del panel de administración, con matriz, hallazgos, limitaciones, manifiesto SHA-256 y registro de accesos. No expone datos personales ni datos de un CRM cliente.",
+      "evidencia": "src/components/ComplianceModule.tsx; scripts/generar-expediente.mjs; e2e: 'El portal fiscalizador no expone datos personales'",
+      "riesgo": "No equivale a eximente; el registro de accesos vive en memoria hasta que exista base desplegada.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A37",
+      "provision": "Ley 19.628 art. 37",
+      "resumen": "Criterios para determinar multas",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A38",
+      "provision": "Ley 19.628 art. 38",
+      "resumen": "Suspensión de operaciones de tratamiento",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Procedimientos ante la Agencia y registro nacional: aplican si existe reclamo o sanción. Se prepara la capacidad de responder con el expediente.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A39",
+      "provision": "Ley 19.628 art. 39",
+      "resumen": "Registro Nacional de Sanciones y Cumplimiento",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Procedimientos ante la Agencia y registro nacional: aplican si existe reclamo o sanción. Se prepara la capacidad de responder con el expediente.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A40",
+      "provision": "Ley 19.628 art. 40",
+      "resumen": "Prescripción de infracciones y sanciones",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Plazos de prescripción y reclamo judicial: se monitorean, no generan control de ingeniería.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A41",
+      "provision": "Ley 19.628 art. 41",
+      "resumen": "Procedimiento de tutela de derechos ante la Agencia",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Procedimientos ante la Agencia y registro nacional: aplican si existe reclamo o sanción. Se prepara la capacidad de responder con el expediente.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A42",
+      "provision": "Ley 19.628 art. 42",
+      "resumen": "Procedimiento administrativo sancionatorio",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Procedimientos ante la Agencia y registro nacional: aplican si existe reclamo o sanción. Se prepara la capacidad de responder con el expediente.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A43",
+      "provision": "Ley 19.628 art. 43",
+      "resumen": "Reclamo judicial de ilegalidad",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Plazos de prescripción y reclamo judicial: se monitorean, no generan control de ingeniería.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A44",
+      "provision": "Ley 19.628 art. 44",
+      "resumen": "Responsabilidad de órganos públicos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A45",
+      "provision": "Ley 19.628 art. 45",
+      "resumen": "Responsabilidad individual de funcionarios",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A46",
+      "provision": "Ley 19.628 art. 46",
+      "resumen": "Reserva y confidencialidad de funcionarios",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A47",
+      "provision": "Ley 19.628 art. 47",
+      "resumen": "Responsabilidad civil e indemnización",
+      "aplicabilidad": "APLICA_MONITOREO",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Mapa de responsabilidad e infracciones revisado para priorizar brechas. No se calculan sanciones ni se asumen montos.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/hallazgos.md",
+      "riesgo": "Sin decisión de la Agencia, toda estimación de multa sería especulación.",
+      "claim": "CONSERVATIVE_POLICY",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A48",
+      "provision": "Ley 19.628 art. 48",
+      "resumen": "Deber general de prevención de infracciones",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Deber general de prevención: existen controles técnicos y documentación, sin programa formal ni responsable designado.",
+      "evidencia": "docs/SEGURIDAD.md; docs/LEY_21719.md",
+      "riesgo": "Medio.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A49",
+      "provision": "Ley 19.628 art. 49",
+      "resumen": "Modelo voluntario de prevención y elementos mínimos",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "El Modelo de Prevención de Infracciones es voluntario y Revela no lo ha adoptado al corte. El DS 662 (09-09-2026) regula su implementación y certificación.",
+      "evidencia": "",
+      "riesgo": "Adoptarlo es una opción de mitigación, no una obligación.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A50",
+      "provision": "Ley 19.628 art. 50",
+      "resumen": "Designación, autonomía, medios y funciones del delegado",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "No hay delegado de protección de datos designado. Si se adopta MPI, la designación pasa a ser exigible según el artículo 49.",
+      "evidencia": "",
+      "riesgo": "Decidir antes del piloto con datos reales.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A51",
+      "provision": "Ley 19.628 art. 51",
+      "resumen": "Certificación, registro, supervisión y reglamento del MPI",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se busca certificación del MPI al corte. Se monitorea el DS 662.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A52",
+      "provision": "Ley 19.628 art. 52",
+      "resumen": "Vigencia y término de certificados",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se busca certificación del MPI al corte. Se monitorea el DS 662.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A53",
+      "provision": "Ley 19.628 art. 53",
+      "resumen": "Revocación de certificación y deber de información",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "No se busca certificación del MPI al corte. Se monitorea el DS 662.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A54",
+      "provision": "Ley 19.628 art. 54",
+      "resumen": "Tratamiento por órganos constitucionales y especiales",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L19628-A55",
+      "provision": "Ley 19.628 art. 55",
+      "resumen": "Derechos y reclamaciones ante órganos constitucionales y especiales",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-A2",
+      "provision": "Ley 21.719 art. segundo",
+      "resumen": "Modificación a la Ley 20.285",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Modifica la Ley 20.285 de transparencia, aplicable a órganos públicos.",
+      "evidencia": "",
+      "riesgo": "",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-A3",
+      "provision": "Ley 21.719 art. tercero",
+      "resumen": "Modificación a la Ley 19.496",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "Modifica la Ley 19.496 del consumidor. Revela vende a empresas (B2B), pero el alta y el pago se hacen a distancia, lo que puede gatillar reglas de contratación electrónica.",
+      "evidencia": "docs/PAGOS.md",
+      "riesgo": "Revisar junto con la Ley 19.799 al implementar el registro y la aceptación de términos.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T1",
+      "provision": "Ley 21.719 transitorio art. primero",
+      "resumen": "Entrada en vigencia general",
+      "aplicabilidad": "APLICA",
+      "estado": "DOCUMENTADO_SIN_IMPLEMENTAR",
+      "hechos": "Vigencia general el 01-12-2026 (enacted_not_effective al corte). El Boletín 18.623-07 propone postergarla al 01-12-2027 y sigue en tramitación: no se activa.",
+      "evidencia": "docs/cumplimiento/revela-2026-09/legal-status.md",
+      "riesgo": "La planificación asume 01-12-2026; si se publica la postergación, se recalcula el plan.",
+      "claim": "TEXTUAL_MANDATE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T2",
+      "provision": "Ley 21.719 transitorio art. segundo, modificado por Ley 21.755 art. 31",
+      "resumen": "Plazos para dictar reglamentos, incluida la regla especial del reglamento del artículo 26 tras informe de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T3",
+      "provision": "Ley 21.719 transitorio art. tercero",
+      "resumen": "Eliminación del registro histórico de bancos de datos",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T4",
+      "provision": "Ley 21.719 transitorio art. cuarto, modificado por Ley 21.806 art. 54",
+      "resumen": "Primera designación, reglas de nombramiento y actuación previa a la vigencia, estatutos e inhabilidad especial del primer Consejo de la Agencia",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T5",
+      "provision": "Ley 21.719 transitorio art. quinto",
+      "resumen": "DPO público desde dotación vigente",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T6",
+      "provision": "Ley 21.719 transitorio art. sexto",
+      "resumen": "Amonestación posible para empresas de menor tamaño durante primeros doce meses",
+      "aplicabilidad": "APLICA",
+      "estado": "REQUIERE_CRITERIO_JURIDICO",
+      "hechos": "Regla transitoria de amonestación para empresas de menor tamaño durante los primeros doce meses. Revela podría calificar, pero el Boletín 18.623-07 propone suprimirla.",
+      "evidencia": "",
+      "riesgo": "No usar como excusa para postergar la remediación.",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T7",
+      "provision": "Ley 21.719 transitorio art. séptimo",
+      "resumen": "Plazo para políticas de órganos del artículo 54",
+      "aplicabilidad": "NO_APLICA",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Revela es una empresa privada; la disposición rige a órganos públicos u órganos constitucionales autónomos.",
+      "evidencia": "",
+      "riesgo": "Si un organismo público contratara el CRM, el cliente asume estas obligaciones como responsable.",
+      "claim": "DERIVED_CONTROL",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    },
+    {
+      "id": "L21719-T8",
+      "provision": "Ley 21.719 transitorio art. octavo",
+      "resumen": "Financiamiento fiscal",
+      "aplicabilidad": "MONITOREO",
+      "estado": "NO_APLICA_JUSTIFICADO",
+      "hechos": "Regula la Agencia, su consejo, su patrimonio o el Estado. No genera obligación para Revela; se monitorea porque define quién fiscaliza y desde cuándo.",
+      "evidencia": "references/legal-status.md (Skill)",
+      "riesgo": "",
+      "claim": "PENDING_AUTHORITY_RULE",
+      "revisadoUtc": "2026-09-24T00:20:00Z"
+    }
+  ],
+  "hallazgos": [
+    {
+      "id": "H-01",
+      "severidad": "Alta",
+      "titulo": "La captura de leads no informa nada ni registra una base",
+      "requisito": "arts. 12, 13 y 14 ter.",
+      "hecho": "el formulario pide nombre, cargo, email, teléfono y dirección sin informar finalidad, sin registrar de dónde salió el dato ni si la persona autorizó.",
+      "remediacion": "campos de origen y consentimiento en la ficha, visibles y auditados."
+    },
+    {
+      "id": "H-02",
+      "severidad": "Alta",
+      "titulo": "No hay contrato de encargo con las empresas cliente",
+      "requisito": "art. 15 bis.",
+      "hecho": "Revela trata datos por cuenta de sus clientes sin contrato, sin instrucciones documentadas y sin autorización de subencargados.",
+      "remediacion": "contrato de encargo firmado al contratar (abogado), más anexo de subencargados."
+    },
+    {
+      "id": "H-03",
+      "severidad": "Alta",
+      "titulo": "No existe supresión real",
+      "requisito": "art. 7.",
+      "hecho": "descartar un lead conserva nombre, email, teléfono y dirección.",
+      "remediacion": "solicitud de supresión con causal, aprobación del gerente y"
+    },
+    {
+      "id": "H-04",
+      "severidad": "Alta",
+      "titulo": "No existe oposición ni \"no contactar\"",
+      "requisito": "art. 8.",
+      "hecho": "un lead que pide no ser contactado sigue apareciendo en la agenda y disponible para el asistente de IA.",
+      "remediacion": "marca de oposición que lo saca de la agenda, del asistente y de la captura."
+    },
+    {
+      "id": "H-05",
+      "severidad": "Alta",
+      "titulo": "Transferencia internacional sin mecanismo",
+      "requisito": "arts. 27 y 28.",
+      "hecho": "Supabase, Gemini, Places y Esri están fuera de Chile; no hay región elegida, ni cláusulas, ni información al titular.",
+      "remediacion": "elegir región, documentar el mecanismo y declararlo en la política."
+    },
+    {
+      "id": "H-06",
+      "severidad": "Alta",
+      "titulo": "No hay canal ni procedimiento para ejercer derechos",
+      "requisito": "arts. 4, 10 y 11.",
+      "hecho": "no existe dirección de contacto, ni plazos, ni autenticación del solicitante, ni propagación a copias.",
+      "remediacion": "canal publicado, registro de solicitudes con plazo y responsable."
+    },
+    {
+      "id": "H-07",
+      "severidad": "Alta",
+      "titulo": "No hay política de privacidad publicada",
+      "requisito": "art. 14 ter.",
+      "hecho": "no existe información pública y permanente sobre tratamientos, finalidades, derechos ni contacto.",
+      "remediacion": "publicarla junto con la landing, antes de recibir el primer cliente real."
+    },
+    {
+      "id": "H-08",
+      "severidad": "Media",
+      "titulo": "Sin bloqueo temporal del tratamiento",
+      "requisito": "art. 8 ter.",
+      "hecho": "mientras se resuelve una solicitud, el dato se sigue usando.",
+      "remediacion": "el lead con solicitud pendiente queda bloqueado: visible, no utilizable."
+    },
+    {
+      "id": "H-09",
+      "severidad": "Media",
+      "titulo": "Soporte con acceso a datos, sin procedimiento",
+      "requisito": "arts. 14 bis y 15 bis.",
+      "hecho": "el administrador de plataforma podría acceder a datos de un cliente para dar soporte, sin instrucción escrita ni registro específico.",
+      "remediacion": "procedimiento de acceso de soporte, con motivo, plazo y registro."
+    },
+    {
+      "id": "H-10",
+      "severidad": "Media",
+      "titulo": "Sin registro de incidentes ni canal de notificación",
+      "requisito": "art. 14 sexies.",
+      "hecho": "el procedimiento está escrito en `docs/LEY_21719.md`, pero no hay registro, responsable ni prueba.",
+      "remediacion": "planilla de incidentes y ensayo del procedimiento antes del despliegue."
+    },
+    {
+      "id": "H-11",
+      "severidad": "Media",
+      "titulo": "Sin regla de conservación",
+      "requisito": "arts. 3 y 14.",
+      "hecho": "nada define cuánto vive un lead descartado.",
+      "remediacion": "decidir el plazo, escribirlo en la política y programar la anonimización."
+    },
+    {
+      "id": "H-12",
+      "severidad": "Media",
+      "titulo": "Geolocalización sin análisis",
+      "requisito": "art. 16 sexies.",
+      "hecho": "el producto geocodifica direcciones y las muestra en un mapa. Para una empresa es dato de contacto; para una persona natural puede ser geolocalización.",
+      "remediacion": "decisión jurídica y, mientras tanto, informar la finalidad en la captura."
+    },
+    {
+      "id": "H-13",
+      "severidad": "Baja",
+      "titulo": "Contraseñas de demostración en el código",
+      "requisito": "",
+      "hecho": "`src/data/mockGeoData.ts` trae contraseñas de demo. Son públicas por diseño y no dan acceso a datos reales. El administrador de plataforma ya quedó fuera del paquete publicado.",
+      "remediacion": "al conectar Supabase Auth, eliminarlas."
+    },
+    {
+      "id": "H-14",
+      "severidad": "Baja",
+      "titulo": "Sin decisión sobre MPI ni delegado",
+      "requisito": "arts. 48, 49 y 50, y DS 662.",
+      "hecho": "el Modelo de Prevención de Infracciones es voluntario y no se ha evaluado; no hay delegado designado.",
+      "remediacion": "decidir antes del piloto con datos reales."
+    }
+  ],
+  "limitaciones": [
+    "No se ejecutaron pruebas activas contra producción porque no existe producción.",
+    "La consulta a la fuente oficial (BCN) falló por tiempo de espera en la sesión del",
+    "Los indicadores del escaneo automático son hipótesis, no hallazgos; su triage está en",
+    "Ningún control se declara PROBADO_CON_EVIDENCIA_VIGENTE: sin despliegue no hay release ni"
+  ],
+  "manifiesto": [
+    {
+      "archivo": "audit-project.json",
+      "bytes": 485196,
+      "sha256": "d3741096dcfea6cff236963e2cbd644bcc91f8b382da74b69dd5570f9b11a4b5"
+    },
+    {
+      "archivo": "autorrevision-auditor.md",
+      "bytes": 4091,
+      "sha256": "66ef52c562b08c37916081e5e55755bcf7455589abfe43dd12ad8a48cb152c10"
+    },
+    {
+      "archivo": "case.json",
+      "bytes": 461,
+      "sha256": "1368e642c7d8e6e9bf21c18ec255b1b8bb4278245742376414ae4448069ec12a"
+    },
+    {
+      "archivo": "hallazgos.md",
+      "bytes": 7469,
+      "sha256": "edae8bf62bfcefc343ec1b6cc23049a59bfb3f70314c39640a673f19883795d8"
+    },
+    {
+      "archivo": "legal-status.md",
+      "bytes": 3070,
+      "sha256": "2b58da3597161cfa94b24c0599a48372faddd4823f7a7fe9667464e365ef78b3"
+    },
+    {
+      "archivo": "matriz-ley21719.csv",
+      "bytes": 41485,
+      "sha256": "4d5b807a379c717860553ddea413c90acf9e0626907ee3eaaf4760692e9c3782"
+    },
+    {
+      "archivo": "plantillas/templates/finding-reproduction.csv",
+      "bytes": 197,
+      "sha256": "452222299cec6ec6b489537b60474bc3148bd9ce468c5e9990136d3fd9644616"
+    },
+    {
+      "archivo": "plantillas/templates/rat.csv",
+      "bytes": 634,
+      "sha256": "b766e090f4c7d83001c6c6357a37556438140c589385995efdcf55d4efb519bc"
+    },
+    {
+      "archivo": "plantillas/templates/rights-capability.csv",
+      "bytes": 278,
+      "sha256": "fb668adc78e5f47203ed88ee88c803e8bc3a829fba132d0dc50ab853173fae6b"
+    },
+    {
+      "archivo": "plantillas/templates/role-matrix.csv",
+      "bytes": 487,
+      "sha256": "bcb769af7873d968ba7519a5edc1970a2e01c61ec4f41cd6ceb0308242047aab"
+    },
+    {
+      "archivo": "plantillas/templates/surface-purpose-basis.csv",
+      "bytes": 1022,
+      "sha256": "cb8d7f19e73a38f562b3dcae691e4148151e19c2637f1dad97a7b10d07d62f5e"
+    },
+    {
+      "archivo": "rat.csv",
+      "bytes": 3574,
+      "sha256": "f05df36248907f80b0dbc0dd598e02b1ed4240fdd4927730a16a49c0ad136bf8"
+    },
+    {
+      "archivo": "rights-capability.csv",
+      "bytes": 2026,
+      "sha256": "56166626dc195d8333033c751c01ab4d5d8cc8c39186e124318bc69cf2894b4b"
+    },
+    {
+      "archivo": "role-matrix.csv",
+      "bytes": 2378,
+      "sha256": "e54d9be9c6b2afe5c436fe941fd07f8e4a16fc44d271a64e76a2ba3f1d017192"
+    },
+    {
+      "archivo": "SCOPE.md",
+      "bytes": 2177,
+      "sha256": "27f83ac2831ac36eab4d941bb4026b454cc73bf5e29043bdedf910000f2f2886"
+    },
+    {
+      "archivo": "surface-purpose-basis.csv",
+      "bytes": 2197,
+      "sha256": "de5551e0eae9e084084b48fb5d4689ee2d4a4ef5bf6c5f44bd517fd7783f0780"
+    },
+    {
+      "archivo": "triage.md",
+      "bytes": 2946,
+      "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
+    }
+  ],
+  "generadoUtc": "2026-09-24T01:01:15.107Z"
+}

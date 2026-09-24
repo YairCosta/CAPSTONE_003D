@@ -27,7 +27,7 @@ No se pueden debilitar sin decirlo explícitamente:
 6. **Asistente de IA:** solo puede buscar, crear, actualizar y mover leads de etapa; **nunca borrar nada**, ni tocar usuarios, empresas, catálogo, etapas, auditoría ni exportación. Toda herramienta nueva que escriba en el CRM se documenta en `docs/SEGURIDAD.md` y pasa por los guards, nunca directo al estado.
 7. **Secretos:** las claves (Gemini, Places, Supabase service_role) viven en `.env.local`, nunca en el bundle ni en el repositorio. Nunca escribir en el código una clave que el usuario pegue en el chat.
 8. **Datos personales:** el CRM guarda nombres, emails y teléfonos (Ley 21.719 en Chile, vigente el 01-12-2026). Nada de exponerlos fuera de su CRM ni en registros de log. Ver `docs/LEY_21719.md`.
-9. **Derechos del titular:** un lead con solicitud pendiente queda bloqueado; "no contactar", revocación y anonimización se respetan en agenda, registro de contacto y asistente (`src/lib/privacy.ts`). Anonimizar borra datos personales y conserva la operación; **nunca se re-identifica** desde la edición. Solo el gerente resuelve una solicitud. Ver `docs/LEY_21719.md` y el expediente `docs/cumplimiento/`.
+9. **Derechos del titular:** un lead con solicitud pendiente queda bloqueado; "no contactar", revocación y anonimización se respetan en agenda, registro de contacto y asistente (`src/lib/privacy.ts`). Anonimizar borra datos personales y conserva la operación; **nunca se re-identifica** desde la edición. La solicitud la registra cualquier perfil desde Registro de contacto; **solo el gerente la resuelve**. El expediente de cumplimiento se muestra en el panel de administración como portal fiscalizador de solo lectura (`npm run expediente` lo regenera). Ver `docs/LEY_21719.md` y el expediente `docs/cumplimiento/`.
 10. **Contraseñas:** solo su dueño la cambia (`src/lib/passwords.ts`); nunca aparecen en la auditoría, la exportación ni la interfaz, y en producción las guarda Supabase Auth con hash. Los pagos y el alta de clientes siguen `docs/PAGOS.md`: ni contraseñas ni datos de tarjeta pasan por Revela.
 
 ## Dónde está cada cosa
@@ -54,6 +54,7 @@ npm run test:sql     # sintaxis y convenciones de las migraciones (parser de Pos
 npm run test:e2e     # punta a punta con Chrome (requiere npm run dev en marcha)
 npx tsc -b && npm run lint && npm run build
 npm run diagramas   # regenera los diagramas de componentes y estados (docs/diagramas/)
+npm run expediente  # regenera el expediente de cumplimiento que muestra el portal fiscalizador
 npm run evidencia   # capturas de código, salida de las pruebas y de la app (docs/evidencia/)
 ```
 
