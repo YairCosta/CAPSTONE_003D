@@ -154,7 +154,7 @@
       "resumen": "Derecho de supresión y excepciones",
       "aplicabilidad": "APLICA",
       "estado": "CODIGO_NO_DESPLEGADO",
-      "hechos": "Supresión implementada como anonimización aprobada por el gerente: se borran nombre, cargo, email, teléfono, dirección, notas y otros contactos, y se conserva la operación comercial. No es reversible ni re-identificable desde la edición.",
+      "hechos": "Supresión implementada como anonimización aprobada por el gerente: se borran nombre, cargo, email, teléfono, dirección, coordenadas, notas, otros contactos y la bitácora de esa persona; se conserva la zona y la operación comercial. El historial de auditoría nunca guarda valores personales (opción A, 25-09-2026), así que no quedan copias. Revertir no re-identifica ni devuelve consentimientos revocados.",
       "evidencia": "src/lib/privacy.ts (anonymizeLead); test:tenant; e2e: 'Aprobar la solicitud borra los datos personales'",
       "riesgo": "Falta el plazo de conservación que dispare la anonimización automática.",
       "claim": "DERIVED_CONTROL",
@@ -190,9 +190,9 @@
       "resumen": "Derecho de bloqueo temporal del tratamiento",
       "aplicabilidad": "APLICA",
       "estado": "CODIGO_NO_DESPLEGADO",
-      "hechos": "Bloqueo implementado: desde que se registra la solicitud y hasta que el gerente la resuelve, el lead no se edita, no aparece en la agenda ni para el asistente, y se muestra como bloqueado.",
-      "evidencia": "src/lib/privacy.ts (isBlocked); test:tenant; e2e: 'Un lead bloqueado no se puede editar'",
-      "riesgo": "",
+      "hechos": "Bloqueo implementado en los guards desde el 25-09-2026: con la solicitud pendiente el lead no se edita (sanitizeLeadUpdate), no se mueve de etapa (canMoveLeadStage) ni se registra contacto (canRegisterActivity); tampoco aparece en agenda, asistente ni selector. CORRECCIÓN: la versión del 24-09-2026 lo declaró implementado pero solo existía en pantalla (AC-02).",
+      "evidencia": "src/lib/tenantGuards.ts; test:tenant 'Bloqueo: el guard rechaza...'; e2e 'En el Pipeline, el lead bloqueado...'",
+      "riesgo": "Queda por replicarlo en RLS/trigger al migrar la base.",
       "claim": "DERIVED_CONTROL",
       "revisadoUtc": "2026-09-24T00:20:00Z"
     },
@@ -1309,8 +1309,8 @@
     },
     {
       "archivo": "autorrevision-auditor.md",
-      "bytes": 4091,
-      "sha256": "66ef52c562b08c37916081e5e55755bcf7455589abfe43dd12ad8a48cb152c10"
+      "bytes": 5595,
+      "sha256": "f7e77d9fa8664e2d3628e450b3a99a1cfc642647661a1f960bf60d996e4be256"
     },
     {
       "archivo": "case.json",
@@ -1319,8 +1319,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 7910,
-      "sha256": "b9334f6dabb598823100f18cb28a067abeec13e791a3dfa5c0c12ebf438051f1"
+      "bytes": 8620,
+      "sha256": "7dd0e3da2f86a72cc79e2b4ffd3c665080dd8eab7f0a64b9aa4d9b8eb7e0a6df"
     },
     {
       "archivo": "legal-status.md",
@@ -1329,8 +1329,8 @@
     },
     {
       "archivo": "matriz-ley21719.csv",
-      "bytes": 41710,
-      "sha256": "62da87ad15ee7c7ba5c34d2ae677bc37f49de908d59f6cc1cd26e5eb0ae5d1b2"
+      "bytes": 42137,
+      "sha256": "6ad29a71c9ff764c753083bda0b497583cdadc3cf05a291ccb51c1617e7ab1ee"
     },
     {
       "archivo": "plantillas/templates/finding-reproduction.csv",
@@ -1388,5 +1388,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-25T19:38:03.174Z"
+  "generadoUtc": "2026-09-25T22:28:48.311Z"
 }

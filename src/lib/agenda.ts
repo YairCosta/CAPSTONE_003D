@@ -100,3 +100,11 @@ export function monthGrid(year: number, month: number): Date[] {
   // La sexta fila solo se dibuja si el mes la necesita
   return dias.filter((d, i) => i < 35 || d.getMonth() === month);
 }
+
+export const CHANNEL_LABEL: Record<ContactChannel, string> = {
+  call: 'Llamada',
+  whatsapp: 'WhatsApp',
+  email: 'Email',
+  meeting: 'Reunión',
+  video_call: 'Videollamada',
+};

@@ -49,6 +49,7 @@ import {
   resolveLeadPrivacy,
   recordFirstContactAnswer,
   anonymizeLeadOfTenant,
+  canMoveLeadStage,
 } from './lib/tenantGuards';
 import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from './lib/aiLeadMatch';
 import { AI_WRITE_LIMIT_ERROR, MAX_AI_WRITES_PER_SESSION, safeForModel } from './lib/aiSafety';
@@ -59,13 +60,20 @@ import { validatePasswordChange } from './lib/passwords';
 import {
   PROSPECT_RETENTION_DAYS,
   REQUEST_REASON_LABEL,
+  accountWithoutPersonalData,
+  anonymizeActivitiesOf,
+  auditLeadLabel,
   blockedReason,
   canContact,
   expiredProspects,
+  isBlocked,
+  leadWithoutPersonalData,
+  restoreAccountKeepingPersonalData,
+  restoreLeadKeepingPersonalData,
   type FirstContactAnswer,
 } from './lib/privacy';
 import { buildSubjectExport } from './lib/subjectExport';
-import { leadTitle } from './lib/contacts';
+import { CHANNEL_LABEL } from './lib/agenda';
 import { mockTerritories, defaultStageConfigs, demoAccounts, platformAdminAccount, platformAdminUser, demoDataFor } from './data/mockGeoData';
 import type {
   AppUser,
@@ -355,6 +363,7 @@ export function App() {
     const lead = tenantLeads.find((l) => l.id === leadId);
     // El usuario base solo avanza leads: retroceder es de gerencia
     if (!lead || !currentUser || !canChangeStage(currentUser.role, lead.commercialStatus, newStatus)) return;
+    if (!canMoveLeadStage(lead)) return;
 
     setAllLeads((prev) =>
       prev.map((l) => (l.id === leadId && l.companyId === tenantId ? { ...l, commercialStatus: newStatus } : l))
@@ -364,7 +373,7 @@ export function App() {
       action: 'stage',
       entity: 'lead',
       entityId: lead.id,
-      entityLabel: lead.fullName,
+      entityLabel: auditLeadLabel(lead),
       summary: `${auditContext.stageLabel(lead.commercialStatus)} → ${auditContext.stageLabel(newStatus)}`,
       changes: [
         {
@@ -374,7 +383,7 @@ export function App() {
           after: auditContext.stageLabel(newStatus),
         },
       ],
-      revert: { kind: 'lead', snapshot: lead },
+      revert: { kind: 'lead', snapshot: leadWithoutPersonalData(lead) },
     });
   };
 
@@ -419,8 +428,8 @@ export function App() {
         action: 'contact',
         entity: 'activity',
         entityId: activityData.leadId,
-        entityLabel: lead.fullName,
-        summary: `${activityData.contactName ? `con ${activityData.contactName} · ` : ''}${activityData.channel} · ${activityData.summary.slice(0, 80)}${
+        entityLabel: auditLeadLabel(lead),
+        summary: `Contacto por ${CHANNEL_LABEL[activityData.channel] ?? activityData.channel}${
           nextStage ? ` · pasa a ${auditContext.stageLabel(nextStage)}` : ''
         }`,
       });
@@ -474,7 +483,7 @@ export function App() {
       action: 'create',
       entity: 'lead',
       entityId: newLead.id,
-      entityLabel: newLead.fullName,
+      entityLabel: auditLeadLabel(newLead),
       summary: leadSummary(newLead),
     });
     return newLead.id;
@@ -747,15 +756,15 @@ export function App() {
       action: action === 'revert' ? 'revert' : action,
       entity: 'lead',
       entityId: safe.id,
-      entityLabel: safe.fullName,
+      entityLabel: auditLeadLabel(safe),
       summary:
         action === 'locate'
           ? `Ubicado en ${auditContext.zoneName(safe.assignedTerritoryId)}`
           : action === 'revert'
-            ? `Se restauró el estado anterior de ${safe.fullName}`
+            ? `Se restauró el estado anterior de ${auditLeadLabel(safe)}`
             : changes.map((c) => c.label).join(', '),
       changes,
-      revert: action === 'revert' ? undefined : { kind: 'lead', snapshot: before },
+      revert: action === 'revert' ? undefined : { kind: 'lead', snapshot: leadWithoutPersonalData(before) },
     });
   };
 
@@ -841,7 +850,7 @@ export function App() {
       entityId: account.id,
       entityLabel: account.name,
       summary: 'Empresa cliente eliminada (no tenía leads)',
-      revert: { kind: 'account-deleted', snapshot: account },
+      revert: { kind: 'account-deleted', snapshot: accountWithoutPersonalData(account) },
     });
   };
 
@@ -868,7 +877,7 @@ export function App() {
       entityLabel: safe.name,
       summary: isRevert ? `Se restauró ${safe.name}` : changes.map((c) => c.label).join(', '),
       changes,
-      revert: isRevert ? undefined : { kind: 'account', snapshot: existing },
+      revert: isRevert ? undefined : { kind: 'account', snapshot: accountWithoutPersonalData(existing) },
     });
   };
 
@@ -881,12 +890,16 @@ export function App() {
 
     switch (entry.revert.kind) {
       case 'lead': {
-        if (!tenantLeads.some((l) => l.id === entry.revert!.snapshot.id)) return 'El lead ya no existe.';
-        handleUpdateLead(entry.revert.snapshot as Lead, { action: 'revert' });
+        const actual = tenantLeads.find((l) => l.id === entry.revert!.snapshot.id);
+        if (!actual) return 'El lead ya no existe.';
+        if (isBlocked(actual)) return 'El lead está bloqueado por una solicitud del titular.';
+        handleUpdateLead(restoreLeadKeepingPersonalData(actual, entry.revert.snapshot as Lead), { action: 'revert' });
         break;
       }
       case 'account': {
-        handleUpdateAccount(entry.revert.snapshot as ClientAccount, true);
+        const actual = tenantAccounts.find((a) => a.id === entry.revert!.snapshot.id);
+        if (!actual) return 'La empresa cliente ya no existe.';
+        handleUpdateAccount(restoreAccountKeepingPersonalData(actual, entry.revert.snapshot as ClientAccount), true);
         break;
       }
       case 'catalog': {
@@ -1134,7 +1147,7 @@ export function App() {
       action: 'update',
       entity: 'lead',
       entityId: safe.id,
-      entityLabel: leadTitle(safe),
+      entityLabel: auditLeadLabel(safe),
       summary: `Solicitud del titular registrada: ${REQUEST_REASON_LABEL[reason]}. El lead queda bloqueado.`,
     });
     return null;
@@ -1150,12 +1163,13 @@ export function App() {
     });
     if (!safe) return;
     setAllLeads((prev) => prev.map((l) => (l.id === safe.id ? safe : l)));
+    if (approve) setAllActivities((prev) => anonymizeActivitiesOf(prev, safe.id));
     record({
       companyId: safe.companyId,
       action: 'update',
       entity: 'lead',
       entityId: safe.id,
-      entityLabel: leadTitle(safe),
+      entityLabel: auditLeadLabel(safe),
       summary: approve
         ? 'Solicitud aprobada: se eliminaron los datos personales del titular y se conservó la operación'
         : 'Solicitud rechazada: el lead vuelve a quedar disponible',
@@ -1178,7 +1192,7 @@ export function App() {
       action: 'update',
       entity: 'lead',
       entityId: safe.id,
-      entityLabel: leadTitle(safe),
+      entityLabel: auditLeadLabel(safe),
       summary:
         answer === 'granted'
           ? 'Primer contacto: el titular autorizó que guardemos sus datos'
@@ -1200,13 +1214,14 @@ export function App() {
     if (anonimizados.length === 0) return;
     const porId = new Map(anonimizados.map((l) => [l.id, l]));
     setAllLeads((prev) => prev.map((l) => porId.get(l.id) ?? l));
+    setAllActivities((prev) => anonimizados.reduce((acc, l) => anonymizeActivitiesOf(acc, l.id), prev));
     for (const lead of anonimizados) {
       record({
         companyId: lead.companyId,
         action: 'update',
         entity: 'lead',
         entityId: lead.id,
-        entityLabel: leadTitle(lead),
+        entityLabel: auditLeadLabel(lead),
         summary: `Datos personales eliminados automáticamente: prospecto sin contactar en ${PROSPECT_RETENTION_DAYS} días`,
       });
     }
@@ -1232,7 +1247,7 @@ export function App() {
       action: 'export',
       entity: 'lead',
       entityId: lead.id,
-      entityLabel: leadTitle(lead),
+      entityLabel: auditLeadLabel(lead),
       summary: 'Se descargó el informe de datos del titular',
     });
   };

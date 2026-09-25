@@ -24,6 +24,7 @@ import {
   setLeadNoContact,
   anonymizeLeadOfTenant,
   recordFirstContactAnswer,
+  canMoveLeadStage,
 } from '../src/lib/tenantGuards.ts';
 import {
   PROSPECT_RETENTION_DAYS,
@@ -34,6 +35,10 @@ import {
   isBlocked,
   isPendingProspect,
   prospectDaysLeft,
+  anonymizeActivitiesOf,
+  auditLeadLabel,
+  leadWithoutPersonalData,
+  restoreLeadKeepingPersonalData,
 } from '../src/lib/privacy.ts';
 import { MAX_LEAD_CONTACTS } from '../src/lib/contacts.ts';
 import { countsByDay, monthGrid, pendingFollowUps } from '../src/lib/agenda.ts';
@@ -55,7 +60,7 @@ import { getRates } from '../server/exchangeRates.ts';
 import { FALLBACK_RATES } from '../src/lib/currency.ts';
 import { COUNTRIES, COUNTRY_CODES, zoneWithArticle } from '../src/data/countries.ts';
 import { applyLeadValue, computeItemSales, isManualValue, leadsWithItems } from '../src/lib/catalog.ts';
-import { accountFields, buildAuditEntry, diffFields, isRevertible, scopeAuditLog } from '../src/lib/audit.ts';
+import { accountFields, buildAuditEntry, diffFields, isRevertible, leadFields, leadSummary, scopeAuditLog } from '../src/lib/audit.ts';
 import { canMoveLeadBackwards, canRevertChanges } from '../src/lib/permissions.ts';
 import type { AuditEntry, CatalogItem, LeadContact } from '../src/types/crm.ts';
 import type { AppUser, ClientAccount, Company, Lead, LeadActivity, StageConfig } from '../src/types/crm.ts';
@@ -901,10 +906,12 @@ test('Privacidad: el origen y el consentimiento solo aceptan valores conocidos',
   )!;
   assert.equal(sucio.dataOrigin, 'form');
   assert.equal(sucio.consentStatus, 'granted');
-  // La solicitud pendiente tampoco se puede inventar desde una edición normal
+  // La solicitud pendiente tampoco se puede quitar desde una edición normal: el lead bloqueado no se edita
   const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
-  const editado = sanitizeLeadUpdate(conSolicitud, { ...conSolicitud, privacyRequest: undefined }, A, [], ['CL'], ZONES, [], 'manager')!;
-  assert.equal(editado.privacyRequest?.status, 'pending');
+  assert.equal(
+    sanitizeLeadUpdate(conSolicitud, { ...conSolicitud, privacyRequest: undefined }, A, [], ['CL'], ZONES, [], 'manager'),
+    null
+  );
 });
 
 test('Prospecto: vence a los 30 días sin contactar y no antes', () => {
@@ -953,6 +960,104 @@ test('Prospecto: la respuesta en el primer contacto cierra el plazo', () => {
   // Solo aplica a prospectos pendientes de su propio CRM
   assert.equal(recordFirstContactAnswer(prospecto, B, 'granted', '2026-09-25T10:00:00Z'), null);
   assert.equal(recordFirstContactAnswer(autoriza, A, 'refused', '2026-09-25T10:00:00Z'), null);
+});
+
+// ------------------------------------------------------------------ bloqueo como regla, no como botón
+test('Bloqueo: el guard rechaza editar, mover o registrar contacto con un lead bloqueado', () => {
+  const bloqueado = requestLeadPrivacy(lead('l-blq', A), A, solicitud)!;
+  assert.equal(
+    sanitizeLeadUpdate(bloqueado, { ...bloqueado, fullName: 'Editado' }, A, [], ['CL'], ZONES, [], 'manager'),
+    null
+  );
+  assert.equal(canMoveLeadStage(bloqueado), false);
+  assert.equal(canRegisterActivity('l-blq', [bloqueado], A), false);
+  // Sin solicitud pendiente, todo sigue funcionando
+  assert.equal(canMoveLeadStage(lead('l-libre', A)), true);
+  assert.equal(canRegisterActivity('l-libre', [lead('l-libre', A)], A), true);
+});
+
+test('Bloqueo: tampoco se registra contacto con quien se opuso, revocó o fue anonimizado', () => {
+  const opuesto = lead('l-op', A, { noContact: true });
+  const revoco = lead('l-rev', A, { consentStatus: 'withdrawn' });
+  const anonimo = anonymizeLeadOfTenant(lead('l-an', A), A, '2026-09-25T00:00:00Z')!;
+  assert.equal(canRegisterActivity('l-op', [opuesto], A), false);
+  assert.equal(canRegisterActivity('l-rev', [revoco], A), false);
+  assert.equal(canRegisterActivity('l-an', [anonimo], A), false);
+});
+
+// ------------------------------------------------------------------ historial sin datos personales (opción A)
+const contextoAuditoria = { zoneName: () => 'Zona', itemName: () => 'Ítem', stageLabel: (s: string) => s };
+
+test('Auditoría: registra que cambió un dato personal, nunca su valor', () => {
+  const antes = lead('l-aud', A, { fullName: 'Ana Pérez', email: 'ana@x.cl', phone: '+56 9 1', notes: 'llamar tarde' });
+  const despues = { ...antes, fullName: 'Ana P.', email: 'ana@y.cl', phone: '+56 9 2', notes: 'otra nota', estimatedDealValue: 5000 };
+  const cambios = diffFields(antes, despues, leadFields(contextoAuditoria as never));
+  const texto = JSON.stringify(cambios);
+  for (const valor of ['Ana Pérez', 'Ana P.', 'ana@x.cl', 'ana@y.cl', '+56 9 1', '+56 9 2', 'llamar tarde', 'otra nota']) {
+    assert.ok(!texto.includes(valor), `el historial guardó "${valor}"`);
+  }
+  const email = cambios.find((c) => c.field === 'email')!;
+  assert.equal(email.redacted, true);
+  // Los datos del negocio sí conservan su valor
+  const valor = cambios.find((c) => c.field === 'estimatedDealValue')!;
+  assert.equal(valor.redacted, undefined);
+  assert.notEqual(valor.after, null);
+});
+
+test('Auditoría: el contacto de una empresa cliente tampoco queda en el historial', () => {
+  const antes = account('acc-aud', A);
+  const conContacto = { ...antes, contactName: 'Juan Soto', email: 'juan@x.cl', industry: 'Minería' };
+  const texto = JSON.stringify(diffFields(antes, conContacto, accountFields));
+  assert.ok(!texto.includes('Juan Soto') && !texto.includes('juan@x.cl'));
+  assert.ok(texto.includes('Minería'));
+});
+
+test('Auditoría: la etiqueta y el resumen nombran a la empresa, nunca a la persona', () => {
+  const conEmpresa = lead('l-et1', A, { fullName: 'Ana Pérez', companyName: 'Minera Sur' });
+  const natural = lead('l-et2', A, { fullName: 'Pedro Díaz' });
+  assert.equal(auditLeadLabel(conEmpresa), 'Minera Sur');
+  assert.ok(!auditLeadLabel(natural).includes('Pedro'));
+  assert.ok(!leadSummary(conEmpresa).includes('Ana Pérez'));
+});
+
+test('Revertir: restaura el negocio pero no revive datos personales borrados', () => {
+  const original = lead('l-rv', A, { fullName: 'Ana Pérez', email: 'ana@x.cl', estimatedDealValue: 1000, commercialStatus: 'proposal' });
+  const snapshot = leadWithoutPersonalData(original);
+  assert.ok(!JSON.stringify(snapshot).includes('Ana Pérez') && !JSON.stringify(snapshot).includes('ana@x.cl'));
+  // Después la persona fue anonimizada y el negocio cambió; revertir trae el negocio de vuelta
+  const hoy = { ...anonymizeLeadOfTenant(original, A, '2026-09-25T00:00:00Z')!, estimatedDealValue: 9999, commercialStatus: 'won' as const };
+  const revertido = restoreLeadKeepingPersonalData(hoy, snapshot);
+  assert.equal(revertido.estimatedDealValue, 1000);
+  assert.equal(revertido.commercialStatus, 'proposal');
+  assert.equal(revertido.email, undefined);
+  assert.ok(!revertido.fullName.includes('Ana'));
+  assert.ok(revertido.anonymizedAt);
+  assert.equal(revertido.noContact, true);
+
+  // Quien revocó su autorización no vuelve a quedar autorizado por revertir un cambio anterior
+  const antesDeRevocar = leadWithoutPersonalData(lead('l-rv2', A, { consentStatus: 'granted' }));
+  const revoco = lead('l-rv2', A, { consentStatus: 'withdrawn', noContact: true });
+  const tras = restoreLeadKeepingPersonalData(revoco, antesDeRevocar);
+  assert.equal(tras.consentStatus, 'withdrawn');
+  assert.equal(tras.noContact, true);
+});
+
+test('Anonimizar: borra dirección exacta, coordenadas y la bitácora de esa persona', () => {
+  const conPunto = lead('l-geo', A, { rawAddress: 'Los Aromos 123', latitude: -33.4, longitude: -70.6, assignedTerritoryId: 'z-cl' });
+  const anonimo = anonymizeLeadOfTenant(conPunto, A, '2026-09-25T00:00:00Z')!;
+  assert.equal(anonimo.latitude, undefined);
+  assert.equal(anonimo.longitude, undefined);
+  assert.ok(!anonimo.rawAddress.includes('Aromos'));
+  assert.equal(anonimo.assignedTerritoryId, 'z-cl'); // la zona se conserva para las métricas
+
+  const bitacora = [
+    { id: 'a1', leadId: 'l-geo', channel: 'call' as const, outcome: 'interested' as const, contactName: 'Ana', summary: 'Habló de su casa', agentName: 'X', createdAt: '2026-09-01T00:00:00Z' },
+    { id: 'a2', leadId: 'otro', channel: 'call' as const, outcome: 'interested' as const, contactName: 'Luis', summary: 'Otro lead', agentName: 'X', createdAt: '2026-09-01T00:00:00Z' },
+  ];
+  const limpia = anonymizeActivitiesOf(bitacora, 'l-geo');
+  assert.equal(limpia[0].contactName, undefined);
+  assert.ok(!limpia[0].summary.includes('casa'));
+  assert.equal(limpia[1].summary, 'Otro lead');
 });
 
 // ------------------------------------------------------------------ reporte

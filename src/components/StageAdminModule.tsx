@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import type { StageConfig, Lead, CommercialStatus } from '../types/crm';
-import {
-  Sliders,
-  ShieldCheck,
-  Clock,
-  TrendingUp,
-  DollarSign,
-  Users,
-  Edit2,
-  Check,
-  X,
-  Layers,
-  ArrowRight
-} from 'lucide-react';
+import { Sliders, Edit2, Check } from 'lucide-react';
 import { COUNTRIES, type CountryCode } from '../data/countries';
 import { leadCurrency, summarizeLeads, summarizeMoney } from '../lib/currency';
 import { useMoney } from '../lib/money';

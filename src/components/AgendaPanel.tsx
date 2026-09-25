@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, List, Phone } from 'lucide-react';
-import type { ContactChannel, Lead, LeadActivity } from '../types/crm';
+import type { Lead, LeadActivity } from '../types/crm';
 import {
   BUCKET_LABEL,
+  CHANNEL_LABEL,
   BUCKET_ORDER,
   countsByDay,
   dayKeyOf,
@@ -17,13 +18,6 @@ interface AgendaPanelProps {
   onSelectLead: (leadId: string) => void;
 }
 
-const CHANNEL_LABEL: Record<ContactChannel, string> = {
-  call: 'Llamada',
-  whatsapp: 'WhatsApp',
-  email: 'Email',
-  meeting: 'Reunión',
-  video_call: 'Videollamada',
-};
 
 const DIAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 

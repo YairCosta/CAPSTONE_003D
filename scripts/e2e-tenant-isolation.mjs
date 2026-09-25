@@ -242,6 +242,10 @@ const collectTenantText = async ({ manager, skipAudit = false }) => {
       await tagElement(() => [...document.querySelectorAll('main select')].find((s) => [...s.options].some((o) => o.text.includes('Bitácora Global'))), 'e2e-lead-select');
       await page.select('#e2e-lead-select', '');
       await sleep(400);
+      // La bitácora global muestra el contenido de las actividades: es donde deben aparecer
+      // (ya no en la auditoría, que no guarda datos personales)
+      await clickText('main button', 'Historial');
+      await sleep(400);
     }
     text += `\n${await mainText()}`;
     if (label === 'Gerencia' && manager) {
@@ -381,11 +385,17 @@ try {
   // Auditoría: el gerente ve lo que acaba de pasar, con persona, acción y hora
   await tab('Auditoría');
   const auditText = await mainText();
-  const auditExpected = ['Lead Aislado A', 'Empresa Aislada A', 'Producto Aislado A', 'Andrea Torres'];
+  // El lead aparece por su empresa: el nombre de la persona no queda en el historial (Ley 21.719)
+  const auditExpected = ['Empresa Aislada A', 'Producto Aislado A', 'Andrea Torres'];
   check(
     'La auditoría registra los cambios (creación, edición y etapa) con su autor',
     auditExpected.every((w) => auditText.includes(w)) && /Gerente/.test(auditText),
     `Faltan: ${auditExpected.filter((w) => !auditText.includes(w))}`
+  );
+  check(
+    'La auditoría no guarda el nombre de la persona ni lo conversado',
+    !auditText.includes('Lead Aislado A') && !auditText.includes('Actividad Aislada A'),
+    auditText.slice(0, 200).replace(/\s+/g, ' ')
   );
   text = await collectTenantText({ manager: true });
   check('Los datos creados en GeoDemo son visibles en GeoDemo', CREATED_A.every((w) => text.includes(w)), `Faltan: ${CREATED_A.filter((w) => !text.includes(w))}`);
@@ -912,6 +922,21 @@ try {
   await tab('Auditoría');
   await sleep(500);
   const auditoriaPrivacidad = await mainText();
+  // Opción A: el historial registra que un dato personal cambió, nunca su valor
+  const detalleAuditoria = await page.evaluate(async () => {
+    for (const b of [...document.querySelectorAll('main button')].filter((x) => /^Ver \d+ cambio/.test(x.textContent.trim()))) {
+      b.click();
+    }
+    await new Promise((r) => setTimeout(r, 300));
+    return document.querySelector('main').innerText;
+  });
+  check(
+    'La auditoría muestra que un dato personal cambió, sin guardar su valor',
+    detalleAuditoria.includes('dato personal, el valor no se guarda') &&
+      !detalleAuditoria.includes('Paula Vergara') &&
+      !detalleAuditoria.includes('Karla Mora E2E'),
+    detalleAuditoria.slice(0, 260).replace(/\s+/g, ' ')
+  );
   check(
     'El borrado queda en la auditoría sin exponer los datos borrados',
     auditoriaPrivacidad.includes('Solicitud aprobada') && !auditoriaPrivacidad.includes('amendoza@navieracostaverde.pe'),
@@ -1015,6 +1040,26 @@ try {
     /solicitud del titular pendiente|bloqueado/i.test(trasPedirAgente),
     trasPedirAgente.slice(0, 220).replace(/\s+/g, ' ')
   );
+  await tab('Pipeline');
+  await sleep(500);
+  const tarjetaBloqueada = await page.evaluate(() => {
+    const h = [...document.querySelectorAll('h4')].find((e) => e.textContent.includes('Corporación Salud Lima') &&
+      e.parentElement?.innerText.includes('Rosa Anticona'));
+    const card = h?.closest('div.rounded-xl');
+    return {
+      texto: card?.innerText ?? '',
+      avanzar: [...(card?.querySelectorAll('button') ?? [])].some((b) => b.textContent.includes('Avanzar')),
+      arrastrable: card?.getAttribute('draggable'),
+    };
+  });
+  check(
+    'En el Pipeline, el lead bloqueado se ve bloqueado y no se puede avanzar ni arrastrar',
+    /Bloqueado/.test(tarjetaBloqueada.texto) && !tarjetaBloqueada.avanzar && tarjetaBloqueada.arrastrable === 'false',
+    JSON.stringify(tarjetaBloqueada).slice(0, 220)
+  );
+  await tab('Registro de contacto');
+  await sleep(400);
+  await tagElement(() => document.querySelector('main select'), 'e2e-priv-lead');
   const opcionesTrasBloqueo = await page.evaluate(
     () => [...(document.querySelector('#e2e-priv-lead')?.options ?? [])].map((o) => o.text).join(' | ')
   );

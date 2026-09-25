@@ -1,4 +1,4 @@
-import type { Lead, PrivacyRequest, PrivacyRequestReason } from '../types/crm';
+import type { ClientAccount, Lead, LeadActivity, PrivacyRequest, PrivacyRequestReason } from '../types/crm';
 
 // Derechos del titular sobre sus datos (Ley 19.628 modificada por la Ley 21.719).
 // Aquí vive la lógica pura: qué se puede hacer con un lead según lo que la persona pidió.
@@ -125,8 +125,11 @@ export const anonymizeLead = (lead: Lead, at: string, reason: 'request' | 'reten
   jobTitle: undefined,
   email: undefined,
   phone: undefined,
-  rawAddress: lead.assignedTerritoryId ? 'Dirección eliminada' : lead.rawAddress,
+  rawAddress: 'Dirección eliminada',
   normalizedAddress: undefined,
+  // Un punto exacto en el mapa identifica tanto como el nombre; se conserva solo la zona
+  latitude: undefined,
+  longitude: undefined,
   notes: undefined,
   contacts: [],
   noContact: true,
@@ -159,3 +162,88 @@ export const resolvePrivacyRequest = (lead: Lead, decision: PrivacyDecision): Le
 
 /** Leads que la agenda y el asistente no deben proponer. */
 export const contactableLeads = (leads: Lead[]): Lead[] => leads.filter(canContact);
+
+// ------------------------------------------------------------------ datos personales fuera del historial
+// La auditoría nunca guarda valores que identifiquen a una persona (opción A, 25-09-2026): así el
+// historial puede seguir siendo inalterable y, aun así, respetar el derecho de supresión (art. 7).
+// Se registra QUE un dato personal cambió, nunca cuál era ni cuál es.
+
+/** Campos del lead que identifican a la persona. */
+export const LEAD_PERSONAL_FIELDS = [
+  'fullName',
+  'jobTitle',
+  'email',
+  'phone',
+  'contacts',
+  'rawAddress',
+  'normalizedAddress',
+  'latitude',
+  'longitude',
+  'notes',
+] as const satisfies readonly (keyof Lead)[];
+
+/** Campos de la empresa cliente que identifican a una persona (su contacto). */
+export const ACCOUNT_PERSONAL_FIELDS = ['contactName', 'email', 'phone', 'notes'] as const satisfies readonly (keyof ClientAccount)[];
+
+const pick = <T extends object, K extends keyof T>(obj: T, keys: readonly K[]) =>
+  Object.fromEntries(keys.map((k) => [k, obj[k]])) as Pick<T, K>;
+
+const blank = <T extends object, K extends keyof T>(keys: readonly K[]) =>
+  Object.fromEntries(keys.map((k) => [k, undefined])) as Partial<T>;
+
+/** Copia del lead para el historial, sin datos de la persona. */
+export const leadWithoutPersonalData = (lead: Lead): Lead => ({
+  ...lead,
+  ...blank<Lead, (typeof LEAD_PERSONAL_FIELDS)[number]>(LEAD_PERSONAL_FIELDS),
+  fullName: '',
+  rawAddress: '',
+  contacts: [],
+});
+
+export const accountWithoutPersonalData = (account: ClientAccount): ClientAccount => ({
+  ...account,
+  ...blank<ClientAccount, (typeof ACCOUNT_PERSONAL_FIELDS)[number]>(ACCOUNT_PERSONAL_FIELDS),
+});
+
+/**
+ * Lo que decidió el titular sobre sus datos. Nunca vuelve atrás por revertir un cambio: si revocó
+ * su autorización, restaurar un estado anterior no puede volver a dejarlo "autorizado".
+ */
+export const LEAD_PRIVACY_STATE_FIELDS = [
+  'dataOrigin',
+  'consentStatus',
+  'consentAt',
+  'noContact',
+  'privacyRequest',
+  'anonymizedAt',
+  'anonymizedReason',
+] as const satisfies readonly (keyof Lead)[];
+
+/**
+ * Revertir un cambio restaura los datos del negocio del snapshot. Los datos personales y lo que
+ * decidió el titular quedan como están hoy: el historial no guarda lo primero, y restaurar lo
+ * segundo podría revivir a quien pidió su eliminación o revocó su autorización.
+ */
+export const restoreLeadKeepingPersonalData = (current: Lead, snapshot: Lead): Lead => ({
+  ...snapshot,
+  ...pick(current, LEAD_PERSONAL_FIELDS),
+  ...pick(current, LEAD_PRIVACY_STATE_FIELDS),
+});
+
+export const restoreAccountKeepingPersonalData = (current: ClientAccount, snapshot: ClientAccount): ClientAccount => ({
+  ...snapshot,
+  ...pick(current, ACCOUNT_PERSONAL_FIELDS),
+});
+
+/** Nombre del lead en el historial: la empresa, nunca la persona. */
+export const auditLeadLabel = (lead: Lead): string =>
+  lead.companyName?.trim() || `Persona natural · ref. ${lead.id.slice(-4)}`;
+
+/** Al anonimizar, la bitácora de ese lead también pierde con quién se habló y qué se dijo. */
+export const anonymizeActivitiesOf = (activities: LeadActivity[], leadId: string): LeadActivity[] =>
+  activities.map((a) =>
+    a.leadId === leadId
+      ? { ...a, contactName: undefined, summary: 'Contenido eliminado junto con los datos del titular' }
+      : a
+  );
+

@@ -6,7 +6,6 @@ import type {
   CatalogItem,
   ClientAccount,
   Company,
-  ContactChannel,
   ContactOutcome,
   Lead,
   LeadActivity,
@@ -17,6 +16,7 @@ import { COUNTRIES, COUNTRY_CODES, type CountryCode } from '../data/countries.ts
 import { enabledCountriesOf, scopeActivities } from './tenantGuards.ts';
 import { isManualValue } from './catalog.ts';
 import { leadCurrency } from './currency.ts';
+import { CHANNEL_LABEL } from './agenda.ts';
 
 export const EXPORT_FORMAT_VERSION = 'Revela · exportación de datos v1';
 
@@ -67,13 +67,6 @@ const STATUS_LABEL: Record<Lead['commercialStatus'], string> = {
   lost: 'Perdido',
 };
 
-const CHANNEL_LABEL: Record<ContactChannel, string> = {
-  call: 'Llamada',
-  whatsapp: 'WhatsApp',
-  email: 'Email',
-  meeting: 'Reunión',
-  video_call: 'Videollamada',
-};
 
 const OUTCOME_LABEL: Record<ContactOutcome, string> = {
   interested: 'Interesado',

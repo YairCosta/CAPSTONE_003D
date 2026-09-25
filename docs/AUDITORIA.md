@@ -14,7 +14,7 @@ Cada registro tiene:
 | Dato | Tipo (lead, empresa cliente, producto, etapa, usuario…) y su nombre |
 | Detalle | Resumen y, al expandir, **campo por campo: valor anterior → valor nuevo** |
 
-**Filtros:** búsqueda libre (incluye los valores antiguos y nuevos), tipo de dato, persona y "solo reversibles".
+**Filtros:** búsqueda libre (incluye los valores antiguos y nuevos que no son personales), tipo de dato, persona y "solo reversibles".
 
 Qué se registra: captura y edición de leads, cambios de etapa, contactos registrados, empresas cliente, catálogo de productos y servicios, configuración de etapas, exportaciones de datos y las acciones del administrador sobre el CRM (activar, desactivar, plan Internacional, usuarios).
 
@@ -53,7 +53,7 @@ La regla está en `canChangeStage()` (`src/lib/tenantGuards.ts`) y se aplica **t
 - Solo permite **insertar y leer**: no hay políticas de `UPDATE` ni `DELETE`, así que nadie puede alterar el historial.
 - Lectura restringida a gerencia del mismo CRM.
 - Marcar una entrada como revertida pasa por la función `mark_audit_entry_reverted()`, que verifica el rol, el CRM y que no se haya revertido antes.
-- `revert_snapshot` guarda el estado anterior completo; si es `NULL`, el cambio no se puede deshacer.
+- `revert_snapshot` guarda el estado anterior **sin datos personales**; si es `NULL`, el cambio no se puede deshacer.
 
 ## Pruebas
 
@@ -64,3 +64,22 @@ npm run test:tenant
 Cubre `canChangeStage` (el usuario base solo avanza), que el historial de un CRM no incluya movimientos de otro, y qué entradas son reversibles.
 
 El e2e verifica que el gerente vea los cambios con su autor, que el usuario base no tenga la pestaña ni el botón "Retroceder", y el ciclo completo de revertir: el dato vuelve atrás, la reversión queda registrada y el historial solo crece.
+
+## El historial no guarda datos personales
+
+Desde el 25-09-2026 (Ley 21.719, derecho de supresión, opción A):
+
+- Cuando cambia un dato que identifica a una persona (nombre, cargo, correo, teléfono, dirección,
+  notas, otros contactos del lead; contacto, correo, teléfono y notas de una empresa cliente), el
+  historial registra **que cambió**, nunca el valor anterior ni el nuevo. En pantalla se lee
+  "modificado · dato personal, el valor no se guarda".
+- El lead se nombra por su **empresa**; si es persona natural, como "Persona natural · ref. XXXX".
+- Un registro de contacto se anota como "Contacto por Llamada", sin la persona ni lo conversado.
+- El estado guardado para revertir (`revert_snapshot`) tampoco lleva datos personales.
+- **Revertir restaura los datos del negocio** (etapa, monto, zona, productos) y deja los datos
+  personales **y lo que decidió el titular** (autorización, oposición, anonimización) como están hoy.
+  Revertir nunca revive a quien pidió su eliminación ni vuelve a dejar "autorizado" a quien revocó.
+
+Así el historial puede seguir sin editarse ni borrarse y, a la vez, anonimizar un lead no deja
+copias de sus datos en ningún lado. La regla está en `src/lib/audit.ts` (`personal: true`) y en
+`src/lib/privacy.ts`.

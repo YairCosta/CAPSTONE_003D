@@ -51,3 +51,26 @@ Ninguno llegó a quedar en el producto: los tres se detectaron con las pruebas a
   marcadas `TEXTUAL_MANDATE` deben cotejarse antes de usarse ante un tercero.
 - No hay snapshot con hash de las fuentes legales: no existe lock append-only de la norma.
 - La decisión sobre bases de licitud, EIPD, geolocalización y contratos **requiere abogado**.
+
+## Revisión del 25-09-2026: nuevos hallazgos sobre el propio trabajo
+
+Esta sección se agrega; lo anterior se conserva tal como se escribió.
+
+**AC-02 · El bloqueo del art. 8 ter se declaró implementado y solo existía en pantalla.**
+La matriz lo marcó `CODIGO_NO_DESPLEGADO` con evidencia de pruebas, pero esas pruebas solo miraban
+la interfaz. Una sonda directa contra los guards mostró que un lead bloqueado se podía editar y
+registrar contactos con él, y en la app se lo pudo avanzar en el Pipeline. Es exactamente el error
+que advierte la skill: filtrar una lista no reemplaza la regla del lado del servidor.
+**Corregido:** regla en `tenantGuards.ts` y prueba unitaria contra el guard, no contra la pantalla.
+
+**AC-03 · Anonimizar no alcanzaba al historial ni a la bitácora.**
+La auditoría guardaba valores personales anteriores y el estado para revertir; la bitácora
+conservaba con quién se habló y qué se dijo; el lead conservaba sus coordenadas exactas.
+**Corregido** con la opción A, decidida por el responsable: el historial nunca guarda valores
+personales.
+
+**AC-04 · Revertir restauraba el consentimiento anterior.** Detectado por una prueba nueva al
+corregir AC-03. **Corregido:** revertir conserva siempre el estado de privacidad actual.
+
+**Lección:** una prueba que pasa por la pantalla no demuestra una regla. Cada control del expediente
+debe tener al menos una prueba directa contra el guard.

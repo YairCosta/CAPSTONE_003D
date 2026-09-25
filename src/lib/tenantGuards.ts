@@ -11,7 +11,9 @@ import { MAX_LEAD_CONTACTS } from './contacts.ts';
 import {
   anonymizeLead,
   applyFirstContactAnswer,
+  canContact,
   isAnonymized,
+  isBlocked,
   isPendingProspect,
   openPrivacyRequest,
   resolvePrivacyRequest,
@@ -51,9 +53,14 @@ export function scopeActivities(activities: LeadActivity[], tenantLeads: Lead[],
 }
 
 // Una actividad solo puede registrarse sobre un lead del propio tenant
+// Tampoco se registra contacto con quien se opuso, revocó, está bloqueado o fue anonimizado:
+// la regla vive aquí y no solo en la pantalla (Ley 21.719, arts. 8 y 8 ter).
 export function canRegisterActivity(leadId: string, tenantLeads: Lead[], tenantId: string | null): boolean {
-  return Boolean(tenantId) && tenantLeads.some((l) => l.id === leadId && l.companyId === tenantId);
+  return Boolean(tenantId) && tenantLeads.some((l) => l.id === leadId && l.companyId === tenantId && canContact(l));
 }
+
+/** Un lead con una solicitud del titular pendiente no se mueve de etapa ni se edita (art. 8 ter). */
+export const canMoveLeadStage = (lead: Lead): boolean => !isBlocked(lead);
 
 interface TerritoryRef {
   territoryId: string;
@@ -165,6 +172,8 @@ export function sanitizeLeadUpdate(
   role: AppUser['role'] | null
 ): Lead | null {
   if (!tenantId || !existing || existing.companyId !== tenantId || existing.id !== updated.id) return null;
+  // Bloqueo del art. 8 ter: mientras el titular espera respuesta, su lead no se edita
+  if (isBlocked(existing)) return null;
   if (!isCountryCode(updated.countryCode) || !enabledCountries.includes(updated.countryCode)) return null;
 
   // Si el perfil no puede hacer ese movimiento, el lead conserva su etapa: el resto de la

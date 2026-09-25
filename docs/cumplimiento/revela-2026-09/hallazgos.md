@@ -98,6 +98,17 @@ voluntario y no se ha evaluado; no hay delegado designado.
 **Corregido el 24-09-2026:** el usuario base registra la solicitud desde Registro de contacto y el
 gerente la resuelve. Ver [`autorrevision-auditor.md`](autorrevision-auditor.md).
 
+### AC-02 · Corregido · El bloqueo existía solo en pantalla
+**Hecho:** se declaró implementado, pero el guard aceptaba editar un lead bloqueado y el Pipeline lo
+movía. **Corregido el 25-09-2026** en `tenantGuards.ts`. Ver [`autorrevision-auditor.md`](autorrevision-auditor.md).
+
+### AC-03 · Corregido · La anonimización dejaba copias en el historial y la bitácora
+**Corregido el 25-09-2026:** el historial ya no guarda valores personales (opción A), y anonimizar
+borra también la bitácora de esa persona y sus coordenadas.
+
+### AC-04 · Corregido · Revertir podía devolver un consentimiento revocado
+**Corregido el 25-09-2026:** revertir conserva las decisiones actuales del titular.
+
 ## Plan de remediación
 
 ### 7 días — hecho el 24-09-2026

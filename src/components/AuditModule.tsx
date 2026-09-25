@@ -262,9 +262,15 @@ export const AuditModule: React.FC<AuditModuleProps> = ({ entries, canRevert, on
                                 {entry.changes.map((change) => (
                                   <li key={change.field} className="text-sm">
                                     <span className="font-semibold text-slate-300">{change.label}:</span>{' '}
-                                    <span className="text-rose-300 line-through">{shorten(change.before)}</span>
-                                    <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-slate-500" />
-                                    <span className="text-emerald-300">{shorten(change.after)}</span>
+                                    {change.redacted ? (
+                                      <RedactedValue />
+                                    ) : (
+                                      <>
+                                        <span className="text-rose-300 line-through">{shorten(change.before)}</span>
+                                        <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-slate-500" />
+                                        <span className="text-emerald-300">{shorten(change.after)}</span>
+                                      </>
+                                    )}
                                   </li>
                                 ))}
                               </ul>
@@ -324,9 +330,15 @@ export const AuditModule: React.FC<AuditModuleProps> = ({ entries, canRevert, on
                 {confirming.changes.map((change) => (
                   <li key={change.field} className="text-sm">
                     <span className="font-semibold text-slate-300">{change.label}:</span>{' '}
-                    <span className="text-rose-300 line-through">{shorten(change.after)}</span>
-                    <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-slate-500" />
-                    <span className="text-emerald-300">{shorten(change.before)}</span>
+                    {change.redacted ? (
+                      <span className="text-slate-400">se mantiene como está hoy (dato personal, no se restaura)</span>
+                    ) : (
+                      <>
+                        <span className="text-rose-300 line-through">{shorten(change.after)}</span>
+                        <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-slate-500" />
+                        <span className="text-emerald-300">{shorten(change.before)}</span>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -345,3 +357,10 @@ export const AuditModule: React.FC<AuditModuleProps> = ({ entries, canRevert, on
     </div>
   );
 };
+
+// Un dato personal cambió, pero su valor no se guarda en el historial (Ley 21.719, derecho de supresión)
+const RedactedValue: React.FC = () => (
+  <span className="text-slate-400" title="El historial registra que cambió, pero no guarda datos de personas">
+    modificado · dato personal, el valor no se guarda
+  </span>
+);

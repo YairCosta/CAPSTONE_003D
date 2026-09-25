@@ -49,6 +49,8 @@ export interface FieldDef<T> {
   key: string;
   label: string;
   value: (item: T) => string | number | null | undefined;
+  // Identifica a una persona: el historial registra que cambió, nunca el valor
+  personal?: boolean;
 }
 
 // Devuelve solo los campos que cambiaron, con su valor anterior y el nuevo
@@ -58,7 +60,12 @@ export function diffFields<T>(before: T, after: T, fields: FieldDef<T>[]): Audit
     const from = field.value(before);
     const to = field.value(after);
     const norm = (v: string | number | null | undefined) => (v === undefined || v === null || v === '' ? null : v);
-    if (norm(from) !== norm(to)) changes.push({ field: field.key, label: field.label, before: norm(from), after: norm(to) });
+    if (norm(from) === norm(to)) continue;
+    changes.push(
+      field.personal
+        ? { field: field.key, label: field.label, before: null, after: null, redacted: true }
+        : { field: field.key, label: field.label, before: norm(from), after: norm(to) }
+    );
   }
   return changes;
 }
@@ -72,15 +79,16 @@ export interface AuditContext {
 }
 
 export const leadFields = (ctx: AuditContext): FieldDef<Lead>[] => [
-  { key: 'fullName', label: 'Nombre', value: (l) => l.fullName },
-  { key: 'jobTitle', label: 'Cargo del contacto', value: (l) => l.jobTitle ?? 'Sin cargo' },
+  { key: 'fullName', label: 'Nombre', value: (l) => l.fullName, personal: true },
+  { key: 'jobTitle', label: 'Cargo del contacto', value: (l) => l.jobTitle ?? 'Sin cargo', personal: true },
   { key: 'companyName', label: 'Empresa cliente', value: (l) => l.companyName ?? 'Persona natural' },
-  { key: 'email', label: 'Email', value: (l) => l.email },
-  { key: 'phone', label: 'Teléfono', value: (l) => l.phone },
+  { key: 'email', label: 'Email', value: (l) => l.email, personal: true },
+  { key: 'phone', label: 'Teléfono', value: (l) => l.phone, personal: true },
   {
     key: 'contacts',
     label: 'Otros contactos',
     value: (l) => (l.contacts ?? []).map((c) => contactLine(c)).join(', ') || 'Sin otros contactos',
+    personal: true,
   },
   { key: 'countryCode', label: 'País', value: (l) => COUNTRIES[l.countryCode]?.name },
   { key: 'currency', label: 'Moneda del lead', value: (l) => leadCurrency(l) },
@@ -91,9 +99,9 @@ export const leadFields = (ctx: AuditContext): FieldDef<Lead>[] => [
     value: (l) =>
       `${formatMoney(l.estimatedDealValue || 0, leadCurrency(l))}${isManualValue(l) ? ' (manual)' : ''}`,
   },
-  { key: 'rawAddress', label: 'Dirección', value: (l) => l.rawAddress },
+  { key: 'rawAddress', label: 'Dirección', value: (l) => l.rawAddress, personal: true },
   { key: 'assignedTerritoryId', label: 'Zona', value: (l) => ctx.zoneName(l.assignedTerritoryId) },
-  { key: 'notes', label: 'Notas', value: (l) => l.notes },
+  { key: 'notes', label: 'Notas', value: (l) => l.notes, personal: true },
   { key: 'dataOrigin', label: 'Origen del dato', value: (l) => (l.dataOrigin ? ORIGIN_LABEL[l.dataOrigin] : 'No registrado') },
   {
     key: 'consentStatus',
@@ -113,11 +121,11 @@ export const accountFields: FieldDef<ClientAccount>[] = [
   { key: 'countryCode', label: 'País', value: (a) => COUNTRIES[a.countryCode]?.name },
   { key: 'taxId', label: 'ID tributario', value: (a) => a.taxId },
   { key: 'industry', label: 'Rubro', value: (a) => a.industry },
-  { key: 'contactName', label: 'Contacto principal', value: (a) => a.contactName },
-  { key: 'email', label: 'Email', value: (a) => a.email },
-  { key: 'phone', label: 'Teléfono', value: (a) => a.phone },
+  { key: 'contactName', label: 'Contacto principal', value: (a) => a.contactName, personal: true },
+  { key: 'email', label: 'Email', value: (a) => a.email, personal: true },
+  { key: 'phone', label: 'Teléfono', value: (a) => a.phone, personal: true },
   { key: 'address', label: 'Dirección', value: (a) => a.address },
-  { key: 'notes', label: 'Notas', value: (a) => a.notes },
+  { key: 'notes', label: 'Notas', value: (a) => a.notes, personal: true },
   { key: 'isActive', label: 'Activa', value: (a) => yesNo(a.isActive) },
 ];
 
@@ -192,7 +200,7 @@ export const isRevertible = (entry: AuditEntry) => Boolean(entry.revert) && !ent
 
 // Resumen del valor de un lead para los mensajes del historial
 export const leadSummary = (lead: Lead) =>
-  `${lead.fullName}${lead.companyName ? ` · ${lead.companyName}` : ''} · ${formatMoney(
+  `${lead.companyName?.trim() || 'Persona natural'} · ${formatMoney(
     lead.items?.length && lead.valueSource !== 'manual' ? itemsSubtotal(lead.items) : lead.estimatedDealValue || 0,
     leadCurrency(lead)
   )}`;

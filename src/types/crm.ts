@@ -174,6 +174,8 @@ export interface AuditChange {
   label: string;
   before: string | number | null;
   after: string | number | null;
+  // Dato personal: se registra que cambió, nunca su valor (Ley 21.719, derecho de supresión)
+  redacted?: boolean;
 }
 
 // Cómo deshacer el cambio: se guarda el estado anterior completo

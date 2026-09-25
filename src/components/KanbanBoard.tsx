@@ -10,19 +10,16 @@ import {
   MapPin,
   Phone,
   Mail,
-  DollarSign,
   Plus,
   MessageSquare,
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  Search
+  Search,
 } from 'lucide-react';
 import { COUNTRIES, zoneLabelFor, type CountryCode } from '../data/countries';
 import { formatLeadMoney, leadCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
 import { contactLine, extraContactsCount, leadSubtitle, leadTitle } from '../lib/contacts';
+import { blockedReason, isAnonymized, isBlocked } from '../lib/privacy';
 
 // Orden secuencial del embudo (debe coincidir con STAGE_ORDER de lib/tenantGuards)
 const stageOrder: CommercialStatus[] = ['new', 'contacted', 'qualified', 'proposal', 'pending_payment', 'won', 'lost'];
@@ -280,11 +277,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       const isExpanded = Boolean(expandedCardIds[lead.id]);
                       const territory = getTerritory(lead.assignedTerritoryId);
                       const prevStageId = getPrevStage(lead.commercialStatus);
+                      // Solicitud del titular pendiente: la tarjeta no se mueve (art. 8 ter)
+                      const bloqueado = isBlocked(lead);
 
                       return (
                         <div
                           key={lead.id}
-                          draggable
+                          draggable={!bloqueado}
                           onDragStart={(e) => {
                             e.dataTransfer.setData('text/plain', lead.id);
                             e.dataTransfer.effectAllowed = 'move';
@@ -294,8 +293,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                             setDraggingLeadId(null);
                             setDragOverStage(null);
                           }}
-                          title="Arrastra para mover a otra etapa"
-                          className={`rounded-xl border transition-all duration-200 bg-slate-950/70 cursor-grab active:cursor-grabbing ${
+                          title={bloqueado ? 'Bloqueado: hay una solicitud del titular pendiente' : 'Arrastra para mover a otra etapa'}
+                          className={`rounded-xl border transition-all duration-200 bg-slate-950/70 ${bloqueado ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${
                             draggingLeadId === lead.id ? 'opacity-40 scale-[0.98]' : ''
                           } ${
                             isExpanded
@@ -319,6 +318,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 {extraContactsCount(lead) > 0 && (
                                   <p className="text-[13px] font-semibold text-indigo-300">
                                     +{extraContactsCount(lead)} {extraContactsCount(lead) === 1 ? 'contacto' : 'contactos'}
+                                  </p>
+                                )}
+                                {blockedReason(lead) && (
+                                  <p className="mt-1 text-[12px] font-semibold text-amber-300">
+                                    {bloqueado ? 'Bloqueado: solicitud del titular' : isAnonymized(lead) ? 'Datos eliminados' : 'No contactar'}
                                   </p>
                                 )}
                               </div>
@@ -369,7 +373,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                             </div>
 
                             {/* Botón de Avance Directo hacia la Derecha */}
-                            {nextStageId && (
+                            {nextStageId && !bloqueado && (
                               <button
                                 type="button"
                                 onClick={(e) => {
