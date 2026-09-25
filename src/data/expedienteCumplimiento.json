@@ -238,7 +238,7 @@
       "resumen": "Consentimiento y revocación",
       "aplicabilidad": "APLICA",
       "estado": "CODIGO_NO_DESPLEGADO",
-      "hechos": "La captura registra el origen del dato y la respuesta del titular (autoriza, no autoriza, aún no se pregunta), con fecha, y queda en la auditoría. Si no autoriza, el lead nace marcado como 'no contactar'.",
+      "hechos": "La captura exige, sin opción por defecto, el origen del dato y la base para guardarlo (pidió cotización, autorizó, prospecto o no autoriza), con fecha y auditoría. El prospecto se informa en el primer contacto y el vendedor debe registrar su respuesta; si nadie lo contacta en 30 días se anonimiza solo. El asistente de IA solo registra datos de empresa. No se obligó a consentir: el consentimiento es una base entre varias.",
       "evidencia": "src/components/LeadCaptureModal.tsx; src/lib/privacy.ts; src/lib/audit.ts; e2e: 'La captura pide el origen del dato'",
       "riesgo": "El texto del aviso al titular y la base jurídica siguen pendientes de revisión legal.",
       "claim": "DERIVED_CONTROL",
@@ -1319,8 +1319,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 7469,
-      "sha256": "edae8bf62bfcefc343ec1b6cc23049a59bfb3f70314c39640a673f19883795d8"
+      "bytes": 7910,
+      "sha256": "b9334f6dabb598823100f18cb28a067abeec13e791a3dfa5c0c12ebf438051f1"
     },
     {
       "archivo": "legal-status.md",
@@ -1329,8 +1329,8 @@
     },
     {
       "archivo": "matriz-ley21719.csv",
-      "bytes": 41485,
-      "sha256": "4d5b807a379c717860553ddea413c90acf9e0626907ee3eaaf4760692e9c3782"
+      "bytes": 41710,
+      "sha256": "62da87ad15ee7c7ba5c34d2ae677bc37f49de908d59f6cc1cd26e5eb0ae5d1b2"
     },
     {
       "archivo": "plantillas/templates/finding-reproduction.csv",
@@ -1388,5 +1388,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-24T01:01:15.107Z"
+  "generadoUtc": "2026-09-25T19:38:03.174Z"
 }

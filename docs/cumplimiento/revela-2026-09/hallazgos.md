@@ -73,6 +73,8 @@ pero no hay registro, responsable ni prueba.
 ### H-11 · Media · Sin regla de conservación
 **Requisito:** arts. 3 y 14. **Hecho:** nada define cuánto vive un lead descartado.
 **Remediación:** decidir el plazo, escribirlo en la política y programar la anonimización.
+**Avance 25-09-2026:** implementada la regla para **prospectos**: 30 días sin contacto y se
+anonimizan solos (`CODIGO_NO_DESPLEGADO`). Falta decidir el plazo de los leads descartados.
 
 ### H-12 · Media · Geolocalización sin análisis
 **Requisito:** art. 16 sexies. **Hecho:** el producto geocodifica direcciones y las muestra en un
@@ -106,6 +108,9 @@ gerente la resuelve. Ver [`autorrevision-auditor.md`](autorrevision-auditor.md).
 - Informe por titular (arts. 5 y 9), descargable. ✅
 - Separación de funciones: el usuario base pide, la gerencia resuelve. ✅
 - Portal fiscalizador de solo lectura en el panel de administración. ✅
+- Origen y base del dato obligatorios en la captura, sin opción por defecto. ✅ (25-09-2026)
+- Prospectos: aviso en el primer contacto y anonimización a los 30 días. ✅ (25-09-2026)
+- Asistente de IA limitado a datos de empresa. ✅ (25-09-2026)
 
 Todo queda en estado `CODIGO_NO_DESPLEGADO`: falta la migración y el despliegue.
 

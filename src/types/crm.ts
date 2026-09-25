@@ -96,13 +96,18 @@ export interface Lead {
   noContact?: boolean; // se opuso a ser contactado (art. 8)
   privacyRequest?: PrivacyRequest; // pendiente = tratamiento bloqueado (art. 8 ter)
   anonymizedAt?: string; // sus datos personales fueron eliminados (art. 7)
+  anonymizedReason?: 'request' | 'retention'; // a pedido del titular o por vencer el plazo de prospecto
 }
 
 // De dónde salió el dato: la ley pide poder decir el origen de lo que se guarda
 export type LeadDataOrigin = 'form' | 'call' | 'event' | 'referral' | 'public' | 'ai';
 
-// Qué respondió el titular cuando se le preguntó si autoriza que se guarden sus datos
-export type ConsentStatus = 'granted' | 'not_requested' | 'refused' | 'withdrawn';
+// Por qué se pueden guardar los datos de esta persona:
+// - inquiry: ella nos contactó o pidió cotización (no hace falta preguntarle nada más)
+// - granted: autorizó que guardemos sus datos
+// - not_requested: prospecto; se le informa y pregunta en el primer contacto (plazo limitado)
+// - refused / withdrawn: no autoriza o revocó
+export type ConsentStatus = 'inquiry' | 'granted' | 'not_requested' | 'refused' | 'withdrawn';
 
 export type PrivacyRequestReason = 'erasure' | 'no_consent' | 'wrong_data' | 'other';
 

@@ -14,10 +14,49 @@ export const ORIGIN_LABEL: Record<NonNullable<Lead['dataOrigin']>, string> = {
 };
 
 export const CONSENT_LABEL: Record<NonNullable<Lead['consentStatus']>, string> = {
+  inquiry: 'Nos contactó o pidió cotización',
   granted: 'Autorizó que guardemos sus datos',
-  not_requested: 'Aún no se le pregunta',
+  not_requested: 'Prospecto: se le preguntará en el primer contacto',
   refused: 'No autoriza',
   withdrawn: 'Revocó su autorización',
+};
+
+// Un prospecto (no nos buscó y aún no se le pregunta) solo puede quedar guardado un tiempo acotado.
+// Si nadie habla con la persona en este plazo, sus datos se anonimizan solos.
+// Es una política de Revela (minimización y conservación, art. 3), no un plazo fijado por la ley.
+export const PROSPECT_RETENTION_DAYS = 30;
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+export const isPendingProspect = (lead: Lead): boolean =>
+  lead.consentStatus === 'not_requested' && !lead.anonymizedAt;
+
+/** Fecha en que vence el plazo del prospecto, o null si no es un prospecto pendiente. */
+export const prospectDeadline = (lead: Lead): Date | null => {
+  if (!isPendingProspect(lead)) return null;
+  const desde = new Date(lead.consentAt ?? lead.createdAt);
+  if (Number.isNaN(desde.getTime())) return null;
+  return new Date(desde.getTime() + PROSPECT_RETENTION_DAYS * DIA_MS);
+};
+
+/** Días que le quedan al prospecto (0 o negativo = vencido). */
+export const prospectDaysLeft = (lead: Lead, now: Date = new Date()): number | null => {
+  const limite = prospectDeadline(lead);
+  return limite ? Math.ceil((limite.getTime() - now.getTime()) / DIA_MS) : null;
+};
+
+/** Prospectos cuyo plazo ya venció sin que nadie hablara con la persona. */
+export const expiredProspects = (leads: Lead[], now: Date = new Date()): Lead[] =>
+  leads.filter((l) => {
+    const limite = prospectDeadline(l);
+    return limite !== null && limite.getTime() <= now.getTime();
+  });
+
+/** Respuesta que el vendedor registra en el primer contacto real con un prospecto. */
+export type FirstContactAnswer = 'granted' | 'refused' | 'unreachable';
+
+export const applyFirstContactAnswer = (lead: Lead, answer: FirstContactAnswer, at: string): Lead => {
+  if (!isPendingProspect(lead) || answer === 'unreachable') return lead;
+  return { ...lead, consentStatus: answer, consentAt: at, noContact: answer === 'refused' ? true : lead.noContact };
 };
 
 export const REQUEST_REASON_LABEL: Record<PrivacyRequestReason, string> = {
@@ -45,7 +84,10 @@ export const canContact = (lead: Lead): boolean =>
 
 /** Motivo corto para explicar en pantalla por qué un lead no se puede trabajar. */
 export const blockedReason = (lead: Lead): string | null => {
-  if (isAnonymized(lead)) return 'Datos personales eliminados a solicitud del titular';
+  if (isAnonymized(lead))
+    return lead.anonymizedReason === 'retention'
+      ? `Datos personales eliminados: pasaron ${PROSPECT_RETENTION_DAYS} días sin contactar al prospecto`
+      : 'Datos personales eliminados a solicitud del titular';
   if (isBlocked(lead)) return 'Bloqueado: hay una solicitud del titular pendiente de resolver';
   if (lead.noContact) return 'El titular pidió no ser contactado';
   if (lead.consentStatus === 'withdrawn') return 'El titular revocó su autorización';
@@ -77,7 +119,7 @@ export const openPrivacyRequest = (lead: Lead, data: NewPrivacyRequest): Lead =>
  * para que el historial y las métricas del CRM sigan cuadrando. La ley exige demostrar que el
  * dato ya no permite identificar a la persona: por eso no se guarda ningún seudónimo reversible.
  */
-export const anonymizeLead = (lead: Lead, at: string): Lead => ({
+export const anonymizeLead = (lead: Lead, at: string, reason: 'request' | 'retention' = 'request'): Lead => ({
   ...lead,
   fullName: 'Titular eliminado',
   jobTitle: undefined,
@@ -90,6 +132,7 @@ export const anonymizeLead = (lead: Lead, at: string): Lead => ({
   noContact: true,
   consentStatus: 'withdrawn',
   anonymizedAt: at,
+  anonymizedReason: reason,
 });
 
 export interface PrivacyDecision {

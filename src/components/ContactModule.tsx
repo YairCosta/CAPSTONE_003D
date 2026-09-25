@@ -17,7 +17,7 @@ import { COUNTRIES } from '../data/countries';
 import { AgendaPanel } from './AgendaPanel';
 import { pendingFollowUps } from '../lib/agenda';
 import { contactsOf, extraContactsCount, leadSubtitle, leadTitle } from '../lib/contacts';
-import { blockedReason, canContact } from '../lib/privacy';
+import { blockedReason, canContact, isPendingProspect, prospectDaysLeft, type FirstContactAnswer } from '../lib/privacy';
 import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
 import { Modal } from './ui';
@@ -34,6 +34,8 @@ interface ContactModuleProps {
   onSelectLead: (leadId: string) => void;
   // El titular pidió algo sobre sus datos: cualquier perfil lo registra, solo gerencia lo resuelve
   onRequestPrivacy?: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
+  // Prospecto: qué respondió la persona en el primer contacto sobre guardar sus datos
+  onRecordFirstContact?: (leadId: string, answer: FirstContactAnswer) => void;
   agentName?: string;
   showCountry?: boolean; // plan Internacional: muestra el país de cada lead
 }
@@ -46,6 +48,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
   onAddContact,
   onSelectLead,
   onRequestPrivacy,
+  onRecordFirstContact,
   agentName: currentAgentName = 'Carlos Mendoza',
   showCountry = false,
 }) => {
@@ -67,6 +70,8 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
   const [panel, setPanel] = useState<'agenda' | 'history'>('agenda');
   const [addingContact, setAddingContact] = useState(false);
   const [requestingPrivacy, setRequestingPrivacy] = useState<Lead | null>(null);
+  const [firstContactAnswer, setFirstContactAnswer] = useState<FirstContactAnswer | ''>('');
+  const [firstContactError, setFirstContactError] = useState<string | null>(null);
 
   const currentLead = leads.find((l) => l.id === activeLeadId);
   // Resumen para la pestaña Agenda: cuántos seguimientos hay y cuántos están atrasados
@@ -88,6 +93,12 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeLeadId || !summary.trim()) return;
+    const esProspecto = currentLead ? isPendingProspect(currentLead) : false;
+    if (esProspecto && !firstContactAnswer) {
+      setFirstContactError('Indica qué respondió la persona sobre guardar sus datos.');
+      document.getElementById('first-contact-answer')?.focus();
+      return;
+    }
 
     onAddActivity(
       {
@@ -102,6 +113,11 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
       autoAdvance ? suggestedStage : undefined
     );
 
+    if (esProspecto && firstContactAnswer && onRecordFirstContact) {
+      onRecordFirstContact(activeLeadId, firstContactAnswer);
+    }
+    setFirstContactAnswer('');
+    setFirstContactError(null);
     setSummary('');
     setNextFollowUpDate('');
   };
@@ -208,6 +224,13 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
             {blockedReason(currentLead) && (
               <p role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[13px] text-amber-200">
                 {blockedReason(currentLead)}: no registres nuevos contactos con esta persona.
+              </p>
+            )}
+            {isPendingProspect(currentLead) && (
+              <p role="status" className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-[13px] text-sky-200">
+                Prospecto: aún no sabe que tenemos sus datos. Al hablar con la persona, infórmale y pregúntale si
+                autoriza. Si nadie la contacta, sus datos se eliminan en{' '}
+                <strong>{Math.max(prospectDaysLeft(currentLead) ?? 0, 0)} días</strong>.
               </p>
             )}
             {leadContacts.length > 1 && (
@@ -326,6 +349,35 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
               <option value="rejected">Rechazado / No Interesado</option>
             </select>
           </div>
+
+          {currentLead && isPendingProspect(currentLead) && (
+            <div>
+              <label htmlFor="first-contact-answer" className="block text-sm font-bold text-slate-300 mb-1">
+                ¿Qué respondió sobre guardar sus datos? *
+              </label>
+              <select
+                id="first-contact-answer"
+                value={firstContactAnswer}
+                onChange={(e) => {
+                  setFirstContactAnswer(e.target.value as FirstContactAnswer);
+                  setFirstContactError(null);
+                }}
+                aria-invalid={!!firstContactError}
+                aria-describedby={firstContactError ? 'first-contact-error' : undefined}
+                className="w-full rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="" disabled>Elige una opción</option>
+                <option value="granted">Autoriza que guardemos sus datos</option>
+                <option value="refused">No autoriza: no contactar más</option>
+                <option value="unreachable">No se pudo hablar con la persona</option>
+              </select>
+              {firstContactError && (
+                <p id="first-contact-error" role="alert" className="mt-1 text-sm font-medium text-rose-300">
+                  {firstContactError}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Resumen / Notas */}
           <div>

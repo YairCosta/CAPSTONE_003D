@@ -190,6 +190,13 @@ const leadChip = () =>
 // Escribe directamente en el campo (la entrada simulada de Chrome headless no es fiable en pruebas largas)
 const typeInto = (selector, value) => fillInput(selector, value);
 
+// La captura exige declarar de dónde salió el dato y por qué se puede guardar (Ley 21.719)
+const declararBaseDelDato = async (origen = 'form', base = 'inquiry') => {
+  await page.select('#cap-origin', origen);
+  await page.select('#cap-consent', base);
+};
+
+
 // `partial` busca la opción que CONTENGA el texto: las opciones de lead incluyen
 // empresa, persona, etapa y monto, así que basta con nombrar a la persona.
 const selectByText = async (selector, text, partial = false) => {
@@ -313,6 +320,7 @@ try {
   await selectByText('#cap-account', 'Empresa Aislada A');
   await typeInto('#cap-rawAddress', 'Av. Providencia 100');
   await page.select('#cap-commune', 't-providencia');
+  await declararBaseDelDato();
   await clickText('button', 'Agregar producto o servicio');
   await sleep(200);
   await selectByText('#cap-item-0', 'Producto Aislado A');
@@ -415,6 +423,7 @@ try {
   await typeInto('#cap-newAccount', 'Empresa Aislada B');
   await typeInto('#cap-rawAddress', 'Av. Irarrázaval 500');
   await page.select('#cap-commune', 't-nunoa');
+  await declararBaseDelDato();
   await clickText('button', 'Guardar lead');
   await sleep(1200);
   check('Norte ahora tiene 4 leads', (await leadChip()) === '4 leads', await leadChip());
@@ -592,6 +601,7 @@ try {
   await typeInto('#cap-fullName', 'Lead Lima E2E');
   await typeInto('#cap-rawAddress', 'Av. Pardo 500');
   await page.select('#cap-commune', 'pe-miraflores');
+  await declararBaseDelDato();
   await clickText('button', 'Guardar lead');
   await sleep(1200);
   check('Perú ahora tiene 8 leads', (await leadChip()) === '8 leads', await leadChip());
@@ -908,17 +918,69 @@ try {
     auditoriaPrivacidad.slice(0, 200).replace(/\s+/g, ' ')
   );
 
-  // La captura pregunta de dónde salió el dato y si la persona autoriza
+  // Prospecto: en el primer contacto el vendedor tiene que registrar qué respondió la persona
+  await tab('Registro de contacto');
+  await sleep(500);
+  await tagElement(() => document.querySelector('main select'), 'e2e-prospecto');
+  await selectByText('#e2e-prospecto', 'Rosa Anticona', true);
+  await sleep(400);
+  check(
+    'El prospecto avisa que aún no sabe que tenemos sus datos y cuántos días quedan',
+    /Prospecto: aún no sabe que tenemos sus datos/.test(await mainText()),
+    (await mainText()).slice(0, 200).replace(/\s+/g, ' ')
+  );
+  await tagElement(() => document.querySelector('main textarea'), 'e2e-prospecto-resumen');
+  await typeInto('#e2e-prospecto-resumen', 'Primera llamada: se le explicó que guardamos sus datos');
+  await clickText('main button', 'Guardar Interacción');
+  await sleep(400);
+  check(
+    'No deja registrar el primer contacto sin la respuesta del prospecto',
+    (await page.evaluate(() => document.querySelector('#first-contact-error')?.textContent ?? '')).includes('respondió')
+  );
+  await page.select('#first-contact-answer', 'granted');
+  await clickText('main button', 'Guardar Interacción');
+  await sleep(700);
+  const trasPrimerContacto = await page.evaluate(() => ({
+    sigueProspecto: document.querySelector('main').innerText.includes('Prospecto: aún no sabe que tenemos sus datos'),
+    lead: document.querySelector('#e2e-prospecto')?.selectedOptions[0]?.text ?? '',
+  }));
+  check(
+    'Con la respuesta registrada, deja de ser prospecto y el contacto avanza la etapa',
+    !trasPrimerContacto.sigueProspecto && /CONTACTED/.test(trasPrimerContacto.lead),
+    JSON.stringify(trasPrimerContacto)
+  );
+
+  // La captura exige elegir de dónde salió el dato y por qué se puede guardar
   await clickText('header button', 'Capturar Lead');
   await sleep(600);
   const capturaPrivacidad = await page.evaluate(() => ({
     origen: [...(document.querySelector('#cap-origin')?.options ?? [])].map((o) => o.text).join(' | '),
-    consentimiento: [...(document.querySelector('#cap-consent')?.options ?? [])].map((o) => o.text).join(' | '),
+    base: [...(document.querySelector('#cap-consent')?.options ?? [])].map((o) => o.text).join(' | '),
+    origenVacio: document.querySelector('#cap-origin')?.value === '',
+    baseVacia: document.querySelector('#cap-consent')?.value === '',
   }));
   check(
-    'La captura pide el origen del dato y la autorización del titular',
-    capturaPrivacidad.origen.includes('Formulario web') && capturaPrivacidad.consentimiento.includes('No autoriza'),
-    JSON.stringify(capturaPrivacidad).slice(0, 200)
+    'La captura pide el origen y la base del dato, sin respuesta marcada',
+    capturaPrivacidad.origen.includes('Formulario web') &&
+      capturaPrivacidad.base.includes('pidió cotización') &&
+      capturaPrivacidad.base.includes('Prospecto') &&
+      capturaPrivacidad.origenVacio &&
+      capturaPrivacidad.baseVacia,
+    JSON.stringify(capturaPrivacidad).slice(0, 240)
+  );
+  await typeInto('#cap-fullName', 'Lead sin base E2E');
+  await typeInto('#cap-rawAddress', 'Av. Providencia 200');
+  await page.select('#cap-commune', 't-providencia');
+  await clickText('button', 'Guardar lead');
+  await sleep(500);
+  const erroresBase = await page.evaluate(() => ({
+    origen: document.querySelector('#err-origin')?.textContent ?? '',
+    base: document.querySelector('#err-consent')?.textContent ?? '',
+  }));
+  check(
+    'Sin elegir origen y base, el lead no se guarda',
+    erroresBase.origen.includes('salió') && erroresBase.base.includes('guardar'),
+    JSON.stringify(erroresBase)
   );
   await clickText('button', 'Cancelar');
   await sleep(300);

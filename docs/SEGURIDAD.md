@@ -13,8 +13,8 @@ lista, no puede hacerlo, aunque el usuario se lo pida y aunque el modelo se equi
 |---|---|
 | Buscar empresas en internet | `search_potential_leads`, vía Google Places. No toca el CRM. |
 | Buscar leads del propio CRM | `find_leads_in_crm`. Solo lectura, solo del CRM en sesión. |
-| Crear un lead nuevo | `save_lead_to_crm`. Queda en auditoría. |
-| Actualizar un lead existente | `save_lead_to_crm` sobre una coincidencia exacta: etapa, teléfono, correo y notas (las notas se **suman**, no se reemplazan). Queda en auditoría y se puede revertir. |
+| Crear un lead nuevo | `save_lead_to_crm`, **solo con datos de la empresa**: nombre, dirección, zona y teléfono de la empresa. El nombre y el correo de una persona se descartan aunque el modelo los envíe. Queda como prospecto ("se le preguntará en el primer contacto") y en auditoría. |
+| Actualizar un lead existente | `save_lead_to_crm` sobre una coincidencia exacta: etapa, teléfono y notas (las notas se **suman**, no se reemplazan). No escribe correos. Queda en auditoría y se puede revertir. |
 | Mover un lead de etapa | `update_lead_stage`, respetando la regla de perfiles. Queda en auditoría. |
 
 | NO puede | Por qué |

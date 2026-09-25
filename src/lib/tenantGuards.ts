@@ -8,9 +8,19 @@ import { isCountryCode, type CountryCode } from '../data/countries.ts';
 import { applyLeadValue } from './catalog.ts';
 import { isAllowedLeadCurrency } from './currency.ts';
 import { MAX_LEAD_CONTACTS } from './contacts.ts';
-import { anonymizeLead, isAnonymized, openPrivacyRequest, resolvePrivacyRequest, type NewPrivacyRequest, type PrivacyDecision } from './privacy.ts';
+import {
+  anonymizeLead,
+  applyFirstContactAnswer,
+  isAnonymized,
+  isPendingProspect,
+  openPrivacyRequest,
+  resolvePrivacyRequest,
+  type FirstContactAnswer,
+  type NewPrivacyRequest,
+  type PrivacyDecision,
+} from './privacy.ts';
 
-const CONSENT_VALUES: ConsentStatus[] = ['granted', 'not_requested', 'refused', 'withdrawn'];
+const CONSENT_VALUES: ConsentStatus[] = ['inquiry', 'granted', 'not_requested', 'refused', 'withdrawn'];
 const ORIGIN_VALUES: LeadDataOrigin[] = ['form', 'call', 'event', 'referral', 'public', 'ai'];
 
 export const isManager = (user: AppUser | null) => user?.role === 'manager';
@@ -210,6 +220,7 @@ export function sanitizeLeadUpdate(
     // La solicitud del titular y la anonimización solo cambian por su flujo propio, nunca editando
     privacyRequest: existing.privacyRequest,
     anonymizedAt: existing.anonymizedAt,
+    anonymizedReason: existing.anonymizedReason,
     contacts: sanitizeLeadContacts(updated.contacts, existing.id),
     items: sanitizeLeadItems(updated.items, catalog, tenantId),
     id: existing.id,
@@ -272,7 +283,19 @@ export function setLeadNoContact(
 /** Anonimización directa, solo para el vencimiento del plazo de conservación. */
 export function anonymizeLeadOfTenant(existing: Lead | undefined, tenantId: string | null, at: string): Lead | null {
   if (!tenantId || !existing || existing.companyId !== tenantId || isAnonymized(existing)) return null;
-  return anonymizeLead(existing, at);
+  return anonymizeLead(existing, at, 'retention');
+}
+
+/** Respuesta del prospecto en el primer contacto: solo cambia un prospecto pendiente de su CRM. */
+export function recordFirstContactAnswer(
+  existing: Lead | undefined,
+  tenantId: string | null,
+  answer: FirstContactAnswer,
+  at: string
+): Lead | null {
+  if (!tenantId || !existing || existing.companyId !== tenantId || !isPendingProspect(existing)) return null;
+  if (answer === 'unreachable') return null;
+  return applyFirstContactAnswer(existing, answer, at);
 }
 
 // Edición de empresa cliente: solo del propio tenant, sin moverla a otro y en un país habilitado

@@ -5,7 +5,7 @@ import { fromDraftItems, itemsSubtotal, type DraftLeadItem } from '../lib/catalo
 import { X, UserPlus, MapPin, Loader2, Save, AlertTriangle } from 'lucide-react';
 import { locateInCommune } from '../lib/geocoding';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
-import { ORIGIN_LABEL } from '../lib/privacy';
+import { ORIGIN_LABEL, PROSPECT_RETENTION_DAYS } from '../lib/privacy';
 import { COUNTRIES, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
 import { convert, leadCurrenciesFor, roundForCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
@@ -24,7 +24,7 @@ interface LeadCaptureModalProps {
   zones: { id: string; name: string; countryCode: CountryCode }[];
 }
 
-type FieldErrors = Partial<Record<'fullName' | 'newAccount' | 'email' | 'rawAddress' | 'commune', string>>;
+type FieldErrors = Partial<Record<'fullName' | 'newAccount' | 'email' | 'rawAddress' | 'commune' | 'origin' | 'consent', string>>;
 
 const NEW_ACCOUNT = '__new__';
 
@@ -76,8 +76,8 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
   // Moneda en que se negocia: parte con la del país y puede cambiarse a otra del CRM o a dólar
   const [currency, setCurrency] = useState<CurrencyCode>(COUNTRIES[defaultCountry].currency);
   // Ley 21.719: hay que poder decir de dónde salió el dato y qué respondió la persona
-  const [dataOrigin, setDataOrigin] = useState<LeadDataOrigin>('form');
-  const [consentStatus, setConsentStatus] = useState<ConsentStatus>('not_requested');
+  const [dataOrigin, setDataOrigin] = useState<LeadDataOrigin | ''>('');
+  const [consentStatus, setConsentStatus] = useState<ConsentStatus | ''>('');
   const { rates } = useMoney();
   const currencies = leadCurrenciesFor(countries);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -141,10 +141,14 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
     if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'El email no es válido.';
     if (!rawAddress.trim()) next.rawAddress = 'Ingresa la dirección.';
     if (!communeId || !sortedCommunes.some((z) => z.id === communeId)) next.commune = `Selecciona ${zoneWithArticle([country.code])}.`;
+    if (!dataOrigin) next.origin = 'Indica de dónde salió este contacto.';
+    if (!consentStatus) next.consent = 'Indica por qué podemos guardar sus datos.';
     return next;
   };
 
   const resetForm = () => {
+    setDataOrigin('');
+    setConsentStatus('');
     setFullName('');
     setJobTitle('');
     setAccountChoice('');
@@ -183,7 +187,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
     const found = validate();
     setErrors(found);
 
-    const firstInvalid = (['fullName', 'newAccount', 'email', 'rawAddress', 'commune'] as const).find((f) => found[f]);
+    const firstInvalid = (['fullName', 'newAccount', 'email', 'rawAddress', 'commune', 'origin', 'consent'] as const).find((f) => found[f]);
     if (firstInvalid) {
       document.getElementById(`cap-${firstInvalid}`)?.focus();
       return;
@@ -208,8 +212,8 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
       commercialStatus,
       ...leadValue(),
       rawAddress: rawAddress.trim(),
-      dataOrigin,
-      consentStatus,
+      dataOrigin: dataOrigin || undefined,
+      consentStatus: consentStatus || undefined,
       consentAt: new Date().toISOString(),
       noContact: consentStatus === 'refused',
       ...locateInCommune(communeId, rawAddress),
@@ -455,43 +459,71 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
               </div>
             </div>
 
-            {/* Origen del dato y respuesta del titular (Ley 21.719, arts. 12 a 14 ter) */}
+            {/* Origen del dato y por qué se pueden guardar (Ley 21.719, arts. 12, 13 y 14 ter).
+                Obligatorio y sin respuesta marcada: el vendedor tiene que elegir. */}
             <fieldset className="rounded-xl border border-slate-700 bg-slate-950/40 p-3">
               <legend className="px-1 text-sm font-bold uppercase tracking-wide text-slate-400">
                 Datos personales
               </legend>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="cap-origin" className={labelClass}>¿De dónde salió este contacto?</label>
+                  <label htmlFor="cap-origin" className={labelClass}>¿De dónde salió este contacto? *</label>
                   <select
                     id="cap-origin"
                     value={dataOrigin}
-                    onChange={(e) => setDataOrigin(e.target.value as LeadDataOrigin)}
-                    className={inputClass}
+                    onChange={(e) => {
+                      setDataOrigin(e.target.value as LeadDataOrigin);
+                      clearError('origin');
+                    }}
+                    aria-invalid={!!errors.origin}
+                    aria-describedby={errors.origin ? 'err-origin' : undefined}
+                    className={`${inputClass} ${errors.origin ? errorInput : ''}`}
                   >
-                    {(Object.keys(ORIGIN_LABEL) as LeadDataOrigin[]).map((key) => (
-                      <option key={key} value={key}>{ORIGIN_LABEL[key]}</option>
-                    ))}
+                    <option value="" disabled>Elige una opción</option>
+                    {(Object.keys(ORIGIN_LABEL) as LeadDataOrigin[])
+                      .filter((key) => key !== 'ai')
+                      .map((key) => (
+                        <option key={key} value={key}>{ORIGIN_LABEL[key]}</option>
+                      ))}
                   </select>
+                  <FieldError id="err-origin" message={errors.origin} />
                 </div>
                 <div>
-                  <label htmlFor="cap-consent" className={labelClass}>¿Autoriza que guardemos sus datos?</label>
+                  <label htmlFor="cap-consent" className={labelClass}>¿Por qué podemos guardar sus datos? *</label>
                   <select
                     id="cap-consent"
                     value={consentStatus}
-                    onChange={(e) => setConsentStatus(e.target.value as ConsentStatus)}
-                    className={inputClass}
-                    aria-describedby="cap-consent-ayuda"
+                    onChange={(e) => {
+                      setConsentStatus(e.target.value as ConsentStatus);
+                      clearError('consent');
+                    }}
+                    aria-invalid={!!errors.consent}
+                    aria-describedby={`cap-consent-ayuda${errors.consent ? ' err-consent' : ''}`}
+                    className={`${inputClass} ${errors.consent ? errorInput : ''}`}
                   >
-                    <option value="not_requested">Aún no se le pregunta</option>
-                    <option value="granted">Sí, autoriza</option>
+                    <option value="" disabled>Elige una opción</option>
+                    <option value="inquiry">Nos contactó o pidió cotización</option>
+                    <option value="granted">Autorizó que guardemos sus datos</option>
+                    <option value="not_requested">Prospecto: se le preguntará en el primer contacto</option>
                     <option value="refused">No autoriza</option>
                   </select>
+                  <FieldError id="err-consent" message={errors.consent} />
                 </div>
               </div>
               <p id="cap-consent-ayuda" className="mt-2 text-sm text-slate-400">
-                Si la persona no autoriza, el lead se guarda marcado como <strong>no contactar</strong> para
-                poder acreditar su decisión, y no aparecerá en la agenda ni para el asistente.
+                {consentStatus === 'not_requested' ? (
+                  <>
+                    Al hablar con la persona, infórmale que guardamos sus datos y pregúntale si autoriza. Si nadie
+                    la contacta en <strong>{PROSPECT_RETENTION_DAYS} días</strong>, sus datos se eliminan solos.
+                  </>
+                ) : consentStatus === 'refused' ? (
+                  <>
+                    El lead se guarda marcado como <strong>no contactar</strong> para poder acreditar su decisión, y
+                    no aparecerá en la agenda ni para el asistente.
+                  </>
+                ) : (
+                  'Si la persona pidió la cotización o nos escribió, no hace falta preguntarle nada más.'
+                )}
               </p>
             </fieldset>
 

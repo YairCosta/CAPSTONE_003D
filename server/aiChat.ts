@@ -124,14 +124,14 @@ export function buildToolDeclarations(countries: ChatCountry[]): FunctionDeclara
         'Crea un lead NUEVO en el CRM de la empresa del usuario y devuelve el ID. ' +
         'Úsala solo cuando el usuario pida explícitamente guardar o registrar una empresa que todavía no está en el CRM. ' +
         'Para cambiar la etapa de un lead que ya existe usa update_lead_stage, no esta herramienta. ' +
-        'Usa datos devueltos por la búsqueda o dichos por el usuario; no inventes teléfonos, correos ni direcciones.',
+        'Usa datos devueltos por la búsqueda o dichos por el usuario; no inventes teléfonos ni direcciones. ' +
+        'Registra solo la EMPRESA: no guardes nombres, cargos, correos ni celulares de personas, aunque los encuentres; ' +
+        'a la persona la agrega el vendedor en el primer contacto (ley chilena de datos personales).',
       parameters: {
         type: Type.OBJECT,
         properties: {
           company_name: { type: Type.STRING, description: 'Nombre de la empresa.' },
-          contact_name: { type: Type.STRING, description: 'Persona de contacto, si se conoce.' },
-          phone: { type: Type.STRING, description: 'Teléfono de contacto.' },
-          email: { type: Type.STRING, description: 'Correo de contacto.' },
+          phone: { type: Type.STRING, description: 'Teléfono de la empresa (central o recepción), nunca el celular de una persona.' },
           address: { type: Type.STRING, description: 'Dirección de la empresa.' },
           country: countryParam('País del lead. Debe coincidir con el país de la dirección.'),
           commune: {

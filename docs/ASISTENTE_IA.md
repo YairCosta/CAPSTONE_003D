@@ -60,7 +60,7 @@ Al conectar Supabase, puede moverse al servidor (insert en `leads` con RLS) sin 
 | `search_potential_leads` | `query`, `location`, `industry`, `country` | Servidor (Google Places) |
 | `find_leads_in_crm` | `query`*, `country` | Navegador |
 | `update_lead_stage` | `lead_id`*, `status`* | Navegador |
-| `save_lead_to_crm` | `company_name`*, `status`*, `contact_name`, `phone`, `email`, `address`, `commune`, `notes`, `estimated_value` | Navegador |
+| `save_lead_to_crm` | `company_name`*, `status`*, `phone` (de la empresa), `address`, `commune`, `notes`, `estimated_value` | Navegador |
 
 `status`: `nuevo`, `contactado`, `calificado`, `propuesta`, `pago_pendiente`, `ganado`, `perdido`.
 `commune`: una de las comunas con zona en el mapa; si falta, el lead queda en **Gerencia → Leads sin comuna**.
@@ -93,3 +93,19 @@ Ahora:
   en un backend (por ejemplo, una Supabase Edge Function o un servidor Node) y agregar autenticación y límite de uso.
 - El asistente puede mover leads de etapa, pero todavía no editar montos, zonas ni contactos: eso se hace a mano.
 - Sin `GOOGLE_PLACES_API_KEY` las empresas encontradas son ficticias (teléfonos `+56 9 5555 01xx`, dominios `.demo`).
+
+## Datos de personas: el asistente registra empresas, no personas
+
+Desde el 25-09-2026 el asistente **solo registra datos de la empresa**. La herramienta
+`save_lead_to_crm` ya no acepta nombre ni correo de una persona, y aunque el modelo los envíe, la
+aplicación los descarta (`src/App.tsx`, `handleAiSaveLead`).
+
+**Por qué:** que un dato de una persona sea público no autoriza a guardarlo. La Ley 21.719 exige una
+base legal y avisarle a la persona. Los datos de una **empresa** (nombre, dirección, rubro, teléfono
+de la oficina) no son datos personales. La búsqueda de Google Places ya devolvía solo eso.
+
+**Cómo queda el lead:** con el origen "Búsqueda del asistente", la persona como "Contacto por
+identificar" y la base "Prospecto: se le preguntará en el primer contacto". El vendedor agrega a la
+persona cuando habla con ella, y si nadie la contacta en 30 días, sus datos se eliminan solos
+(ver `docs/LEY_21719.md`).
+

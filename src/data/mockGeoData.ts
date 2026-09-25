@@ -878,6 +878,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g1',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'form',
+    consentStatus: 'inquiry',
+    consentAt: '2026-06-18T09:15:00Z',
     countryCode: 'CL',
     fullName: 'Paulina Ibáñez',
     jobTitle: 'Jefa de Informática',
@@ -900,6 +903,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g2',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'call',
+    consentStatus: 'granted',
+    consentAt: '2026-07-01T11:40:00Z',
     countryCode: 'CL',
     fullName: 'Ignacio Bravo',
     jobTitle: 'Gerente de Operaciones',
@@ -926,6 +932,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g3',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'referral',
+    consentStatus: 'granted',
+    consentAt: '2026-08-22T16:05:00Z',
     countryCode: 'CL',
     fullName: 'Carolina Peña',
     jobTitle: 'Subgerenta de Tecnología',
@@ -951,6 +960,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g4',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'form',
+    consentStatus: 'inquiry',
+    consentAt: '2026-09-05T08:50:00Z',
     countryCode: 'CL',
     fullName: 'Héctor Navarro',
     jobTitle: 'Jefe de Operaciones',
@@ -975,6 +987,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g5',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'event',
+    consentStatus: 'granted',
+    consentAt: '2026-06-30T14:00:00Z',
     countryCode: 'CL',
     fullName: 'Marcela Zúñiga',
     jobTitle: 'Directora de Tecnologías de la Información',
@@ -997,6 +1012,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g6',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'referral',
+    consentStatus: 'inquiry',
+    consentAt: '2026-07-14T10:30:00Z',
     countryCode: 'PE',
     fullName: 'Diego Ramírez',
     jobTitle: 'Gerente de Administración',
@@ -1019,6 +1037,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g7',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'call',
+    consentStatus: 'granted',
+    consentAt: '2026-08-04T09:20:00Z',
     countryCode: 'PE',
     fullName: 'Patricia Chávez',
     jobTitle: 'Jefa de Operaciones',
@@ -1044,6 +1065,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g8',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'form',
+    consentStatus: 'inquiry',
+    consentAt: '2026-09-01T13:10:00Z',
     countryCode: 'PE',
     fullName: 'Álvaro Mendoza',
     jobTitle: 'Dueño / Socio',
@@ -1066,6 +1090,9 @@ const baseLeads: Lead[] = [
   {
     id: 'lead-g9',
     companyId: TENANT_DEMO_ID,
+    dataOrigin: 'public',
+    consentStatus: 'not_requested',
+    consentAt: '2026-09-18T11:25:00Z',
     countryCode: 'PE',
     fullName: 'Rosa Anticona',
     jobTitle: 'Asistente de Administración',

@@ -23,8 +23,18 @@ import {
   resolveLeadPrivacy,
   setLeadNoContact,
   anonymizeLeadOfTenant,
+  recordFirstContactAnswer,
 } from '../src/lib/tenantGuards.ts';
-import { blockedReason, canContact, isAnonymized, isBlocked } from '../src/lib/privacy.ts';
+import {
+  PROSPECT_RETENTION_DAYS,
+  blockedReason,
+  canContact,
+  expiredProspects,
+  isAnonymized,
+  isBlocked,
+  isPendingProspect,
+  prospectDaysLeft,
+} from '../src/lib/privacy.ts';
 import { MAX_LEAD_CONTACTS } from '../src/lib/contacts.ts';
 import { countsByDay, monthGrid, pendingFollowUps } from '../src/lib/agenda.ts';
 import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from '../src/lib/aiLeadMatch.ts';
@@ -895,6 +905,54 @@ test('Privacidad: el origen y el consentimiento solo aceptan valores conocidos',
   const conSolicitud = requestLeadPrivacy(base, A, solicitud)!;
   const editado = sanitizeLeadUpdate(conSolicitud, { ...conSolicitud, privacyRequest: undefined }, A, [], ['CL'], ZONES, [], 'manager')!;
   assert.equal(editado.privacyRequest?.status, 'pending');
+});
+
+test('Prospecto: vence a los 30 días sin contactar y no antes', () => {
+  const creado = '2026-09-01T00:00:00Z';
+  const prospecto = lead('l-pros', A, { consentStatus: 'not_requested', consentAt: creado, createdAt: creado });
+  const dia = 24 * 60 * 60 * 1000;
+  const antes = new Date(new Date(creado).getTime() + (PROSPECT_RETENTION_DAYS - 1) * dia);
+  const despues = new Date(new Date(creado).getTime() + PROSPECT_RETENTION_DAYS * dia + 1);
+  assert.equal(isPendingProspect(prospecto), true);
+  assert.equal(prospectDaysLeft(prospecto, antes), 1);
+  assert.equal(expiredProspects([prospecto], antes).length, 0);
+  assert.equal(expiredProspects([prospecto], despues).length, 1);
+  // Quien nos pidió cotización o autorizó nunca vence por esta regla
+  const cotizo = lead('l-cot', A, { consentStatus: 'inquiry', createdAt: creado });
+  const autorizo = lead('l-aut', A, { consentStatus: 'granted', createdAt: creado });
+  const sinRegistro = lead('l-legacy', A, { createdAt: creado });
+  assert.equal(expiredProspects([cotizo, autorizo, sinRegistro], despues).length, 0);
+  assert.equal(canContact(cotizo), true);
+});
+
+test('Prospecto vencido: se anonimiza con el motivo del plazo, no como pedido del titular', () => {
+  const prospecto = lead('l-pros2', A, { consentStatus: 'not_requested', email: 'x@y.cl', createdAt: '2026-08-01T00:00:00Z' });
+  const anonimo = anonymizeLeadOfTenant(prospecto, A, '2026-09-25T00:00:00Z')!;
+  assert.equal(anonimo.email, undefined);
+  assert.equal(anonimo.anonymizedReason, 'retention');
+  assert.match(blockedReason(anonimo) ?? '', /sin contactar/);
+  assert.equal(isPendingProspect(anonimo), false);
+  // Otro CRM no puede vencer mis prospectos
+  assert.equal(anonymizeLeadOfTenant(prospecto, B, '2026-09-25T00:00:00Z'), null);
+});
+
+test('Prospecto: la respuesta en el primer contacto cierra el plazo', () => {
+  const prospecto = lead('l-pros3', A, { consentStatus: 'not_requested' });
+  const autoriza = recordFirstContactAnswer(prospecto, A, 'granted', '2026-09-25T10:00:00Z')!;
+  assert.equal(autoriza.consentStatus, 'granted');
+  assert.equal(isPendingProspect(autoriza), false);
+  assert.equal(canContact(autoriza), true);
+
+  const noAutoriza = recordFirstContactAnswer(prospecto, A, 'refused', '2026-09-25T10:00:00Z')!;
+  assert.equal(noAutoriza.consentStatus, 'refused');
+  assert.equal(noAutoriza.noContact, true);
+  assert.equal(canContact(noAutoriza), false);
+
+  // "No se pudo hablar" no cuenta como informar: sigue siendo prospecto y el plazo sigue corriendo
+  assert.equal(recordFirstContactAnswer(prospecto, A, 'unreachable', '2026-09-25T10:00:00Z'), null);
+  // Solo aplica a prospectos pendientes de su propio CRM
+  assert.equal(recordFirstContactAnswer(prospecto, B, 'granted', '2026-09-25T10:00:00Z'), null);
+  assert.equal(recordFirstContactAnswer(autoriza, A, 'refused', '2026-09-25T10:00:00Z'), null);
 });
 
 // ------------------------------------------------------------------ reporte

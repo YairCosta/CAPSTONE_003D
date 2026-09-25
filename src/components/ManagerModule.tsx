@@ -6,7 +6,7 @@ import { CatalogManager } from './CatalogManager';
 import { LeadItemsEditor } from './LeadItemsEditor';
 import { fromDraftItems, itemsSubtotal, toDraftItems, type DraftLeadItem } from '../lib/catalog';
 import { extraContactsCount, leadTitle } from '../lib/contacts';
-import { blockedReason, isAnonymized, isBlocked } from '../lib/privacy';
+import { blockedReason, isAnonymized, isBlocked, isPendingProspect, prospectDaysLeft } from '../lib/privacy';
 import { PrivacyDecisionModal, PrivacyRequestModal } from './PrivacyRequestModal';
 import { convert, leadCurrenciesFor, leadCurrency, roundForCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
@@ -725,6 +725,11 @@ function ContactsSection({
                       {extraContactsCount(lead) > 0 && (
                         <div className="mt-1 text-sm font-semibold text-indigo-300">
                           +{extraContactsCount(lead)} {extraContactsCount(lead) === 1 ? 'contacto más' : 'contactos más'}
+                        </div>
+                      )}
+                      {isPendingProspect(lead) && (
+                        <div className="mt-1" title="Aún no se le pregunta si autoriza; si nadie la contacta, sus datos se eliminan solos">
+                          <Pill tone="indigo">Prospecto · {Math.max(prospectDaysLeft(lead) ?? 0, 0)} días</Pill>
                         </div>
                       )}
                       {blockedReason(lead) && (

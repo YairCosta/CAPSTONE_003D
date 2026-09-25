@@ -47,6 +47,8 @@ import {
   canResolvePrivacyRequest,
   requestLeadPrivacy,
   resolveLeadPrivacy,
+  recordFirstContactAnswer,
+  anonymizeLeadOfTenant,
 } from './lib/tenantGuards';
 import { CONFIDENT_MATCH, findDuplicateCandidates, findLeadMatches } from './lib/aiLeadMatch';
 import { AI_WRITE_LIMIT_ERROR, MAX_AI_WRITES_PER_SESSION, safeForModel } from './lib/aiSafety';
@@ -54,7 +56,14 @@ import type { ZoneMetric } from './lib/metrics';
 import { KpiSearchBar, applyKpiFilters, emptyKpiFilters, type KpiFilters } from './components/KpiSearchBar';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { validatePasswordChange } from './lib/passwords';
-import { REQUEST_REASON_LABEL, blockedReason, canContact } from './lib/privacy';
+import {
+  PROSPECT_RETENTION_DAYS,
+  REQUEST_REASON_LABEL,
+  blockedReason,
+  canContact,
+  expiredProspects,
+  type FirstContactAnswer,
+} from './lib/privacy';
 import { buildSubjectExport } from './lib/subjectExport';
 import { leadTitle } from './lib/contacts';
 import { mockTerritories, defaultStageConfigs, demoAccounts, platformAdminAccount, platformAdminUser, demoDataFor } from './data/mockGeoData';
@@ -582,9 +591,12 @@ export function App() {
     const status = AI_STATUS[normalize(text(args.status))] ?? 'new';
     const statusLabel = stageConfigs.find((s) => s.id === status)?.label ?? status;
 
-    const contactName = text(args.contact_name);
+    // El asistente registra empresas, no personas: aunque el modelo envíe un nombre o un correo, se
+    // descartan. A la persona la agrega el vendedor en el primer contacto real (Ley 21.719: los datos
+    // de una persona no se recolectan de fuentes públicas sin base ni aviso).
+    const contactName = '';
     const phone = text(args.phone) || undefined;
-    const email = text(args.email) || undefined;
+    const email = undefined;
     const notes = text(args.notes) || undefined;
     // País: el indicado por la IA (código o nombre), el de la zona indicada o el primero visible
     const countryArg = normalize(text(args.country));
@@ -654,7 +666,7 @@ export function App() {
 
     const leadId = handleAddLead({
       countryCode,
-      fullName: contactName || companyName,
+      fullName: 'Contacto por identificar',
       companyName,
       phone,
       email,
@@ -1150,6 +1162,58 @@ export function App() {
     });
   };
 
+  // Prospecto: en el primer contacto real se registra qué respondió sobre guardar sus datos
+  const handleRecordFirstContact = (leadId: string, answer: FirstContactAnswer) => {
+    const lead = allLeads.find((l) => l.id === leadId);
+    const at = new Date().toISOString();
+    const safe = recordFirstContactAnswer(lead, tenantId, answer, at);
+    if (!safe) return;
+    // Se aplica sobre el estado más reciente: el registro de contacto recién guardado también
+    // actualiza este lead (fecha de contacto y etapa) y no debe perderse
+    setAllLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? recordFirstContactAnswer(l, tenantId, answer, at) ?? l : l))
+    );
+    record({
+      companyId: safe.companyId,
+      action: 'update',
+      entity: 'lead',
+      entityId: safe.id,
+      entityLabel: leadTitle(safe),
+      summary:
+        answer === 'granted'
+          ? 'Primer contacto: el titular autorizó que guardemos sus datos'
+          : 'Primer contacto: el titular no autoriza; queda marcado como no contactar',
+    });
+  };
+
+  // Prospectos sin contactar dentro del plazo: se anonimizan solos. Aquí corre al abrir el CRM; en
+  // producción lo hace un job programado en la base (ver docs/LEY_21719.md).
+  useEffect(() => {
+    if (!tenantId || !currentUser) return;
+    const ahora = new Date();
+    const vencidos = expiredProspects(allLeads.filter((l) => l.companyId === tenantId), ahora);
+    if (vencidos.length === 0) return;
+    const at = ahora.toISOString();
+    const anonimizados = vencidos
+      .map((l) => anonymizeLeadOfTenant(l, tenantId, at))
+      .filter((l): l is Lead => l !== null);
+    if (anonimizados.length === 0) return;
+    const porId = new Map(anonimizados.map((l) => [l.id, l]));
+    setAllLeads((prev) => prev.map((l) => porId.get(l.id) ?? l));
+    for (const lead of anonimizados) {
+      record({
+        companyId: lead.companyId,
+        action: 'update',
+        entity: 'lead',
+        entityId: lead.id,
+        entityLabel: leadTitle(lead),
+        summary: `Datos personales eliminados automáticamente: prospecto sin contactar en ${PROSPECT_RETENTION_DAYS} días`,
+      });
+    }
+    // record es estable en la práctica; solo importa reaccionar a los leads y al CRM activo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLeads, tenantId, currentUser?.id]);
+
   // Informe con todo lo que el CRM guarda de una persona (derechos de acceso y portabilidad)
   const handleDownloadSubjectReport = async (leadId: string) => {
     const lead = allLeads.find((l) => l.id === leadId);
@@ -1494,6 +1558,7 @@ export function App() {
             onAddContact={handleAddLeadContact}
             onSelectLead={setSelectedLeadIdForContact}
             onRequestPrivacy={handleRequestPrivacy}
+            onRecordFirstContact={handleRecordFirstContact}
             agentName={currentUser.fullName}
             showCountry={isMultiCountry}
           />
