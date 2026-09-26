@@ -1323,6 +1323,11 @@
       "sha256": "f3592ecfd06581202d67f0dd40a50eab061ecd8da6d0c23e5e06047011291f96"
     },
     {
+      "archivo": "evidence/prueba-crm-supabase-2026-09-26.txt",
+      "bytes": 4578,
+      "sha256": "bfdb45cdd051aa1f887f61a680854af72c9a3341743002f9e39c3d0381b73a34"
+    },
+    {
       "archivo": "evidence/prueba-equipo-auditoria-supabase-2026-09-26.txt",
       "bytes": 3270,
       "sha256": "9ad23e8d6746d9760b7d30307a3ca503bde37e3a3bbf31d042bbaa620d3f5430"
@@ -1334,8 +1339,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 11240,
-      "sha256": "216b90e713772b4f499ce477231adae443f4b09901574640b44b0a0cbbdc7958"
+      "bytes": 12693,
+      "sha256": "1ccc6271edb061ca3aba441d8722d6a7eb9e70a945d7457b969c0da4830c130f"
     },
     {
       "archivo": "legal-status.md",
@@ -1403,5 +1408,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-26T17:03:18.865Z"
+  "generadoUtc": "2026-09-26T23:27:27.856Z"
 }

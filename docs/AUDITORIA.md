@@ -57,7 +57,7 @@ La regla está en `canChangeStage()` (`src/lib/tenantGuards.ts`) y se aplica **t
 - **La base firma cada entrada** (trigger `trg_audit_log_set_actor`, 0015): pone el nombre y el rol del perfil de la sesión, la hora de la base y la deja sin revertir. La app no puede atribuirle un cambio a otra persona ni fecharlo en el pasado.
 - **El administrador de la plataforma** registra sus acciones (crear un CRM, activarlo, cambiar el plan, invitar o editar usuarios) en el historial del CRM afectado (política `Auditoría: registro plataforma`, 0015). No puede leer ese historial: es de la gerencia del CRM.
 
-Con `VITE_DATA_SOURCE=supabase`, hoy van a la base las entradas de **CRMs y usuarios** (`CONNECTED_AUDIT_ENTITIES` en `src/lib/db/mappers.ts`); las de leads, empresas, catálogo y etapas se suman cuando se conecte su módulo. La gerencia ve al entrar las 500 entradas más recientes. Si una entrada no alcanza a llegar a la base, la app avisa que el cambio se guardó pero no quedó registrado.
+Con `VITE_DATA_SOURCE=supabase`, van a la base las entradas de **CRMs, usuarios, leads, empresas cliente, catálogo y registros de contacto** (`CONNECTED_AUDIT_ENTITIES` en `src/lib/db/mappers.ts`); la configuración de etapas y la exportación se suman con su etapa. El estado anterior para **"Volver atrás"** se guarda en `revert_snapshot` (sin datos personales) y el tipo de reversión se deduce del dato y la acción (`revertKindFor`). Revertir restaura el dato con la misma sincronización del resto de la app y marca la entrada original con `mark_audit_entry_reverted()`. La gerencia ve al entrar las 500 entradas más recientes. Si una entrada no alcanza a llegar a la base, la app avisa que el cambio se guardó pero no quedó registrado.
 
 ## Pruebas
 

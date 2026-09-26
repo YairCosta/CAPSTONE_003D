@@ -7,8 +7,14 @@ export interface DbErrorLike {
   status?: number | null;
 }
 
+// Mensajes técnicos de PostgreSQL/PostgREST: nombran tablas, políticas o restricciones
+const TECNICO = /row-level security|permission denied|violates|constraint|relation |column |syntax|function |duplicate key/i;
+
 export function dbErrorMessage(error: DbErrorLike | null | undefined, fallback: string): string {
   if (!error) return fallback;
+  // Los triggers de Revela también usan 42501 y 23514, pero con mensajes escritos para la persona
+  const propio = error.message?.trim();
+  if ((error.code === '42501' || error.code === '23514') && propio && !TECNICO.test(propio)) return propio;
   switch (error.code) {
     case '23505':
       return 'Ya existe un registro con esos datos (por ejemplo, el mismo identificador o email).';

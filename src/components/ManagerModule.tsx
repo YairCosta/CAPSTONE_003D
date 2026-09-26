@@ -947,7 +947,7 @@ function LeadContactModal({
       valueSource: manual ? 'manual' : 'items',
       estimatedDealValue: manual ? Math.max(0, Number(dealValue) || 0) : itemsSubtotal(leadItems),
     };
-    if (locationChanged) updated = { ...updated, ...locateInCommune(communeId, rawAddress) };
+    if (locationChanged) updated = { ...updated, ...locateInCommune(territories.find((t) => t.territoryId === communeId), rawAddress) };
     onSave(updated);
   };
 
@@ -1131,7 +1131,7 @@ function QueueSection({
       return;
     }
     const address = (drafts[lead.id] ?? lead.rawAddress).trim() || lead.rawAddress;
-    onUpdateLead({ ...lead, rawAddress: address, ...locateInCommune(territoryId, address) });
+    onUpdateLead({ ...lead, rawAddress: address, ...locateInCommune(territories.find((t) => t.territoryId === territoryId), address) });
     setResolved((prev) => [`${lead.fullName} quedó ubicado en ${communeName(territoryId)}`, ...prev].slice(0, 4));
   };
 

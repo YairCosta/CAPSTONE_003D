@@ -9,7 +9,8 @@
 //   1. Sumar su código a CountryCode (ej. 'AR') y su moneda a CurrencyCode si es nueva (ej. 'ARS').
 //   2. Agregar su configuración en COUNTRIES (zoneLabel: { singular: 'Provincia', plural: 'Provincias', gender: 'f' }, etc.).
 //   3. Agregar la moneda y su tasa en src/lib/currency.ts.
-//   4. Cargar sus zonas (polígonos) con countryCode 'AR' en la tabla territories (mock: mockTerritories).
+//   4. Cargar sus zonas (polígonos) con country_code 'AR' en zone_catalog (se copian solas a cada CRM que
+//      habilite el país) y, para la demo, en mockTerritories.
 //   5. Habilitarlo en la migración (tabla countries) y activarlo por empresa desde Administración.
 
 export type CountryCode = 'CL' | 'PE';

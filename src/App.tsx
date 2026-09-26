@@ -17,9 +17,18 @@ import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswor
 import { insertCompany, inviteUser, loadPlatform, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
 import { loadAuditLog, saveAuditEntry } from './lib/db/audit';
 import { isAuditEntityConnected } from './lib/db/mappers';
+import {
+  applySyncOps,
+  insertPrivacyRequest,
+  loadTenantData,
+  markAuditReverted,
+  resolvePrivacyRequest,
+  type TenantData,
+} from './lib/db/crm';
+import { acceptLeads, diffTenantData, snapshotFor, type TenantSnapshot } from './lib/db/sync';
 import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
-import { newId } from './lib/ids';
+import { newId, newUuid } from './lib/ids';
 import { CountryBar } from './components/CountryBar';
 import { CountryFlag } from './components/CountryFlag';
 import { COUNTRIES, type CountryCode } from './data/countries';
@@ -104,6 +113,7 @@ import type {
   NewCompany,
   PrivacyRequestReason,
   StageConfig,
+  TerritoryMetric,
 } from './types/crm';
 import { ROLE_LABEL, ROLE_TABS, authenticate, canCaptureLeads, canMoveLeadBackwards, canRevertChanges, type ActiveTab } from './lib/permissions';
 import { Users, Target, CheckCircle2, DollarSign, Trophy, Map as MapIcon, Boxes, Database, Loader2 } from 'lucide-react';
@@ -208,6 +218,8 @@ export function App() {
   const [allLeads, setAllLeads] = useState<Lead[]>(initialData.leads);
   const [allActivities, setAllActivities] = useState<LeadActivity[]>(initialData.activities);
   const [catalog, setCatalog] = useState<CatalogItem[]>(initialData.catalog);
+  // Zonas: en la demo, las de ejemplo; con Supabase, las del CRM en la base (con su polígono)
+  const [territories, setTerritories] = useState<TerritoryMetric[]>(db ? [] : mockTerritories);
   // Historial de auditoría: se agrega, nunca se edita ni se borra
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   // Configuración del pipeline por CRM: la edición de un tenant no afecta a otro
@@ -223,6 +235,15 @@ export function App() {
   const [authNotice, setAuthNotice] = useState<string | null>(db ? initialAuthLinkError : null);
   // Con Supabase: un cambio guardado cuya entrada de auditoría no llegó a la base
   const [auditWarning, setAuditWarning] = useState<string | null>(null);
+  // Con Supabase: un cambio que la base rechazó (la app vuelve a cargar lo que de verdad quedó)
+  const [syncError, setSyncError] = useState<string | null>(null);
+  // Lo último que quedó guardado en la base: cada cambio del estado se compara con esto
+  const synced = useRef<TenantSnapshot | null>(null);
+  // Llamadas que no son una diferencia de datos (derechos del titular, marcar una reversión)
+  const pendingCalls = useRef<((client: NonNullable<typeof db>) => Promise<string | null>)[]>([]);
+  const [syncTick, setSyncTick] = useState(0);
+  // Una escritura a la vez y en orden: una empresa antes que su lead, un lead antes que su bitácora
+  const writeChain = useRef<Promise<void>>(Promise.resolve());
   const [activeTab, setActiveTab] = useState<ActiveTab>('kpi');
   const [selectedTerritoryId, setSelectedTerritoryId] = useState<string | null>(null);
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
@@ -257,8 +278,8 @@ export function App() {
   }, [countrySelection, enabledCountries]);
   const isMultiCountry = selectedCountries.length > 1;
   const tenantTerritories = useMemo(
-    () => mockTerritories.filter((t) => enabledCountries.includes(t.countryCode)),
-    [enabledCountries]
+    () => territories.filter((t) => enabledCountries.includes(t.countryCode)),
+    [territories, enabledCountries]
   );
   const visibleTerritories = useMemo(
     () => tenantTerritories.filter((t) => selectedCountries.includes(t.countryCode)),
@@ -293,8 +314,7 @@ export function App() {
 
   // ---------- Auditoría: quién hizo qué y cuándo ----------
   const auditContext: AuditContext = {
-    zoneName: (territoryId) =>
-      mockTerritories.find((t) => t.territoryId === territoryId)?.territoryName ?? 'Sin zona',
+    zoneName: (territoryId) => territories.find((t) => t.territoryId === territoryId)?.territoryName ?? 'Sin zona',
     itemName: (itemId) => catalog.find((i) => i.id === itemId)?.name ?? 'Ítem',
     stageLabel: (stage) => stageConfigs.find((s) => s.id === stage)?.label ?? stage,
   };
@@ -303,7 +323,7 @@ export function App() {
     if (!currentUser) return;
     // Con Supabase, lo que ya vive en la base deja también su historial en la base
     const persist = db !== null && isAuditEntityConnected(data.entity);
-    const entry = buildAuditEntry(data, currentUser, persist ? crypto.randomUUID() : newId('audit'));
+    const entry = buildAuditEntry(data, currentUser, persist ? newUuid() : newId('audit'));
     setAuditLog((prev) => [entry, ...prev]);
     if (db && persist) {
       void saveAuditEntry(db, entry).then((error) => {
@@ -311,6 +331,58 @@ export function App() {
       });
     }
   };
+  // Ids: con Supabase, UUID (el tipo de las columnas id); en la demo, legibles con prefijo
+  const recordId = (prefix: string) => (db ? newUuid() : newId(prefix));
+
+  // ---------- Sincronización con la base (Supabase) ----------
+  // Todo lo del CRM, tal como está en la base
+  const applyTenantData = (companyId: string, data: TenantData) => {
+    synced.current = snapshotFor(companyId, data);
+    setAccounts(data.accounts);
+    setAllLeads(data.leads);
+    setAllActivities(data.activities);
+    setCatalog(data.catalog);
+    setTerritories(data.territories);
+  };
+
+  const loadTenant = async (companyId: string): Promise<string | null> => {
+    if (!db) return null;
+    const datos = await loadTenantData(db, companyId);
+    if (!datos.ok) return datos.error;
+    applyTenantData(companyId, datos.data);
+    return null;
+  };
+
+  const enqueueCall = (call: (client: NonNullable<typeof db>) => Promise<string | null>) => {
+    pendingCalls.current.push(call);
+    setSyncTick((t) => t + 1);
+  };
+
+  // Cada cambio del CRM (desde cualquier módulo o desde el asistente) se compara con lo guardado y
+  // solo la diferencia va a la base. Si la base rechaza algo, se avisa y se recarga lo real.
+  useEffect(() => {
+    if (!db || !tenantId || !currentUser || !synced.current) return;
+    const next = snapshotFor(tenantId, { leads: allLeads, accounts, activities: allActivities, catalog });
+    const ops = diffTenantData(synced.current, next);
+    synced.current = next;
+    const calls = pendingCalls.current.splice(0);
+    if (ops.length === 0 && calls.length === 0) return;
+    const userId = currentUser.id;
+    const companyId = tenantId;
+    writeChain.current = writeChain.current.then(async () => {
+      let error = ops.length > 0 ? await applySyncOps(db, ops, { userId }) : null;
+      for (const call of calls) {
+        if (error) break;
+        error = await call(db);
+      }
+      if (!error) return;
+      const recarga = await loadTenant(companyId);
+      setSyncError(recarga ? `${error} Tampoco se pudieron recargar los datos: ${recarga}` : error);
+    });
+    // Se compara solo cuando cambian los datos del CRM o hay llamadas pendientes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLeads, accounts, allActivities, catalog, syncTick]);
+
   const canAdminister = isSuperadmin(currentUser) && isSessionValid;
 
   const allowedTabs = currentUser ? ROLE_TABS[currentUser.role] : [];
@@ -400,8 +472,17 @@ export function App() {
     const visibles = plataforma.data.users.some((u) => u.id === user.id)
       ? plataforma.data.users
       : [user, ...plataforma.data.users];
+    // El trabajo diario del CRM: sin él no se puede operar, así que un error impide entrar
+    if (user.role !== 'superadmin' && company) {
+      const cargado = await loadTenant(company.id);
+      if (cargado) {
+        await signOut(db);
+        return cargado;
+      }
+    }
     // El historial es de la gerencia del CRM (RLS no se lo muestra a nadie más)
-    const historial = user.role === 'manager' && company ? await loadAuditLog(db, company.id) : null;
+    const nombreDe = (id: string) => visibles.find((u) => u.id === id)?.fullName;
+    const historial = user.role === 'manager' && company ? await loadAuditLog(db, company.id, nombreDe) : null;
     setCompanies(plataforma.data.companies);
     setUsers(visibles);
     setAuditLog(historial?.ok ? historial.data : []);
@@ -462,6 +543,10 @@ export function App() {
       setAuditLog([]);
       setComplianceAccessLog([]);
       setAuditWarning(null);
+      setTerritories([]);
+      setSyncError(null);
+      synced.current = null;
+      pendingCalls.current = [];
     }
     setPasswordLink(null);
     setSessionUserId(null);
@@ -516,7 +601,7 @@ export function App() {
     if (!lead || !data.fullName.trim()) return;
     handleUpdateLead({
       ...lead,
-      contacts: [...(lead.contacts ?? []), { ...data, id: newId('contact') }],
+      contacts: [...(lead.contacts ?? []), { ...data, id: recordId('contact') }],
     });
   };
 
@@ -533,7 +618,7 @@ export function App() {
         ? advanceStageTo
         : undefined;
 
-    setAllActivities((prev) => [{ ...activityData, companyId: tenantId, id: newId('act'), createdAt: now }, ...prev]);
+    setAllActivities((prev) => [{ ...activityData, companyId: tenantId, id: recordId('act'), createdAt: now }, ...prev]);
     setAllLeads((prev) =>
       prev.map((l) =>
         l.id === activityData.leadId && l.companyId === tenantId
@@ -578,7 +663,7 @@ export function App() {
       ? tenantAccounts.find((a) => a.countryCode === input.countryCode && a.name.toLowerCase() === name.toLowerCase())
       : undefined;
     if (name && !account) {
-      account = { id: newId('acc'), companyId: tenantId, countryCode: input.countryCode, name, isActive: true, createdAt: now };
+      account = { id: recordId('acc'), companyId: tenantId, countryCode: input.countryCode, name, isActive: true, createdAt: now };
       const created = account;
       setAccounts((prev) => [...prev, created]);
     }
@@ -590,7 +675,7 @@ export function App() {
       // Moneda negociada: solo una permitida para el CRM; si no, la del país del lead
       currency: isAllowedLeadCurrency(input.currency, enabledCountries) ? input.currency : undefined,
       items: sanitizeLeadItems(input.items, tenantCatalog, tenantId),
-      id: newId('lead'),
+      id: recordId('lead'),
       companyId: tenantId,
       clientAccountId: account?.id,
       companyName: account?.name,
@@ -788,7 +873,7 @@ export function App() {
 
     const rawAddress = text(args.address) || 'Dirección por confirmar';
     const location = commune
-      ? locateInCommune(commune.territoryId, rawAddress)
+      ? locateInCommune(commune, rawAddress)
       : { geocodingStatus: 'manual_review' as const };
     const estimated = Number(args.estimated_value);
 
@@ -890,7 +975,7 @@ export function App() {
   // ---------- Catálogo de productos y servicios ----------
   const handleCreateCatalogItem = (data: NewCatalogItem) => {
     if (!canManage || !tenantId) return;
-    const draft: CatalogItem = { ...data, id: newId('item'), companyId: tenantId, createdAt: new Date().toISOString() };
+    const draft: CatalogItem = { ...data, id: recordId('item'), companyId: tenantId, createdAt: new Date().toISOString() };
     const safe = sanitizeCatalogItemUpdate(draft, draft, tenantId);
     if (!safe) return;
     setCatalog((prev) => [...prev, safe]);
@@ -944,7 +1029,7 @@ export function App() {
 
   const handleCreateAccount = (data: NewClientAccount) => {
     if (!canManage || !tenantId || !enabledCountries.includes(data.countryCode)) return;
-    const account: ClientAccount = { ...data, id: newId('acc'), companyId: tenantId, createdAt: new Date().toISOString() };
+    const account: ClientAccount = { ...data, id: recordId('acc'), companyId: tenantId, createdAt: new Date().toISOString() };
     setAccounts((prev) => [...prev, account]);
     record({
       companyId: tenantId,
@@ -1076,6 +1161,7 @@ export function App() {
     setAuditLog((prev) =>
       prev.map((e) => (e.id === entryId ? { ...e, revertedAt: now, revertedBy: currentUser.fullName } : e))
     );
+    if (db && isAuditEntityConnected(entry.entity)) enqueueCall((client) => markAuditReverted(client, entryId));
     return null;
   };
 
@@ -1113,7 +1199,7 @@ export function App() {
       activities: allActivities,
       catalog,
       stageConfigs: stageConfigsForTenant(stageConfigsByTenant, company.id, defaultStageConfigs),
-      territories: mockTerritories,
+      territories,
       exportedBy: `${currentUser.fullName} (${currentUser.email})`,
     });
   };
@@ -1306,6 +1392,10 @@ export function App() {
     });
     if (!safe) return 'No se pudo registrar la solicitud: ya hay una pendiente o el lead no admite cambios.';
     setAllLeads((prev) => prev.map((l) => (l.id === safe.id ? safe : l)));
+    if (db && currentUser && tenantId) {
+      const data = { companyId: tenantId, leadId, reason, detail, userId: currentUser.id, userName: currentUser.fullName };
+      enqueueCall((client) => insertPrivacyRequest(client, data));
+    }
     record({
       companyId: safe.companyId,
       action: 'update',
@@ -1328,6 +1418,17 @@ export function App() {
     if (!safe) return;
     setAllLeads((prev) => prev.map((l) => (l.id === safe.id ? safe : l)));
     if (approve) setAllActivities((prev) => anonymizeActivitiesOf(prev, safe.id));
+    if (db && tenantId) {
+      // La base anonimiza por su cuenta (resolve_lead_privacy_request): lo local no se envía como
+      // una edición, y al terminar se recarga lo que de verdad quedó
+      if (approve && synced.current) synced.current = acceptLeads(synced.current, [safe]);
+      const companyId = tenantId;
+      enqueueCall(async (client) => {
+        const error = await resolvePrivacyRequest(client, leadId, approve, note);
+        if (!error) await loadTenant(companyId);
+        return error;
+      });
+    }
     record({
       companyId: safe.companyId,
       action: 'update',
@@ -1364,10 +1465,10 @@ export function App() {
     });
   };
 
-  // Prospectos sin contactar dentro del plazo: se anonimizan solos. Aquí corre al abrir el CRM; en
-  // producción lo hace un job programado en la base (ver docs/LEY_21719.md).
+  // Prospectos sin contactar dentro del plazo: se anonimizan solos. En la demo corre al abrir el CRM;
+  // con Supabase lo hace la tarea diaria de la base (pg_cron, ver docs/LEY_21719.md).
   useEffect(() => {
-    if (!tenantId || !currentUser) return;
+    if (db || !tenantId || !currentUser) return;
     const ahora = new Date();
     const vencidos = expiredProspects(allLeads.filter((l) => l.companyId === tenantId), ahora);
     if (vencidos.length === 0) return;
@@ -1402,7 +1503,7 @@ export function App() {
       lead,
       activities: allActivities.filter((a) => a.leadId === lead.id),
       stageConfigs,
-      territories: mockTerritories,
+      territories,
       requestedBy: currentUser.fullName,
     });
     await downloadTenantExport(informe);
@@ -1605,14 +1706,18 @@ export function App() {
           </div>
         )}
 
-        {/* CONEXIÓN POR ETAPAS: con Supabase, la sesión, el CRM y el equipo vienen de la base; el resto aún no */}
-        {db && tenantId && (
-          <div role="status" className="mb-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[15px] text-amber-200">
-            <Database className="mt-0.5 h-5 w-5 shrink-0" />
-            <span>
-              Tu sesión, tu CRM y tu equipo ya vienen de la base real. Leads, empresas cliente, contactos, catálogo y
-              etapas se conectan en las próximas etapas: por ahora lo que cambies en esos módulos no se guarda al recargar.
+        {/* Con Supabase: un cambio que la base rechazó. La app ya recargó lo que de verdad quedó guardado */}
+        {syncError && (
+          <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-[15px] text-rose-300">
+            <span className="flex gap-2">
+              <Database className="mt-0.5 h-5 w-5 shrink-0" />
+              <span>
+                {syncError} Se volvió a cargar lo que quedó guardado en la base.
+              </span>
             </span>
+            <button type="button" onClick={() => setSyncError(null)} className="cursor-pointer text-sm font-semibold text-rose-200 hover:underline">
+              Cerrar
+            </button>
           </div>
         )}
 
@@ -1826,7 +1931,12 @@ export function App() {
           catalog={tenantCatalog}
           countries={enabledCountries}
           defaultCountry={selectedCountries[0]}
-          zones={tenantTerritories.map((t) => ({ id: t.territoryId, name: t.territoryName, countryCode: t.countryCode }))}
+          zones={tenantTerritories.map((t) => ({
+            id: t.territoryId,
+            name: t.territoryName,
+            countryCode: t.countryCode,
+            geojsonPolygon: t.geojsonPolygon,
+          }))}
         />
       )}
 

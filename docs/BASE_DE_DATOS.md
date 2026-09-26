@@ -151,13 +151,15 @@ La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`
 |---|---|---|
 | 1. Sesión y plataforma | Login con Supabase Auth, perfil y CRM de la sesión, Admin → CRMs (crear, editar, activar, plan y países) y Admin → Usuarios (invitar, perfil, activar) | **Conectada** |
 | 2. Gerencia → Usuarios y auditoría | Equipo del CRM administrado por el gerente; historial de CRMs y usuarios en `audit_log` | **Conectada** (0015) |
-| 3. Leads, empresas cliente, contactos y actividades | Pipeline, captura, registro de contacto, derechos del titular | Pendiente |
-| 4. Catálogo, etapas y reversión | Gerencia → Catálogo, etapas y "Volver atrás" del historial | Pendiente |
+| 3. El trabajo diario del CRM | Leads (con sus contactos y productos), empresas cliente, bitácora de contactos, catálogo, zonas del mapa, derechos del titular y "Volver atrás" del historial | **Conectada** (0017, 0018) |
+| 4. Etapas del pipeline | Configuración de etapas por CRM (`pipeline_stage_configs`); hoy su pestaña está oculta y se usan las etapas por defecto | Pendiente |
 | 5. Exportación | `export_tenant_snapshot()` | Pendiente (el botón queda desactivado con Supabase) |
 
-Mientras una etapa no esté conectada, el usuario de un CRM ve un aviso: lo que cambie en esos módulos no se guarda al recargar.
+**Cómo se guarda el trabajo diario (etapa 3).** Al entrar, la app carga todo el CRM desde la base (`loadTenantData`, `src/lib/db/crm.ts`). Desde ahí cada módulo sigue trabajando como en la demo, con los mismos guards, y un solo efecto compara el estado con lo último guardado (`diffTenantData`, `src/lib/db/sync.ts`) y manda **solo la diferencia**, en orden: catálogo → empresas → leads → sus contactos y productos → bitácora → bajas. Los leads se actualizan columna por columna, así dos personas que editan campos distintos no se pisan. Si la base rechaza algo (RLS, un trigger de privacidad, un país no habilitado), la app muestra el motivo y vuelve a cargar lo que de verdad quedó. Los derechos del titular no pasan por la comparación: la solicitud se inserta en `lead_privacy_requests` y aprobarla la resuelve `resolve_lead_privacy_request()`, la única que anonimiza. Los ids nuevos son UUID (`newUuid`, `src/lib/ids.ts`).
 
-La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app, funciones puras), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas), `platform.ts` (CRMs y usuarios) y `audit.ts` (historial). Qué entradas del historial van ya a la base lo dice `CONNECTED_AUDIT_ENTITIES` (`mappers.ts`): crece con cada etapa. Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
+Límites de hoy: los cambios de otra persona se ven al recargar la página (no hay tiempo real) y la carga pide los datos en páginas de 1.000 filas.
+
+La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas ↔ tipos de la app, funciones puras), `sync.ts` (qué cambió, función pura), `crm.ts` (carga y escritura del CRM), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas), `platform.ts` (CRMs y usuarios) y `audit.ts` (historial). Qué entradas del historial van ya a la base lo dice `CONNECTED_AUDIT_ENTITIES` (`mappers.ts`): crece con cada etapa. Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
 
 ## 7. Estado actual
 
@@ -179,6 +181,8 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app,
 | 0014 | Permisos de funciones: nada para `anon`, funciones de trigger e internas fuera de la API, `search_path` fijo en `set_updated_at()` |
 | 0015 | Gerencia edita a su equipo (`Perfiles: gestión gerente` + `trg_profiles_guard_update`); el administrador registra sus acciones en el historial del CRM y la base firma cada entrada (`trg_audit_log_set_actor`) |
 | 0016 | Permisos de tablas para `service_role` (el servidor que invita usuarios): faltaban desde la 0012 y toda invitación se rechazaba |
+| 0017 | Etapa 3: `zone_catalog` (zonas de referencia por país) copiadas solas a cada CRM, vista `territories_geojson` para el mapa, `leads.location` desde latitud y longitud, espejo del contacto principal en `lead_contacts` y eliminación de empresas cliente sin leads por gerencia |
+| 0018 | Corrige la 0017: los triggers que copian las zonas pasan a `SECURITY DEFINER` (crear un CRM fallaba) |
 
 ## 8. Revisión automática
 
@@ -195,13 +199,13 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 56 pruebas funcionales: privacidad, aislamiento, administración y equipos
+npm run test:db                               # 76 pruebas funcionales: privacidad, aislamiento, administración, equipos y trabajo diario
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 y 0016 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0018 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

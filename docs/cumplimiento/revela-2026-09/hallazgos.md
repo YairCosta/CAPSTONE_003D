@@ -188,3 +188,24 @@ Se agrega; lo anterior no se modifica.
   que se conecte su módulo; con Supabase, la app lo advierte en pantalla.
 
 Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 26-09-2026 (tarde) · El trabajo diario del CRM en la base
+
+Se agrega; lo anterior no se modifica.
+
+- **Leads, contactos, empresas cliente, bitácora y catálogo** se guardan en la base con
+  `VITE_DATA_SOURCE=supabase`. Cada escritura vuelve a pasar por RLS y por los triggers de
+  privacidad: con una solicitud pendiente el lead no se edita ni se mueve, a un titular que se opuso
+  no se le registra contacto y un anonimizado no se re-identifica. Si la base rechaza un cambio, la
+  app lo informa y recarga lo que de verdad quedó.
+- **Derechos del titular**: la solicitud se registra en `lead_privacy_requests` y solo gerencia la
+  resuelve con `resolve_lead_privacy_request()`, la única que anonimiza. Con Supabase la app ya no
+  anonimiza prospectos vencidos por su cuenta: lo hace la tarea diaria de la base.
+- **Auditoría**: todas las entradas del trabajo diario van a `audit_log` con el estado anterior sin
+  datos personales, y "Volver atrás" marca la reversión con `mark_audit_entry_reverted()`.
+- **Hallazgo corregido antes de usarse** (0018): crear un CRM fallaba al copiar sus zonas por un
+  permiso retirado en la 0017. Lo detectó `npm run test:db`.
+- **Evidencia**: `evidence/prueba-crm-supabase-2026-09-26.txt` (76 pruebas contra la base real, 20
+  nuevas, todas deshechas al terminar) y `npm run test:supabase` (36 sin conexión).
+
+Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).

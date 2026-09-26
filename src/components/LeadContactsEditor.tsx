@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Trash2, Users } from 'lucide-react';
 import type { LeadContact } from '../types/crm';
 import { MAX_LEAD_CONTACTS } from '../lib/contacts';
+import { newUuid } from '../lib/ids';
 import { inputClass, labelClass, secondaryButton } from '../lib/styles';
 
 interface LeadContactsEditorProps {
@@ -17,7 +18,7 @@ export const LeadContactsEditor: React.FC<LeadContactsEditorProps> = ({ idPrefix
     onChange(contacts.map((c, i) => (i === index ? { ...c, ...patch } : c)));
 
   const add = () =>
-    onChange([...contacts, { id: `${idPrefix}-${Date.now()}-${contacts.length}`, fullName: '' }]);
+    onChange([...contacts, { id: newUuid(), fullName: '' }]);
 
   const remove = (index: number) => onChange(contacts.filter((_, i) => i !== index));
 

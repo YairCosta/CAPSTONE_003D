@@ -27,7 +27,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 |---|---|
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Mapa | Leaflet, mapas base de Esri |
-| Base de datos | PostgreSQL 17 + PostGIS en Supabase (login, administración, equipos y su auditoría conectados; el resto por etapas) |
+| Base de datos | PostgreSQL 17 + PostGIS en Supabase (login, administración y todo el trabajo diario del CRM conectados; faltan etapas y exportación) |
 | Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
 
 ## Cómo ejecutarlo

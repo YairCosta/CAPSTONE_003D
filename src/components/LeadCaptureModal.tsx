@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CatalogItem, ClientAccount, CommercialStatus, ConsentStatus, Lead, LeadDataOrigin } from '../types/crm';
+import type { CatalogItem, ClientAccount, CommercialStatus, ConsentStatus, Lead, LeadDataOrigin, TerritoryMetric } from '../types/crm';
 import { LeadItemsEditor } from './LeadItemsEditor';
 import { fromDraftItems, itemsSubtotal, type DraftLeadItem } from '../lib/catalog';
 import { X, UserPlus, MapPin, Loader2, Save, AlertTriangle } from 'lucide-react';
@@ -21,7 +21,7 @@ interface LeadCaptureModalProps {
   // Países habilitados para el CRM y zonas de cada uno (comunas, distritos…)
   countries: CountryCode[];
   defaultCountry: CountryCode;
-  zones: { id: string; name: string; countryCode: CountryCode }[];
+  zones: { id: string; name: string; countryCode: CountryCode; geojsonPolygon: TerritoryMetric['geojsonPolygon'] }[];
 }
 
 type FieldErrors = Partial<Record<'fullName' | 'newAccount' | 'email' | 'rawAddress' | 'commune' | 'origin' | 'consent', string>>;
@@ -95,6 +95,10 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
   const sortedCommunes = zones
     .filter((z) => z.countryCode === country.code)
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const zoneById = (id: string) => {
+    const zone = zones.find((z) => z.id === id);
+    return zone && { territoryId: zone.id, territoryName: zone.name, countryCode: zone.countryCode, geojsonPolygon: zone.geojsonPolygon };
+  };
 
   const handleCountryChange = (code: CountryCode) => {
     // La empresa, la zona y el prefijo telefónico dependen del país
@@ -216,7 +220,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
       consentStatus: consentStatus || undefined,
       consentAt: new Date().toISOString(),
       noContact: consentStatus === 'refused',
-      ...locateInCommune(communeId, rawAddress),
+      ...locateInCommune(zoneById(communeId), rawAddress),
     });
 
     setIsSaving(false);

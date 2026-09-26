@@ -20,13 +20,19 @@ export async function saveAuditEntry(db: SupabaseClient, entry: AuditEntry): Pro
 }
 
 /** Historial del CRM, del más nuevo al más antiguo. RLS solo lo muestra a su gerencia. */
-export async function loadAuditLog(db: SupabaseClient, companyId: string): Promise<DbResult<AuditEntry[]>> {
+export async function loadAuditLog(
+  db: SupabaseClient,
+  companyId: string,
+  nameOf: (userId: string) => string | undefined = () => undefined
+): Promise<DbResult<AuditEntry[]>> {
   const { data, error } = await db
     .from('audit_log')
-    .select('id, company_id, actor_id, actor_name, actor_role, action, entity, entity_id, entity_label, summary, changes, reverted_at, created_at')
+    .select(
+      'id, company_id, actor_id, actor_name, actor_role, action, entity, entity_id, entity_label, summary, changes, revert_snapshot, reverted_at, reverted_by, created_at'
+    )
     .eq('company_id', companyId)
     .order('created_at', { ascending: false })
     .limit(AUDIT_PAGE_SIZE);
   if (error) return { ok: false, error: dbErrorMessage(error, 'No se pudo cargar el historial de auditoría.') };
-  return { ok: true, data: ((data ?? []) as AuditRow[]).map(auditEntryFromRow) };
+  return { ok: true, data: ((data ?? []) as AuditRow[]).map((row) => auditEntryFromRow(row, nameOf)) };
 }

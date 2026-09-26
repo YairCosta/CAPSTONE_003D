@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 const ARCHIVOS = [
   { archivo: 'scripts/sql/prueba-privacidad-remota.sql', titulo: 'Privacidad y aislamiento' },
   { archivo: 'scripts/sql/prueba-plataforma-remota.sql', titulo: 'Administración de la plataforma' },
+  { archivo: 'scripts/sql/prueba-crm-remota.sql', titulo: 'Trabajo diario del CRM (etapa 3)' },
 ];
 
 const fallar = (motivo, salida) => {

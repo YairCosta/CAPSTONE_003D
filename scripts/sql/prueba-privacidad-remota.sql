@@ -53,8 +53,8 @@ BEGIN
          'CLP', 'not_requested', NOW() - INTERVAL '5 days', NULL),
         (lead_b, co_b, 'Luis Otro CRM', NULL, NULL, NULL, 'Calle B', NULL, NULL, NULL, 'CLP', 'inquiry', NOW(), NULL);
 
+    -- El contacto principal (Ana) lo copia la base desde el lead (0017); se agrega un colega
     INSERT INTO public.lead_contacts (company_id, lead_id, full_name, email, is_primary) VALUES
-        (co_a, lead_1, 'Ana Titular', 'ana@prueba.invalid', TRUE),
         (co_a, lead_1, 'Juan Colega', 'juan@prueba.invalid', FALSE);
 
     INSERT INTO public.lead_activities (lead_id, company_id, channel, outcome, summary, agent_name, contact_name)

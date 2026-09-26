@@ -14,8 +14,13 @@ import {
   auditEntryFromRow,
   auditEntryToRow,
   isAuditEntityConnected,
+  revertKindFor,
   type CompanyRow,
 } from '../src/lib/db/mappers.ts';
+import { catalogToRow, leadFromRow, leadToRow, privacyRequestFor, territoryFromRow } from '../src/lib/db/crmMappers.ts';
+import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
+import { locateInCommune } from '../src/lib/geocoding.ts';
+import type { ClientAccount, Lead } from '../src/types/crm.ts';
 import { buildAuditEntry } from '../src/lib/audit.ts';
 import { authorizeInvite, type InviteCaller } from '../src/lib/userAdmin.ts';
 import { authErrorMessage, dbErrorMessage } from '../src/lib/db/errors.ts';
@@ -97,7 +102,7 @@ test('Usuarios: la contraseña nunca viene de la base y un rol desconocido no da
 });
 
 // ------------------------------------------------------------------ auditoría
-test('Auditoría: la fila no trae fecha ni reversión; la base las fija al guardar', () => {
+test('Auditoría: la fila no trae fecha ni marca de revertido; la base las fija al guardar', () => {
   const actor = userFromRow({ id: 'u1', company_id: CRM_A, full_name: 'Sebastián', email: 's@piloto.demo', role: 'manager', is_active: true, created_at: '2026-09-25T12:00:00Z' });
   const entrada = buildAuditEntry(
     { companyId: CRM_A, action: 'deactivate', entity: 'user', entityId: 'u2', entityLabel: 'Vendedor', summary: 'Activo', changes: [{ field: 'isActive', label: 'Activo', before: 'Sí', after: 'No' }] },
@@ -108,7 +113,9 @@ test('Auditoría: la fila no trae fecha ni reversión; la base las fija al guard
   assert.equal(fila.id, '33333333-3333-3333-3333-333333333333');
   assert.equal(fila.actor_role, 'manager');
   assert.deepEqual(fila.changes, entrada.changes);
-  assert.ok(!('created_at' in fila) && !('reverted_at' in fila) && !('revert_snapshot' in fila));
+  assert.ok(!('created_at' in fila) && !('reverted_at' in fila));
+  // Sin estado anterior: el cambio no se puede deshacer
+  assert.equal(fila.revert_snapshot, null);
 });
 
 test('Auditoría: lo que viene de la base se lee igual que lo de memoria', () => {
@@ -124,7 +131,9 @@ test('Auditoría: lo que viene de la base se lee igual que lo de memoria', () =>
     entity_label: 'Minera Sur',
     summary: 'Datos personales eliminados automáticamente',
     changes: null,
+    revert_snapshot: null,
     reverted_at: null,
+    reverted_by: null,
     created_at: '2026-09-26T03:15:00Z',
   });
   assert.equal(entrada.actorId, 'sistema');
@@ -133,11 +142,145 @@ test('Auditoría: lo que viene de la base se lee igual que lo de memoria', () =>
   assert.equal(entrada.revert, undefined);
 });
 
-test('Auditoría: hoy van a la base CRMs y usuarios; lo demás espera su etapa', () => {
-  assert.ok(isAuditEntityConnected('company') && isAuditEntityConnected('user'));
-  for (const pendiente of ['lead', 'account', 'catalog', 'activity', 'stage', 'export'] as const) {
-    assert.ok(!isAuditEntityConnected(pendiente), pendiente);
+test('Auditoría: "Volver atrás" funciona con lo guardado en la base', () => {
+  const fila = {
+    id: 'a2', company_id: CRM_A, actor_id: 'u1', actor_name: 'Sebastián', actor_role: 'manager', entity_id: 'x', entity_label: 'X',
+    summary: 's', changes: [], reverted_at: '2026-09-26T10:00:00Z', reverted_by: 'u1', created_at: '2026-09-26T09:00:00Z',
+  };
+  const eliminada = auditEntryFromRow({ ...fila, action: 'delete', entity: 'account', revert_snapshot: { id: 'acc-1', name: 'Minera' } }, (id) => (id === 'u1' ? 'Sebastián' : undefined));
+  assert.equal(eliminada.revert?.kind, 'account-deleted');
+  assert.equal(eliminada.revertedBy, 'Sebastián');
+  assert.equal(auditEntryFromRow({ ...fila, action: 'update', entity: 'catalog', revert_snapshot: { id: 'i1' } }).revert?.kind, 'catalog');
+  assert.equal(auditEntryFromRow({ ...fila, action: 'export', entity: 'export', revert_snapshot: { id: 'e' } }).revert, undefined);
+  assert.equal(revertKindFor('lead', 'stage'), 'lead');
+});
+
+test('Auditoría: van a la base CRMs, usuarios, leads, empresas, catálogo y contactos; etapas y exportación esperan', () => {
+  for (const conectada of ['company', 'user', 'lead', 'account', 'catalog', 'activity'] as const) {
+    assert.ok(isAuditEntityConnected(conectada), conectada);
   }
+  for (const pendiente of ['stage', 'export'] as const) assert.ok(!isAuditEntityConnected(pendiente), pendiente);
+});
+
+// ------------------------------------------------------------------ etapa 3: leads y sincronización
+const cuenta = (over: Partial<ClientAccount> = {}): ClientAccount => ({
+  id: 'acc-1', companyId: CRM_A, countryCode: 'CL', name: 'Minera Sur', isActive: true, createdAt: '2026-09-26T12:00:00Z', ...over,
+});
+const lead = (over: Partial<Lead> = {}): Lead => ({
+  id: 'lead-1', companyId: CRM_A, countryCode: 'CL', fullName: 'Ana Pérez', commercialStatus: 'new', estimatedDealValue: 1000,
+  rawAddress: 'Av. Siempre Viva 123', geocodingStatus: 'success', createdAt: '2026-09-26T12:00:00Z', clientAccountId: 'acc-1',
+  companyName: 'Minera Sur', contacts: [], items: [], valueSource: 'manual', dataOrigin: 'form', consentStatus: 'inquiry', ...over,
+});
+const vacio: TenantSnapshot = { leads: [], accounts: [], activities: [], catalog: [] };
+
+test('Lead: textos en blanco van como NULL y la moneda por defecto es la del país', () => {
+  const fila = leadToRow(lead({ jobTitle: '  ', notes: '', email: ' ' }));
+  assert.equal(fila.job_title, null);
+  assert.equal(fila.notes, null);
+  assert.equal(fila.email, null);
+  assert.equal(fila.currency_code, 'CLP');
+  assert.equal(fila.value_source, 'manual');
+  // La anonimización solo la escribe la base
+  assert.ok(!('anonymized_at' in fila) && !('anonymized_reason' in fila) && !('created_at' in fila));
+});
+
+test('Lead: al leerlo, la moneda del país queda implícita y los montos son números', () => {
+  const base = {
+    ...leadToRow(lead()), created_by: null, estimated_deal_value: '150000.00', anonymized_at: null, anonymized_reason: null, created_at: '2026-09-26T12:00:00+00:00',
+  };
+  const leido = leadFromRow(base, { accountName: 'Minera Sur', contacts: [], items: [] });
+  assert.equal(leido.currency, undefined);
+  assert.equal(leido.estimatedDealValue, 150000);
+  assert.equal(leido.companyName, 'Minera Sur');
+  assert.equal(leadFromRow({ ...base, currency_code: 'USD' }, { contacts: [], items: [] }).currency, 'USD');
+  // Ida y vuelta sin diferencias: cargar desde la base no genera escrituras
+  assert.deepEqual(diffTenantData({ ...vacio, leads: [leido] }, { ...vacio, leads: [leido] }), []);
+});
+
+test('Sincronización: una empresa nueva va antes que su lead, y el lead antes que su bitácora', () => {
+  const nuevo = lead({ contacts: [{ id: 'c1', fullName: 'Juan Firma' }], items: [{ itemId: 'i1', quantity: 2, unitPrice: 500 }] });
+  const actividad = { id: 'act-1', leadId: 'lead-1', companyId: CRM_A, channel: 'call' as const, outcome: 'interested' as const, summary: 'Llamada', agentName: 'Vendedor', createdAt: '2026-09-26T12:05:00Z' };
+  const ops = diffTenantData(vacio, { ...vacio, accounts: [cuenta()], leads: [nuevo], activities: [actividad] });
+  assert.deepEqual(ops.map((o) => o.kind), ['account-insert', 'lead-insert', 'lead-contacts', 'lead-items', 'activity-insert']);
+});
+
+test('Sincronización: mover de etapa envía solo esa columna (no pisa lo que otro editó)', () => {
+  const antes = { ...vacio, accounts: [cuenta()], leads: [lead()] };
+  const ops = diffTenantData(antes, { ...antes, leads: [lead({ commercialStatus: 'contacted' })] });
+  assert.equal(ops.length, 1);
+  assert.deepEqual(ops[0], { kind: 'lead-update', id: 'lead-1', patch: { commercial_status: 'contacted' } });
+});
+
+test('Sincronización: cambiar productos agrega los nuevos y quita los que salieron', () => {
+  const antes = { ...vacio, leads: [lead({ items: [{ itemId: 'i1', quantity: 1, unitPrice: 500 }] })] };
+  const ops = diffTenantData(antes, { ...vacio, leads: [lead({ items: [{ itemId: 'i2', quantity: 3, unitPrice: 100 }] })] });
+  const items = ops.find((o) => o.kind === 'lead-items');
+  assert.ok(items && items.kind === 'lead-items');
+  assert.deepEqual(items.upserts.map((u) => u.catalog_item_id), ['i2']);
+  assert.deepEqual(items.deleteItemIds, ['i1']);
+});
+
+test('Sincronización: las bajas van al final y la bitácora nunca se edita', () => {
+  const producto = { id: 'i9', companyId: CRM_A, type: 'product' as const, name: 'Notebook', prices: { CL: 500000 }, isActive: true, createdAt: '2026-09-26T12:00:00Z' };
+  const actividad = { id: 'act-1', leadId: 'lead-1', companyId: CRM_A, channel: 'call' as const, outcome: 'interested' as const, summary: 'Llamada', agentName: 'Vendedor', createdAt: '2026-09-26T12:05:00Z' };
+  const antes = { ...vacio, accounts: [cuenta(), cuenta({ id: 'acc-2', name: 'Sin leads' })], leads: [lead()], catalog: [producto], activities: [actividad] };
+  const despues = { ...antes, accounts: [cuenta()], catalog: [], leads: [lead({ notes: 'Nota nueva' })], activities: [{ ...actividad, summary: 'editado' }] };
+  const tipos = diffTenantData(antes, despues).map((o) => o.kind);
+  assert.deepEqual(tipos, ['lead-update', 'catalog-delete', 'account-delete']);
+});
+
+test('Sincronización: precios por país del catálogo, incluido quitar uno', () => {
+  const producto = { id: 'i1', companyId: CRM_A, type: 'service' as const, name: 'Soporte', billing: 'monthly' as const, prices: { CL: 50000, PE: 180 }, isActive: true, createdAt: '2026-09-26T12:00:00Z' };
+  const ops = diffTenantData({ ...vacio, catalog: [producto] }, { ...vacio, catalog: [{ ...producto, prices: { CL: 55000 } }] });
+  assert.equal(ops.length, 1);
+  const op = ops[0];
+  assert.ok(op.kind === 'catalog-upsert');
+  assert.deepEqual(op.prices, [{ catalog_item_id: 'i1', country_code: 'CL', price: 55000 }]);
+  assert.deepEqual(op.removedCountries, ['PE']);
+  // Un producto nunca lleva periodicidad (la base lo rechazaría)
+  assert.equal(catalogToRow({ ...producto, type: 'product' }).billing_type, null);
+});
+
+test('Sincronización: lo que anonimiza la base no vuelve a la base como una edición', () => {
+  const original = lead();
+  const anonimizado = lead({ fullName: 'Titular eliminado', rawAddress: 'Dirección eliminada', noContact: true, consentStatus: 'withdrawn', anonymizedAt: '2026-09-26T13:00:00Z', anonymizedReason: 'request' });
+  const antes = { ...vacio, leads: [original] };
+  assert.ok(diffTenantData(antes, { ...vacio, leads: [anonimizado] }).length > 0);
+  assert.deepEqual(diffTenantData(acceptLeads(antes, [anonimizado]), { ...vacio, leads: [anonimizado] }), []);
+});
+
+test('Privacidad: el lead muestra la solicitud pendiente aunque haya otras resueltas', () => {
+  const filas = [
+    { id: 'r1', lead_id: 'lead-1', reason: 'wrong_data', detail: null, requested_by_name: 'Ana', requested_at: '2026-09-20T10:00:00Z', status: 'rejected', decided_by_name: 'Sebastián', decided_at: '2026-09-21T10:00:00Z', decision_note: null },
+    { id: 'r2', lead_id: 'lead-1', reason: 'erasure', detail: 'Por correo', requested_by_name: 'Ana', requested_at: '2026-09-25T10:00:00Z', status: 'pending', decided_by_name: null, decided_at: null, decision_note: null },
+    { id: 'r3', lead_id: 'otro', reason: 'other', detail: null, requested_by_name: 'Ana', requested_at: '2026-09-26T10:00:00Z', status: 'pending', decided_by_name: null, decided_at: null, decision_note: null },
+  ];
+  const solicitud = privacyRequestFor('lead-1', filas);
+  assert.equal(solicitud?.status, 'pending');
+  assert.equal(solicitud?.reason, 'erasure');
+  assert.equal(privacyRequestFor('sin-solicitudes', filas), undefined);
+});
+
+test('Zonas: el polígono de la base ubica al lead dentro de su zona', () => {
+  const zona = territoryFromRow({
+    id: 'z1', company_id: CRM_A, country_code: 'CL', name: 'Providencia', code: 'PROV-01', color_hex: '#3B82F6',
+    polygon: { type: 'MultiPolygon', coordinates: [[[[-70.63, -33.42], [-70.585, -33.415], [-70.59, -33.445], [-70.635, -33.44], [-70.63, -33.42]]]] },
+  });
+  const ubicado = locateInCommune(zona, 'Av. Providencia 1234');
+  assert.equal(ubicado.assignedTerritoryId, 'z1');
+  assert.equal(ubicado.geocodingStatus, 'success');
+  assert.ok(ubicado.latitude! < -33.4 && ubicado.latitude! > -33.46);
+  assert.equal(locateInCommune(undefined, 'x').geocodingStatus, 'manual_review');
+});
+
+test('Errores: los mensajes de las reglas de Revela se muestran; los técnicos no', () => {
+  assert.equal(
+    dbErrorMessage({ code: '42501', message: 'Lead bloqueado: hay una solicitud del titular pendiente de resolver.' }, 'x'),
+    'Lead bloqueado: hay una solicitud del titular pendiente de resolver.'
+  );
+  assert.match(dbErrorMessage({ code: '42501', message: 'new row violates row-level security policy for table "leads"' }, 'x'), /permiso/);
+  assert.equal(dbErrorMessage({ code: '23514', message: 'La zona asignada pertenece a otro país' }, 'x'), 'La zona asignada pertenece a otro país');
+  assert.match(dbErrorMessage({ code: '23514', message: 'new row for relation "leads" violates check constraint "leads_email_check"' }, 'x'), /reglas/);
 });
 
 // ------------------------------------------------------------------ quién invita a quién

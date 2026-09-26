@@ -1,7 +1,7 @@
 // Traducción entre la base (snake_case) y la app (camelCase), en un solo lugar.
 // Ver docs/BASE_DE_DATOS.md, sección 6. Funciones puras: se prueban sin conexión (npm run test:supabase).
 
-import type { AppUser, AuditAction, AuditChange, AuditEntity, AuditEntry, Company, CompanyPlan, UserRole } from '../../types/crm.ts';
+import type { AppUser, AuditAction, AuditChange, AuditEntity, AuditEntry, AuditRevert, Company, CompanyPlan, UserRole } from '../../types/crm.ts';
 import { COUNTRIES, isCountryCode, type CountryCode } from '../../data/countries.ts';
 
 // ------------------------------------------------------------------ CRMs (companies + company_countries)
@@ -112,10 +112,10 @@ export function profileUpdateRow(user: Pick<AppUser, 'fullName' | 'role' | 'isAc
 // ------------------------------------------------------------------ auditoría (audit_log)
 /**
  * Qué parte del historial ya vive en la base. Crece con cada etapa de la conexión: lo que no está
- * aquí sigue solo en memoria, porque su dato tampoco está en la base todavía. Las entradas
- * reversibles (leads, empresas, catálogo, etapas) llegan con sus módulos.
+ * aquí sigue solo en memoria, porque su dato tampoco está en la base todavía (hoy: la
+ * configuración de etapas del pipeline y la exportación de un CRM).
  */
-export const CONNECTED_AUDIT_ENTITIES: readonly AuditEntity[] = ['company', 'user'];
+export const CONNECTED_AUDIT_ENTITIES: readonly AuditEntity[] = ['company', 'user', 'lead', 'account', 'catalog', 'activity'];
 
 export const isAuditEntityConnected = (entity: AuditEntity) => CONNECTED_AUDIT_ENTITIES.includes(entity);
 
@@ -131,8 +131,30 @@ export interface AuditRow {
   entity_label: string;
   summary: string;
   changes: AuditChange[] | null;
+  revert_snapshot: Record<string, unknown> | null;
   reverted_at: string | null;
+  reverted_by: string | null;
   created_at: string;
+}
+
+/**
+ * La base guarda el estado anterior "plano" (sin datos personales: los quita un trigger). El tipo
+ * de reversión se deduce del dato y la acción: eliminar una empresa o un producto se revierte
+ * recreándolo; lo demás, restaurando sus campos.
+ */
+export function revertKindFor(entity: AuditEntity, action: AuditAction): AuditRevert['kind'] | null {
+  switch (entity) {
+    case 'lead':
+      return 'lead';
+    case 'account':
+      return action === 'delete' ? 'account-deleted' : 'account';
+    case 'catalog':
+      return action === 'delete' ? 'catalog-deleted' : 'catalog';
+    case 'stage':
+      return 'stage';
+    default:
+      return null;
+  }
 }
 
 /**
@@ -152,10 +174,12 @@ export function auditEntryToRow(entry: AuditEntry) {
     entity_label: entry.entityLabel,
     summary: entry.summary,
     changes: entry.changes,
+    revert_snapshot: entry.revert ? (entry.revert.snapshot as unknown as Record<string, unknown>) : null,
   };
 }
 
-export function auditEntryFromRow(row: AuditRow): AuditEntry {
+export function auditEntryFromRow(row: AuditRow, nameOf: (userId: string) => string | undefined = () => undefined): AuditEntry {
+  const kind = row.revert_snapshot ? revertKindFor(row.entity as AuditEntity, row.action as AuditAction) : null;
   return {
     id: row.id,
     companyId: row.company_id,
@@ -169,7 +193,9 @@ export function auditEntryFromRow(row: AuditRow): AuditEntry {
     entityLabel: row.entity_label,
     summary: row.summary,
     changes: Array.isArray(row.changes) ? row.changes : [],
+    revert: kind ? ({ kind, snapshot: row.revert_snapshot } as unknown as AuditRevert) : undefined,
     revertedAt: row.reverted_at ?? undefined,
+    revertedBy: row.reverted_by ? (nameOf(row.reverted_by) ?? 'Gerencia') : undefined,
     createdAt: row.created_at,
   };
 }
