@@ -148,8 +148,14 @@ export function createAdminMiddleware(config: AdminServerConfig) {
       });
       if (errorInvitacion || !invitado?.user) {
         const mensaje = (errorInvitacion?.message ?? '').toLowerCase();
-        console.warn('[admin/invite] Supabase rechazó la invitación:', errorInvitacion?.status ?? 'sin estado');
-        if (mensaje.includes('already') || mensaje.includes('registered')) {
+        const codigo = (errorInvitacion as { code?: string } | null)?.code ?? '';
+        console.warn('[admin/invite] Supabase rechazó la invitación:', errorInvitacion?.status ?? 'sin estado', codigo);
+        if (codigo === 'email_address_not_authorized' || mensaje.includes('not authorized')) {
+          sendJson(res, 422, {
+            error:
+              'El correo de prueba de Supabase solo envía a los miembros de tu proyecto. Para invitar a otras personas configura un SMTP propio en Supabase (Authentication → Emails → SMTP Settings).',
+          });
+        } else if (mensaje.includes('already') || mensaje.includes('registered')) {
           sendJson(res, 409, { error: 'Ese email ya tiene una cuenta en Supabase.' });
         } else if (errorInvitacion?.status === 429 || mensaje.includes('rate')) {
           sendJson(res, 429, {

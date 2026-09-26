@@ -66,8 +66,10 @@ interface ManagerModuleProps {
   // Usuarios del propio CRM, administrados por gerencia
   teamUsers: AppUser[];
   currentUserId: string;
-  onCreateTeamUser: (user: NewAppUser) => string | null;
-  onUpdateTeamUser: (user: AppUser) => void;
+  onCreateTeamUser: (user: NewAppUser) => string | null | Promise<string | null>;
+  onUpdateTeamUser: (user: AppUser) => string | null | Promise<string | null>;
+  /** Con Supabase el equipo se invita por correo: nadie escribe la contraseña de otra persona */
+  teamInvitations?: boolean;
   onCreateAccount: (account: NewClientAccount) => void;
   onUpdateAccount: (account: ClientAccount) => void;
   onDeleteAccount: (accountId: string) => void;
@@ -94,6 +96,7 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
   currentUserId,
   onCreateTeamUser,
   onUpdateTeamUser,
+  teamInvitations,
   onCreateAccount,
   onUpdateAccount,
   onDeleteAccount,
@@ -167,6 +170,7 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
           currentUserId={currentUserId}
           onCreateUser={onCreateTeamUser}
           onUpdateUser={onUpdateTeamUser}
+          invitations={teamInvitations}
         />
       )}
       {section === 'queue' && (

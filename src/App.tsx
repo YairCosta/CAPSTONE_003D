@@ -15,6 +15,8 @@ import { usingSupabase } from './lib/dataSource';
 import { supabase, initialAuthLinkError, initialAuthLinkType } from './lib/supabaseClient';
 import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswordFromLink, signIn, signOut } from './lib/db/auth';
 import { insertCompany, inviteUser, loadPlatform, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
+import { loadAuditLog, saveAuditEntry } from './lib/db/audit';
+import { isAuditEntityConnected } from './lib/db/mappers';
 import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
 import { newId } from './lib/ids';
@@ -219,6 +221,8 @@ export function App() {
   // Enlace de invitación o recuperación: la persona elige su contraseña antes de entrar
   const [passwordLink, setPasswordLink] = useState<'invite' | 'recovery' | null>(db ? initialAuthLinkType : null);
   const [authNotice, setAuthNotice] = useState<string | null>(db ? initialAuthLinkError : null);
+  // Con Supabase: un cambio guardado cuya entrada de auditoría no llegó a la base
+  const [auditWarning, setAuditWarning] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('kpi');
   const [selectedTerritoryId, setSelectedTerritoryId] = useState<string | null>(null);
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
@@ -297,7 +301,15 @@ export function App() {
 
   const record = (data: NewAuditEntry) => {
     if (!currentUser) return;
-    setAuditLog((prev) => [buildAuditEntry(data, currentUser, newId('audit')), ...prev]);
+    // Con Supabase, lo que ya vive en la base deja también su historial en la base
+    const persist = db !== null && isAuditEntityConnected(data.entity);
+    const entry = buildAuditEntry(data, currentUser, persist ? crypto.randomUUID() : newId('audit'));
+    setAuditLog((prev) => [entry, ...prev]);
+    if (db && persist) {
+      void saveAuditEntry(db, entry).then((error) => {
+        if (error) setAuditWarning(`El cambio se guardó, pero no quedó registrado en la auditoría: ${error}`);
+      });
+    }
   };
   const canAdminister = isSuperadmin(currentUser) && isSessionValid;
 
@@ -388,8 +400,12 @@ export function App() {
     const visibles = plataforma.data.users.some((u) => u.id === user.id)
       ? plataforma.data.users
       : [user, ...plataforma.data.users];
+    // El historial es de la gerencia del CRM (RLS no se lo muestra a nadie más)
+    const historial = user.role === 'manager' && company ? await loadAuditLog(db, company.id) : null;
     setCompanies(plataforma.data.companies);
     setUsers(visibles);
+    setAuditLog(historial?.ok ? historial.data : []);
+    setAuditWarning(historial && !historial.ok ? historial.error : null);
     openSession(user);
     return null;
   };
@@ -445,6 +461,7 @@ export function App() {
       setCatalog([]);
       setAuditLog([]);
       setComplianceAccessLog([]);
+      setAuditWarning(null);
     }
     setPasswordLink(null);
     setSessionUserId(null);
@@ -1212,37 +1229,51 @@ export function App() {
     [users, tenantId]
   );
 
-  const handleCreateTeamUser = (data: NewAppUser): string | null => {
+  // Con Supabase, el gerente invita por correo (el servidor revisa que sea a su propio CRM)
+  const handleCreateTeamUser = async (data: NewAppUser): Promise<string | null> => {
     const payload: NewAppUser = { ...data, companyId: tenantId };
-    const invalid = validateNewTeamUser(payload, users, currentUser, tenantId);
+    const invalid = validateNewTeamUser(payload, users, currentUser, tenantId, { invitation: Boolean(db) });
     if (invalid) return invalid;
-    const user: AppUser = {
+    let user: AppUser = {
       ...payload,
       email: payload.email.trim().toLowerCase(),
       fullName: payload.fullName.trim(),
       id: newId('user'),
       createdAt: new Date().toISOString(),
     };
-    setUsers((prev) => [...prev, user]);
+    if (db) {
+      const invitado = await inviteUser(db, user);
+      if (!invitado.ok) return invitado.error;
+      user = invitado.data;
+    }
+    const created = user;
+    setUsers((prev) => [...prev, created]);
     record({
-      companyId: user.companyId!,
+      companyId: created.companyId!,
       action: 'create',
       entity: 'user',
-      entityId: user.id,
-      entityLabel: user.fullName,
-      summary: `Usuario creado con perfil ${ROLE_LABEL[user.role]}`,
+      entityId: created.id,
+      entityLabel: created.fullName,
+      summary: db ? `Invitación enviada con perfil ${ROLE_LABEL[created.role]}` : `Usuario creado con perfil ${ROLE_LABEL[created.role]}`,
     });
     return null;
   };
 
-  const handleUpdateTeamUser = (updated: AppUser) => {
+  const handleUpdateTeamUser = async (updated: AppUser): Promise<string | null> => {
     const before = users.find((u) => u.id === updated.id);
-    const safe = sanitizeTeamUserUpdate(before, updated, currentUser, tenantId);
-    if (!safe || !before) return;
-    setUsers((prev) => prev.map((u) => (u.id === safe.id ? safe : u)));
+    const sanitized = sanitizeTeamUserUpdate(before, updated, currentUser, tenantId);
+    if (!sanitized || !before) return 'No se pudo guardar el usuario: revisa que sea de tu CRM y que no sea tu propio acceso.';
+    let safe = sanitized;
+    if (db) {
+      const guardado = await updateProfile(db, sanitized);
+      if (!guardado.ok) return guardado.error;
+      safe = guardado.data;
+    }
+    const saved = safe;
+    setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)));
 
     const changes = diffFields(before, safe, userFields);
-    if (changes.length === 0 || !safe.companyId) return;
+    if (changes.length === 0 || !safe.companyId) return null;
     const onlyActivation = changes.length === 1 && changes[0].field === 'isActive';
     record({
       companyId: safe.companyId,
@@ -1253,6 +1284,7 @@ export function App() {
       summary: changes.map((c) => c.label).join(', '),
       changes,
     });
+    return null;
   };
 
   const recordComplianceAccess = (what: string) =>
@@ -1564,13 +1596,22 @@ export function App() {
       />
 
       <main className={`mx-auto flex-1 w-full px-6 py-6 ${currentTab === 'kanban' ? 'max-w-none' : 'max-w-7xl'}`}>
-        {/* CONEXIÓN POR ETAPAS: con Supabase, la sesión y el CRM vienen de la base; los módulos aún no */}
+        {auditWarning && (
+          <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-[15px] text-rose-300">
+            <span>{auditWarning}</span>
+            <button type="button" onClick={() => setAuditWarning(null)} className="cursor-pointer text-sm font-semibold text-rose-200 hover:underline">
+              Cerrar
+            </button>
+          </div>
+        )}
+
+        {/* CONEXIÓN POR ETAPAS: con Supabase, la sesión, el CRM y el equipo vienen de la base; el resto aún no */}
         {db && tenantId && (
           <div role="status" className="mb-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[15px] text-amber-200">
             <Database className="mt-0.5 h-5 w-5 shrink-0" />
             <span>
-              Tu sesión y tu CRM ya vienen de la base real. Leads, empresas, contactos, catálogo, usuarios del equipo y
-              auditoría se conectan en las próximas etapas: por ahora lo que cambies en esos módulos no se guarda al recargar.
+              Tu sesión, tu CRM y tu equipo ya vienen de la base real. Leads, empresas cliente, contactos, catálogo y
+              etapas se conectan en las próximas etapas: por ahora lo que cambies en esos módulos no se guarda al recargar.
             </span>
           </div>
         )}
@@ -1691,6 +1732,7 @@ export function App() {
             currentUserId={currentUser.id}
             onCreateTeamUser={handleCreateTeamUser}
             onUpdateTeamUser={handleUpdateTeamUser}
+            teamInvitations={Boolean(db)}
             onCreateAccount={handleCreateAccount}
             onUpdateAccount={handleUpdateAccount}
             onDeleteAccount={handleDeleteAccount}

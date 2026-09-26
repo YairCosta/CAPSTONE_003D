@@ -54,6 +54,10 @@ La regla está en `canChangeStage()` (`src/lib/tenantGuards.ts`) y se aplica **t
 - Lectura restringida a gerencia del mismo CRM.
 - Marcar una entrada como revertida pasa por la función `mark_audit_entry_reverted()`, que verifica el rol, el CRM y que no se haya revertido antes.
 - `revert_snapshot` guarda el estado anterior **sin datos personales**; si es `NULL`, el cambio no se puede deshacer.
+- **La base firma cada entrada** (trigger `trg_audit_log_set_actor`, 0015): pone el nombre y el rol del perfil de la sesión, la hora de la base y la deja sin revertir. La app no puede atribuirle un cambio a otra persona ni fecharlo en el pasado.
+- **El administrador de la plataforma** registra sus acciones (crear un CRM, activarlo, cambiar el plan, invitar o editar usuarios) en el historial del CRM afectado (política `Auditoría: registro plataforma`, 0015). No puede leer ese historial: es de la gerencia del CRM.
+
+Con `VITE_DATA_SOURCE=supabase`, hoy van a la base las entradas de **CRMs y usuarios** (`CONNECTED_AUDIT_ENTITIES` en `src/lib/db/mappers.ts`); las de leads, empresas, catálogo y etapas se suman cuando se conecte su módulo. La gerencia ve al entrar las 500 entradas más recientes. Si una entrada no alcanza a llegar a la base, la app avisa que el cambio se guardó pero no quedó registrado.
 
 ## Pruebas
 

@@ -170,3 +170,21 @@ Se agrega; lo anterior no se modifica.
   administrador escribe `profiles`); se resuelve en la etapa de Gerencia.
 
 Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 26-09-2026 · Equipo del gerente y auditoría en la base
+
+Se agrega; lo anterior no se modifica.
+
+- **Se cierra el hueco conocido del 25-09**: con la migración 0015 el gerente administra a su
+  equipo en la base, dentro de su CRM. La base impide cambiar emails, mover a alguien de CRM y
+  quitarse el acceso propio (así un CRM nunca queda sin gerencia).
+- **Auditoría en la base** para CRMs y usuarios: el administrador de la plataforma registra sus
+  acciones en el historial del CRM afectado sin poder leerlo, y la base firma cada entrada con el
+  nombre y rol reales de la sesión, con su propia hora y sin marca de revertido. Una entrada ya no
+  se puede atribuir a otra persona ni fechar en el pasado.
+- **Evidencia**: `evidence/prueba-equipo-auditoria-supabase-2026-09-26.txt` (55 pruebas contra la
+  base real, 17 nuevas, todas deshechas al terminar) y `npm run test:supabase` (24 sin conexión).
+- **Pendiente**: la auditoría de leads, empresas cliente, catálogo y etapas sigue en memoria hasta
+  que se conecte su módulo; con Supabase, la app lo advierte en pantalla.
+
+Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).

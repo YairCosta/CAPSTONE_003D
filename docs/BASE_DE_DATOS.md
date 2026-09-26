@@ -150,14 +150,14 @@ La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`
 | Etapa | Qué usa la base | Estado |
 |---|---|---|
 | 1. Sesión y plataforma | Login con Supabase Auth, perfil y CRM de la sesión, Admin → CRMs (crear, editar, activar, plan y países) y Admin → Usuarios (invitar, perfil, activar) | **Conectada** |
-| 2. Gerencia → Usuarios | Equipo del CRM administrado por el gerente | Pendiente: requiere una política nueva, hoy solo el administrador escribe `profiles` |
+| 2. Gerencia → Usuarios y auditoría | Equipo del CRM administrado por el gerente; historial de CRMs y usuarios en `audit_log` | **Conectada** (0015) |
 | 3. Leads, empresas cliente, contactos y actividades | Pipeline, captura, registro de contacto, derechos del titular | Pendiente |
-| 4. Catálogo, etapas y auditoría | Gerencia → Catálogo, historial y reversión | Pendiente |
+| 4. Catálogo, etapas y reversión | Gerencia → Catálogo, etapas y "Volver atrás" del historial | Pendiente |
 | 5. Exportación | `export_tenant_snapshot()` | Pendiente (el botón queda desactivado con Supabase) |
 
 Mientras una etapa no esté conectada, el usuario de un CRM ve un aviso: lo que cambie en esos módulos no se guarda al recargar.
 
-La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app, funciones puras), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas) y `platform.ts` (CRMs y usuarios). Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
+La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app, funciones puras), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas), `platform.ts` (CRMs y usuarios) y `audit.ts` (historial). Qué entradas del historial van ya a la base lo dice `CONNECTED_AUDIT_ENTITIES` (`mappers.ts`): crece con cada etapa. Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
 
 ## 7. Estado actual
 
@@ -177,6 +177,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app,
 | 0012 | Derechos del titular: origen y base del dato, `lead_privacy_requests`, bloqueo, anonimización, borrado automático de prospectos (pg_cron), auditoría sin valores personales y permisos explícitos |
 | 0013 | Corrige `export_tenant_snapshot()`: usaba `first_name`/`last_name` (borradas en 0007); agrega `lead_contacts` y `lead_privacy_requests` al formato v2 |
 | 0014 | Permisos de funciones: nada para `anon`, funciones de trigger e internas fuera de la API, `search_path` fijo en `set_updated_at()` |
+| 0015 | Gerencia edita a su equipo (`Perfiles: gestión gerente` + `trg_profiles_guard_update`); el administrador registra sus acciones en el historial del CRM y la base firma cada entrada (`trg_audit_log_set_actor`) |
 
 ## 8. Revisión automática
 
@@ -193,13 +194,13 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 42 pruebas funcionales: privacidad, aislamiento y administración
+npm run test:db                               # 55 pruebas funcionales: privacidad, aislamiento, administración y equipos
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase. Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 el 26-09-2026**. Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

@@ -1,7 +1,7 @@
 // Traducción entre la base (snake_case) y la app (camelCase), en un solo lugar.
 // Ver docs/BASE_DE_DATOS.md, sección 6. Funciones puras: se prueban sin conexión (npm run test:supabase).
 
-import type { AppUser, Company, CompanyPlan, UserRole } from '../../types/crm.ts';
+import type { AppUser, AuditAction, AuditChange, AuditEntity, AuditEntry, Company, CompanyPlan, UserRole } from '../../types/crm.ts';
 import { COUNTRIES, isCountryCode, type CountryCode } from '../../data/countries.ts';
 
 // ------------------------------------------------------------------ CRMs (companies + company_countries)
@@ -106,5 +106,70 @@ export function profileUpdateRow(user: Pick<AppUser, 'fullName' | 'role' | 'isAc
     role: user.role,
     is_active: user.isActive,
     company_id: user.role === 'superadmin' ? null : user.companyId,
+  };
+}
+
+// ------------------------------------------------------------------ auditoría (audit_log)
+/**
+ * Qué parte del historial ya vive en la base. Crece con cada etapa de la conexión: lo que no está
+ * aquí sigue solo en memoria, porque su dato tampoco está en la base todavía. Las entradas
+ * reversibles (leads, empresas, catálogo, etapas) llegan con sus módulos.
+ */
+export const CONNECTED_AUDIT_ENTITIES: readonly AuditEntity[] = ['company', 'user'];
+
+export const isAuditEntityConnected = (entity: AuditEntity) => CONNECTED_AUDIT_ENTITIES.includes(entity);
+
+export interface AuditRow {
+  id: string;
+  company_id: string;
+  actor_id: string | null;
+  actor_name: string;
+  actor_role: string;
+  action: string;
+  entity: string;
+  entity_id: string;
+  entity_label: string;
+  summary: string;
+  changes: AuditChange[] | null;
+  reverted_at: string | null;
+  created_at: string;
+}
+
+/**
+ * Fila para insertar. No lleva fecha, autor verificado ni estado de reversión: los fija la base
+ * (trigger trg_audit_log_set_actor), así nadie firma por otro ni fecha en el pasado.
+ */
+export function auditEntryToRow(entry: AuditEntry) {
+  return {
+    id: entry.id,
+    company_id: entry.companyId,
+    actor_id: entry.actorId,
+    actor_name: entry.actorName,
+    actor_role: entry.actorRole,
+    action: entry.action,
+    entity: entry.entity,
+    entity_id: entry.entityId,
+    entity_label: entry.entityLabel,
+    summary: entry.summary,
+    changes: entry.changes,
+  };
+}
+
+export function auditEntryFromRow(row: AuditRow): AuditEntry {
+  return {
+    id: row.id,
+    companyId: row.company_id,
+    // Sin autor: tareas automáticas de la base, como el borrado de prospectos vencidos
+    actorId: row.actor_id ?? 'sistema',
+    actorName: row.actor_name,
+    actorRole: ROLES.includes(row.actor_role as UserRole) ? (row.actor_role as UserRole) : 'agent',
+    action: row.action as AuditAction,
+    entity: row.entity as AuditEntity,
+    entityId: row.entity_id,
+    entityLabel: row.entity_label,
+    summary: row.summary,
+    changes: Array.isArray(row.changes) ? row.changes : [],
+    revertedAt: row.reverted_at ?? undefined,
+    createdAt: row.created_at,
   };
 }

@@ -11,8 +11,12 @@ import {
   companyToRow,
   profileUpdateRow,
   userFromRow,
+  auditEntryFromRow,
+  auditEntryToRow,
+  isAuditEntityConnected,
   type CompanyRow,
 } from '../src/lib/db/mappers.ts';
+import { buildAuditEntry } from '../src/lib/audit.ts';
 import { authorizeInvite, type InviteCaller } from '../src/lib/userAdmin.ts';
 import { authErrorMessage, dbErrorMessage } from '../src/lib/db/errors.ts';
 import { validateNewPassword, validatePasswordChange } from '../src/lib/passwords.ts';
@@ -90,6 +94,50 @@ test('Usuarios: la contraseña nunca viene de la base y un rol desconocido no da
   // Un administrador de plataforma no pertenece a ningún CRM
   assert.equal(profileUpdateRow({ ...usuario, role: 'superadmin' }).company_id, null);
   assert.equal(profileUpdateRow(usuario).company_id, CRM_A);
+});
+
+// ------------------------------------------------------------------ auditoría
+test('Auditoría: la fila no trae fecha ni reversión; la base las fija al guardar', () => {
+  const actor = userFromRow({ id: 'u1', company_id: CRM_A, full_name: 'Sebastián', email: 's@piloto.demo', role: 'manager', is_active: true, created_at: '2026-09-25T12:00:00Z' });
+  const entrada = buildAuditEntry(
+    { companyId: CRM_A, action: 'deactivate', entity: 'user', entityId: 'u2', entityLabel: 'Vendedor', summary: 'Activo', changes: [{ field: 'isActive', label: 'Activo', before: 'Sí', after: 'No' }] },
+    actor,
+    '33333333-3333-3333-3333-333333333333'
+  );
+  const fila = auditEntryToRow(entrada);
+  assert.equal(fila.id, '33333333-3333-3333-3333-333333333333');
+  assert.equal(fila.actor_role, 'manager');
+  assert.deepEqual(fila.changes, entrada.changes);
+  assert.ok(!('created_at' in fila) && !('reverted_at' in fila) && !('revert_snapshot' in fila));
+});
+
+test('Auditoría: lo que viene de la base se lee igual que lo de memoria', () => {
+  const entrada = auditEntryFromRow({
+    id: 'a1',
+    company_id: CRM_A,
+    actor_id: null,
+    actor_name: 'Revela (tarea automática)',
+    actor_role: 'manager',
+    action: 'update',
+    entity: 'lead',
+    entity_id: 'l1',
+    entity_label: 'Minera Sur',
+    summary: 'Datos personales eliminados automáticamente',
+    changes: null,
+    reverted_at: null,
+    created_at: '2026-09-26T03:15:00Z',
+  });
+  assert.equal(entrada.actorId, 'sistema');
+  assert.deepEqual(entrada.changes, []);
+  assert.equal(entrada.revertedAt, undefined);
+  assert.equal(entrada.revert, undefined);
+});
+
+test('Auditoría: hoy van a la base CRMs y usuarios; lo demás espera su etapa', () => {
+  assert.ok(isAuditEntityConnected('company') && isAuditEntityConnected('user'));
+  for (const pendiente of ['lead', 'account', 'catalog', 'activity', 'stage', 'export'] as const) {
+    assert.ok(!isAuditEntityConnected(pendiente), pendiente);
+  }
 });
 
 // ------------------------------------------------------------------ quién invita a quién
@@ -171,7 +219,7 @@ interface FakeState {
   invited: { email: string; options: { data?: { full_name?: string }; redirectTo?: string } }[];
   deleted: string[];
   failProfileInsert?: boolean;
-  failInvite?: { status: number; message: string };
+  failInvite?: { status: number; message: string; code?: string };
 }
 
 const fakeSupabase = (state: FakeState) => {
@@ -338,6 +386,14 @@ test('Endpoint: el límite de correos de Supabase se explica y los registros no 
   }
   assert.ok(registros.length > 0);
   assert.ok(registros.every((linea) => !linea.includes('@') && !linea.includes('Persona Nueva')), registros.join('\n'));
+});
+
+test('Endpoint: sin SMTP propio, explica qué configurar en Supabase', async () => {
+  const state = estadoBase({ failInvite: { status: 400, message: 'Email address not authorized', code: 'email_address_not_authorized' } });
+  const r = await invitar(middlewareCon(state), 'tok-gerente', cuerpo());
+  assert.equal(r.status, 422);
+  assert.match(String(r.json.error), /SMTP/);
+  assert.equal(state.profiles.filter((p) => p.email === 'nuevo@piloto.demo').length, 0);
 });
 
 test('Endpoint: invitar solo acepta POST y rechaza cuerpos gigantes con 400', async () => {

@@ -716,6 +716,11 @@ test('validateNewTeamUser: el gerente solo crea usuarios de su propio CRM', () =
   assert.notEqual(validateNewTeamUser({ ...base, email: 'sinarroba', role: 'agent', companyId: A }, existing, manager, A), null);
   assert.notEqual(validateNewTeamUser({ ...base, password: '123', role: 'agent', companyId: A }, existing, manager, A), null);
   assert.notEqual(validateNewTeamUser({ ...base, fullName: '  ', role: 'agent', companyId: A }, existing, manager, A), null);
+  // Con invitación (Supabase) no hay contraseña temporal, pero las demás reglas siguen igual
+  const invitacion = { invitation: true };
+  assert.equal(validateNewTeamUser({ ...base, password: '', role: 'agent', companyId: A }, existing, manager, A, invitacion), null);
+  assert.notEqual(validateNewTeamUser({ ...base, password: '', role: 'agent', companyId: B }, existing, manager, A, invitacion), null);
+  assert.notEqual(validateNewTeamUser({ ...base, password: '', email: agent.email, role: 'agent', companyId: A }, existing, manager, A, invitacion), null);
 });
 
 test('sanitizeTeamUserUpdate: el gerente no toca otros CRMs, emails ni su propio acceso', () => {

@@ -347,7 +347,9 @@ export function validateNewTeamUser(
   data: NewAppUser,
   users: AppUser[],
   actor: AppUser | null,
-  tenantId: string | null
+  tenantId: string | null,
+  // Con Supabase se invita por correo y la persona elige su contraseña: no hay contraseña temporal
+  { invitation = false }: { invitation?: boolean } = {}
 ): string | null {
   if (!isManager(actor) || !tenantId || actor?.companyId !== tenantId) {
     return 'Solo el gerente puede crear usuarios de este CRM.';
@@ -359,7 +361,7 @@ export function validateNewTeamUser(
   const email = data.email.trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(email)) return 'El email no es válido.';
   if (users.some((u) => u.email.toLowerCase() === email)) return 'Ya existe un usuario con ese email.';
-  if ((data.password ?? '').length < MIN_PASSWORD_LENGTH) {
+  if (!invitation && (data.password ?? '').length < MIN_PASSWORD_LENGTH) {
     return `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
   }
   return null;
