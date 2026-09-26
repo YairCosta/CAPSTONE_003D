@@ -28,7 +28,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Mapa | Leaflet, mapas base de Esri |
 | Base de datos | PostgreSQL + PostGIS en Supabase (esquema listo, aún sin conectar) |
-| Servicios | Gemini (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
+| Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
 
 ## Cómo ejecutarlo
 
@@ -58,6 +58,7 @@ Para el asistente de IA hace falta un archivo `.env.local` con `GEMINI_API_KEY`
 ```bash
 npm run test:tenant   # aislamiento entre CRMs y reglas de negocio
 npm run test:export   # exportación a Excel
+npm run test:ai       # asistente de IA (OpenAI simulado)
 npm run test:sql      # migraciones de la base de datos
 npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
 ```

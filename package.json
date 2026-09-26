@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:tenant": "node --experimental-strip-types --no-warnings scripts/test-tenant-guards.mts",
     "test:export": "node --experimental-strip-types --no-warnings scripts/test-tenant-export.mts",
+    "test:ai": "node --experimental-strip-types --no-warnings scripts/test-ai-providers.mts",
     "test:sql": "node scripts/test-migrations.mjs",
     "diagramas": "node scripts/generar-diagramas.mjs",
     "evidencia": "node scripts/generar-evidencia.mjs",

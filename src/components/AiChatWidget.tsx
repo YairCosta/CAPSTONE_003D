@@ -56,6 +56,7 @@ type ChatResponse =
   | { type: 'error'; error: string };
 
 interface AiStatus {
+  provider?: 'gemini' | 'openai';
   serverKeyConfigured: boolean;
   model: string;
   leadSource: 'google_places' | 'demo';
@@ -475,7 +476,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 {statusError
                   ? 'Servidor del asistente no disponible'
                   : status
-                    ? `Gemini · ${activeModel ?? status.model}${hasKey ? '' : ' · falta API key'}`
+                    ? `${personalKey || status.provider !== 'openai' ? 'Gemini' : 'GPT'} · ${activeModel ?? status.model}${hasKey ? '' : ' · falta API key'}`
                     : 'Conectando…'}
               </p>
             </div>
@@ -484,8 +485,8 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowSettings(true)}
-                  title="Configurar API key de Gemini"
-                  aria-label="Configurar API key de Gemini"
+                  title="Configurar el asistente"
+                  aria-label="Configurar el asistente"
                   className="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                 >
                   <KeyRound className="h-5 w-5" />
@@ -537,6 +538,9 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
               <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
                 <p className="font-semibold text-slate-200">Estado</p>
                 <p className="mt-1 text-slate-400">
+                  Proveedor: {status?.provider === 'openai' ? 'OpenAI (GPT)' : 'Google (Gemini)'}
+                </p>
+                <p className="text-slate-400">
                   API key del servidor: {status?.serverKeyConfigured ? 'configurada ✓' : 'no configurada'}
                 </p>
                 <p className="text-slate-400">API key personal: {personalKey ? 'en uso ✓' : 'no ingresada'}</p>
@@ -560,7 +564,8 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 />
                 <p className="mt-1.5 text-sm text-slate-400">
                   Se guarda solo en esta pestaña (se borra al cerrarla) y se envía a tu servidor, nunca directo a
-                  terceros. Para producción, usa GEMINI_API_KEY en el servidor.
+                  terceros. Para producción, usa GEMINI_API_KEY en el servidor. Si ingresas una, el asistente usa
+                  Gemini aunque el servidor esté configurado con GPT.
                 </p>
                 <div className="mt-3 flex gap-2">
                   <button type="button" onClick={saveKey} disabled={!keyDraft.trim()} className={primaryButton}>

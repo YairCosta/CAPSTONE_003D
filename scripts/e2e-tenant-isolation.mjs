@@ -453,8 +453,8 @@ try {
 
   // Clave personal de Gemini de un usuario de GeoDemo
   await domClick('button[aria-label="Abrir asistente de prospección"]');
-  await page.waitForSelector('section[aria-label="Asistente de prospección"] button[aria-label="Configurar API key de Gemini"]', { visible: true, timeout: 5000 });
-  await domClick('button[aria-label="Configurar API key de Gemini"]');
+  await page.waitForSelector('section[aria-label="Asistente de prospección"] button[aria-label="Configurar el asistente"]', { visible: true, timeout: 5000 });
+  await domClick('button[aria-label="Configurar el asistente"]');
   await page.waitForSelector('#gemini-key', { visible: true, timeout: 5000 });
   await fillInput('#gemini-key', 'AIzaCLAVE-SOLO-GEODEMO');
   await clickText('button', 'Guardar clave');

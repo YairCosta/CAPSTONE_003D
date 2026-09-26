@@ -1359,8 +1359,8 @@
     },
     {
       "archivo": "rat.csv",
-      "bytes": 3574,
-      "sha256": "f05df36248907f80b0dbc0dd598e02b1ed4240fdd4927730a16a49c0ad136bf8"
+      "bytes": 3710,
+      "sha256": "840623c6f2037e870e691880c071f79ccf7a0a6b8d3cd91195e4db888a845cf1"
     },
     {
       "archivo": "rights-capability.csv",
@@ -1369,8 +1369,8 @@
     },
     {
       "archivo": "role-matrix.csv",
-      "bytes": 2378,
-      "sha256": "e54d9be9c6b2afe5c436fe941fd07f8e4a16fc44d271a64e76a2ba3f1d017192"
+      "bytes": 2402,
+      "sha256": "1b6b588e007a912c4fe47a7366399a8235052f68a162691b19b78127321e1e36"
     },
     {
       "archivo": "SCOPE.md",
@@ -1388,5 +1388,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-25T22:28:48.311Z"
+  "generadoUtc": "2026-09-26T00:39:00.174Z"
 }

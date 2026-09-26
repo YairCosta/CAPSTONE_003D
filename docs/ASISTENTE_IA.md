@@ -109,3 +109,38 @@ identificar" y la base "Prospecto: se le preguntará en el primer contacto". El 
 persona cuando habla con ella, y si nadie la contacta en 30 días, sus datos se eliminan solos
 (ver `docs/LEY_21719.md`).
 
+## Usar GPT (OpenAI) en vez de Gemini
+
+Desde el 25-09-2026 el asistente puede funcionar con **GPT**. Las herramientas, las reglas y los
+límites son exactamente los mismos; solo cambia el modelo que conversa.
+
+**Qué hace falta:** una clave de API de [platform.openai.com](https://platform.openai.com/api-keys)
+con saldo cargado. **La suscripción de ChatGPT no sirve**: es una cuenta distinta que no da acceso a
+la API.
+
+**Cómo activarlo**, en `.env.local` (nunca en el chat ni en el código):
+
+```
+AI_PROVIDER=openai
+OPENAI_API_KEY=la-clave
+OPENAI_MODEL=gpt-5-mini
+```
+
+y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-mini".
+
+**Cómo está hecho:**
+- La conversación se guarda siempre en el formato de Gemini, así que el navegador no cambia. El
+  servidor la traduce al formato de OpenAI en cada paso (`server/openaiChat.ts`) y devuelve la
+  respuesta traducida. Se puede cambiar de proveedor sin perder nada.
+- Agregar la clave de OpenAI **no cambia el proveedor**: hay que pedirlo con `AI_PROVIDER=openai`.
+  Si OpenAI es la única clave configurada, se usa sola.
+- La clave personal que se ingresa en el chat es de Gemini; si hay una, se usa Gemini.
+- No se envía temperatura: los modelos de razonamiento de OpenAI solo aceptan el valor por defecto.
+
+**Pruebas:** `npm run test:ai` simula a OpenAI y recorre la conversación completa por el servidor,
+incluida una herramienta que ejecuta el navegador. **Falta la prueba con la clave real.**
+
+**Ley 21.719:** OpenAI pasa a ser otro subencargado que recibe datos del CRM. Recibe lo mismo que
+Gemini: la ficha mínima del lead, sin correo, teléfono ni monto. Queda en el registro de
+tratamientos (`docs/cumplimiento/revela-2026-09/rat.csv`) y requiere el mismo análisis de
+transferencia internacional.

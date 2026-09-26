@@ -1,15 +1,33 @@
-// API del asistente IA de prospección (proxy hacia Gemini con function calling).
+// API del asistente IA de prospección (proxy hacia Gemini u OpenAI con function calling).
 // Corre en Node dentro del servidor de Vite: la API key nunca se envía al bundle del navegador.
+// El proveedor se elige con AI_PROVIDER; la conversación se guarda siempre en formato Gemini.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
 import { ApiError, GoogleGenAI, Type, type Content, type FunctionDeclaration, type Part } from '@google/genai';
 import { searchPotentialLeads, type LeadSearchResult } from './leadSearch.ts';
+import { callOpenAi, describeOpenAiError, toOpenAiMessages, toOpenAiTools, type ModelStep } from './openaiChat.ts';
+
+export type AiProvider = 'gemini' | 'openai';
 
 export interface AiServerConfig {
+  provider: AiProvider;
   geminiApiKey?: string;
   geminiModel: string;
+  openaiApiKey?: string;
+  openaiModel: string;
   placesApiKey?: string;
+}
+
+/**
+ * Proveedor a usar: el que diga AI_PROVIDER; si no se indica, OpenAI solo cuando es la única clave
+ * configurada. Así agregar la clave de OpenAI no cambia nada hasta decidirlo explícitamente.
+ */
+export function resolveProvider(env: { AI_PROVIDER?: string; OPENAI_API_KEY?: string; GEMINI_API_KEY?: string }): AiProvider {
+  const pedido = (env.AI_PROVIDER ?? '').trim().toLowerCase();
+  if (pedido === 'openai' || pedido === 'gpt') return 'openai';
+  if (pedido === 'gemini') return 'gemini';
+  return env.OPENAI_API_KEY && !env.GEMINI_API_KEY ? 'openai' : 'gemini';
 }
 
 // País habilitado para el CRM, con sus zonas (comunas en Chile, distritos en Perú…)
@@ -367,9 +385,11 @@ export function createAiMiddleware(config: AiServerConfig) {
     const path = (req.url ?? '').split('?')[0];
 
     if (req.method === 'GET' && path === '/status') {
+      const openai = config.provider === 'openai';
       sendJson(res, 200, {
-        serverKeyConfigured: Boolean(config.geminiApiKey),
-        model: config.geminiModel,
+        provider: config.provider,
+        serverKeyConfigured: Boolean(openai ? config.openaiApiKey : config.geminiApiKey),
+        model: openai ? config.openaiModel : config.geminiModel,
         leadSource: config.placesApiKey ? 'google_places' : 'demo',
       });
       return;
@@ -386,30 +406,44 @@ export function createAiMiddleware(config: AiServerConfig) {
     }
 
     let model = config.geminiModel;
+    let provider: AiProvider = config.provider;
     try {
       const body = await readJsonBody(req);
       const payload = isRecord(body) ? body : {};
       const history = parseContents(payload.contents);
       const context = parseContext(payload.context);
 
-      // Una API key personal (ingresada en el chat) tiene prioridad sobre la del servidor
+      // Una API key personal (ingresada en el chat) es de Gemini y tiene prioridad sobre el servidor
       const headerKey = req.headers['x-gemini-api-key'];
       const personalKey = typeof headerKey === 'string' ? headerKey.trim() : '';
-      const apiKey = personalKey || config.geminiApiKey;
+      if (personalKey) provider = 'gemini';
+      const apiKey = provider === 'openai' ? config.openaiApiKey : personalKey || config.geminiApiKey;
       if (!apiKey) {
         sendJson(res, 400, {
           type: 'error',
-          error: 'Falta la API key de Gemini. Agrégala en .env.local (GEMINI_API_KEY) o en la configuración del chat.',
+          error:
+            provider === 'openai'
+              ? 'Falta la API key de OpenAI. Agrégala en .env.local (OPENAI_API_KEY).'
+              : 'Falta la API key de Gemini. Agrégala en .env.local (GEMINI_API_KEY) o en la configuración del chat.',
         });
         return;
       }
 
-      const ai = new GoogleGenAI({ apiKey });
       const tools = buildToolDeclarations(context.countries);
       const systemInstruction = buildSystemInstruction(context);
       const events: SearchEvent[] = [];
+
+      // ---------------------------------------------------------------- OpenAI (GPT)
+      const openAiTools = provider === 'openai' ? toOpenAiTools(tools) : [];
+      const stepOpenAi = (): Promise<ModelStep> => {
+        model = config.openaiModel;
+        return callOpenAi({ apiKey, model, messages: toOpenAiMessages(systemInstruction, history), tools: openAiTools });
+      };
+
+      // ---------------------------------------------------------------- Gemini
+      const ai = new GoogleGenAI({ apiKey });
       const cacheKey = keyId(apiKey);
-      model = modelByKey.get(cacheKey) ?? config.geminiModel;
+      if (provider === 'gemini') model = modelByKey.get(cacheKey) ?? config.geminiModel;
 
       const generate = () =>
         ai.models.generateContent({
@@ -465,27 +499,33 @@ export function createAiMiddleware(config: AiServerConfig) {
         throw lastError;
       };
 
-      for (let step = 0; step < MAX_MODEL_STEPS; step++) {
+      const stepGemini = async (): Promise<ModelStep> => {
         const response = await generateResilient();
+        // Se conserva el contenido completo (incluidas las firmas de pensamiento) para el siguiente turno
+        const parts = response.candidates?.[0]?.content?.parts ?? [];
+        const functionCalls = (response.functionCalls ?? []).map((c) => ({ id: c.id, name: c.name ?? '', args: c.args ?? {} }));
+        return { parts, functionCalls, text: response.text?.trim() ?? '' };
+      };
 
-        const modelContent = response.candidates?.[0]?.content;
-        if (!modelContent?.parts?.length) {
+      for (let step = 0; step < MAX_MODEL_STEPS; step++) {
+        const result = provider === 'openai' ? await stepOpenAi() : await stepGemini();
+
+        if (!result.parts.length) {
           sendJson(res, 200, { type: 'message', text: 'No obtuve respuesta del modelo. Inténtalo de nuevo.', contents: history, events, model });
           return;
         }
-        // Se conserva el contenido completo (incluidas las firmas de pensamiento) para el siguiente turno
-        history.push({ role: 'model', parts: modelContent.parts });
+        history.push({ role: 'model', parts: result.parts });
 
-        const functionCalls = response.functionCalls ?? [];
+        const functionCalls = result.functionCalls;
         if (functionCalls.length === 0) {
-          sendJson(res, 200, { type: 'message', text: response.text?.trim() || 'Listo.', contents: history, events, model });
+          sendJson(res, 200, { type: 'message', text: result.text || 'Listo.', contents: history, events, model });
           return;
         }
 
         const calls: ToolCallResult[] = await Promise.all(
           functionCalls.map(async (call): Promise<ToolCallResult> => {
-            const name = call.name ?? '';
-            const args = call.args ?? {};
+            const name = call.name;
+            const args = call.args;
             if (name === 'search_potential_leads') {
               const result = await searchPotentialLeads(args, config.placesApiKey, context.countries);
               events.push({ tool: name, args, result });
@@ -520,9 +560,9 @@ export function createAiMiddleware(config: AiServerConfig) {
         sendJson(res, error.status, { type: 'error', error: error.message });
         return;
       }
-      const { status, message } = describeGeminiError(error, model);
+      const { status, message } = provider === 'openai' ? describeOpenAiError(error, model) : describeGeminiError(error, model);
       const detail = String((error as Error)?.message ?? error).slice(0, 300);
-      console.error('[ai/chat]', error instanceof ApiError ? `Gemini ${error.status}: ${detail}` : detail);
+      console.error('[ai/chat]', provider === 'openai' ? `OpenAI: ${detail}` : error instanceof ApiError ? `Gemini ${error.status}: ${detail}` : detail);
       sendJson(res, status, { type: 'error', error: message });
     }
   };

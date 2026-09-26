@@ -1,15 +1,18 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { createAiMiddleware } from './server/aiChat.ts'
+import { createAiMiddleware, resolveProvider } from './server/aiChat.ts'
 import { createRatesMiddleware } from './server/exchangeRates.ts'
 
 // API del asistente IA (/api/ai/*): corre en Node dentro del servidor de Vite.
-// Las variables sin prefijo VITE_ (GEMINI_API_KEY, GOOGLE_PLACES_API_KEY) nunca llegan al navegador.
+// Las variables sin prefijo VITE_ (GEMINI_API_KEY, OPENAI_API_KEY, GOOGLE_PLACES_API_KEY) nunca llegan al navegador.
 function aiAssistantApi(env: Record<string, string>): Plugin {
   const middleware = createAiMiddleware({
+    provider: resolveProvider(env),
     geminiApiKey: env.GEMINI_API_KEY || undefined,
     geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
+    openaiApiKey: env.OPENAI_API_KEY || undefined,
+    openaiModel: env.OPENAI_MODEL || 'gpt-5-mini',
     placesApiKey: env.GOOGLE_PLACES_API_KEY || undefined,
   })
 
