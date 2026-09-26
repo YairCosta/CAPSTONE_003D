@@ -181,7 +181,7 @@ const MODULOS = [
 
 await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
 for (const [usuario, pestana, salida, seccion] of MODULOS) {
-  await page.goto(APP_URL, { waitUntil: 'networkidle2' });
+  await page.goto(`${APP_URL}/?demo`, { waitUntil: 'networkidle2' });
   await page.evaluate((u) => {
     localStorage.setItem('revela-session', u);
     localStorage.setItem('revela-theme', 'light');

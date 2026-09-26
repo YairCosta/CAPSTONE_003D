@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { createAiMiddleware, resolveProvider } from './server/aiChat.ts'
 import { createRatesMiddleware } from './server/exchangeRates.ts'
+import { createAdminMiddleware } from './server/adminUsers.ts'
 
 // API del asistente IA (/api/ai/*): corre en Node dentro del servidor de Vite.
 // Las variables sin prefijo VITE_ (GEMINI_API_KEY, OPENAI_API_KEY, GOOGLE_PLACES_API_KEY) nunca llegan al navegador.
@@ -41,11 +42,30 @@ function exchangeRatesApi(): Plugin {
   }
 }
 
+// Invitaciones de usuarios (/api/admin/*). La clave secreta de Supabase (SUPABASE_SERVICE_ROLE_KEY)
+// salta RLS: por eso vive solo en el servidor, sin prefijo VITE_, y nunca llega al navegador.
+function adminUsersApi(env: Record<string, string>): Plugin {
+  const middleware = createAdminMiddleware({
+    supabaseUrl: env.VITE_SUPABASE_URL || undefined,
+    serviceKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || undefined,
+    appUrl: env.APP_URL || 'http://localhost:5173',
+  })
+  return {
+    name: 'revela-admin-users-api',
+    configureServer(server) {
+      server.middlewares.use('/api/admin', middleware)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use('/api/admin', middleware)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), tailwindcss(), aiAssistantApi(env), exchangeRatesApi()],
+    plugins: [react(), tailwindcss(), aiAssistantApi(env), exchangeRatesApi(), adminUsersApi(env)],
   }
 })

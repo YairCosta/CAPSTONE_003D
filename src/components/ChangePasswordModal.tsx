@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, KeyRound } from 'lucide-react';
+import { AlertTriangle, KeyRound, Loader2 } from 'lucide-react';
 import { Modal } from './ui';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
 import { MIN_PASSWORD_LENGTH } from '../lib/passwords';
@@ -8,7 +8,7 @@ interface ChangePasswordModalProps {
   userName: string;
   onClose: () => void;
   /** Devuelve el mensaje de error, o null si la contraseña se cambió */
-  onSubmit: (current: string, next: string, confirm: string) => string | null;
+  onSubmit: (current: string, next: string, confirm: string) => string | null | Promise<string | null>;
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ userName, onClose, onSubmit }) => {
@@ -17,10 +17,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ userNa
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const message = onSubmit(current, next, confirm);
+    setBusy(true);
+    const message = await onSubmit(current, next, confirm);
+    setBusy(false);
     if (message) {
       setError(message);
       return;
@@ -44,8 +47,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ userNa
             <button type="button" onClick={onClose} className={secondaryButton}>
               Cancelar
             </button>
-            <button type="submit" form="form-cambiar-clave" className={primaryButton}>
-              <KeyRound className="h-4 w-4" />
+            <button type="submit" form="form-cambiar-clave" disabled={busy} className={primaryButton}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
               Guardar contraseña
             </button>
           </>

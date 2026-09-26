@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { AppUser, Company, Lead, NewAppUser, NewCompany, UserRole } from '../types/crm';
-import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale } from 'lucide-react';
+import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale, Send } from 'lucide-react';
 import type { TenantExport } from '../lib/tenantExport';
 import { ROLE_LABEL } from '../lib/permissions';
 import { COUNTRIES, COUNTRY_CODES, type CountryCode } from '../data/countries';
@@ -21,6 +21,10 @@ import { ActiveSwitch, Modal, PageHeader, Pill, SectionTabs, type PillTone } fro
 
 type Section = 'tenants' | 'users' | 'compliance';
 
+/** Mensaje de error, o null si se guardó. Con Supabase la respuesta llega después (promesa). */
+type SaveResult = string | null;
+type SaveHandler<T> = (value: T) => SaveResult | Promise<SaveResult>;
+
 const ROLE_TONE: Record<UserRole, PillTone> = { agent: 'slate', manager: 'indigo', superadmin: 'amber' };
 
 const slugify = (value: string) =>
@@ -36,10 +40,14 @@ interface AdminModuleProps {
   users: AppUser[];
   leads: Lead[];
   currentUserId: string;
-  onCreateCompany: (company: NewCompany) => void;
-  onUpdateCompany: (company: Company) => void;
-  onCreateUser: (user: NewAppUser) => string | null;
-  onUpdateUser: (user: AppUser) => void;
+  onCreateCompany: SaveHandler<NewCompany>;
+  onUpdateCompany: SaveHandler<Company>;
+  onCreateUser: SaveHandler<NewAppUser>;
+  onUpdateUser: SaveHandler<AppUser>;
+  /** Con Supabase los usuarios se invitan por correo y eligen su contraseña; nadie la escribe por ellos */
+  invitations?: boolean;
+  /** Si la exportación no está disponible (por ejemplo, datos aún no conectados a la base), el motivo */
+  exportDisabledReason?: string;
   // Portabilidad: resumen previo y descarga del Excel con los datos de un CRM
   getExportPreview: (companyId: string) => TenantExport | null;
   onExportCompany: (companyId: string) => Promise<void>;
@@ -110,15 +118,19 @@ function TenantsSection({
   onUpdateCompany,
   getExportPreview,
   onExportCompany,
+  exportDisabledReason,
 }: AdminModuleProps) {
   const [editing, setEditing] = useState<Company | 'new' | null>(null);
   const [exporting, setExporting] = useState<Company | null>(null);
   const [disablingPlan, setDisablingPlan] = useState<Company | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
+
+  const quickUpdate = async (company: Company) => setRowError(await onUpdateCompany(company));
 
   // Plan Internacional: activa todos los países disponibles; al desactivarlo queda solo el país base.
   // Los datos de los otros países no se borran: vuelven a verse si se reactiva el plan.
   const setInternational = (company: Company, international: boolean) =>
-    onUpdateCompany({
+    quickUpdate({
       ...company,
       plan: international ? 'international' : 'national',
       enabledCountries: international ? [...COUNTRY_CODES] : [company.homeCountry],
@@ -141,6 +153,8 @@ function TenantsSection({
           Nuevo CRM
         </button>
       </div>
+
+      {rowError && <ErrorBanner message={rowError} onDismiss={() => setRowError(null)} />}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1080px] text-[15px]">
@@ -174,7 +188,7 @@ function TenantsSection({
                         checked={isInternational}
                         onChange={(on) => {
                           if (!on && foreignLeads(company) > 0) setDisablingPlan(company);
-                          else setInternational(company, on);
+                          else void setInternational(company, on);
                         }}
                         label={
                           isInternational
@@ -203,7 +217,7 @@ function TenantsSection({
                     <div className="flex items-center gap-2.5">
                       <ActiveSwitch
                         checked={company.isActive}
-                        onChange={(isActive) => onUpdateCompany({ ...company, isActive })}
+                        onChange={(isActive) => void quickUpdate({ ...company, isActive })}
                         label={company.isActive ? `Desactivar CRM ${company.name}` : `Activar CRM ${company.name}`}
                       />
                       <span className={`text-sm font-semibold ${company.isActive ? 'text-emerald-300' : 'text-slate-400'}`}>
@@ -216,8 +230,9 @@ function TenantsSection({
                       <button
                         type="button"
                         onClick={() => setExporting(company)}
+                        disabled={Boolean(exportDisabledReason)}
                         aria-label={`Exportar datos de ${company.name}`}
-                        title="Descargar un Excel con todos los datos de este CRM"
+                        title={exportDisabledReason ?? 'Descargar un Excel con todos los datos de este CRM'}
                         className={`${secondaryButton} px-3 py-2 text-sm`}
                       >
                         <Download className="h-4 w-4" />
@@ -241,10 +256,10 @@ function TenantsSection({
           company={editing === 'new' ? null : editing}
           existingSlugs={companies.filter((c) => editing === 'new' || c.id !== editing.id).map((c) => c.slug)}
           onClose={() => setEditing(null)}
-          onSave={(data) => {
-            if (editing === 'new') onCreateCompany(data);
-            else onUpdateCompany({ ...editing, ...data });
-            setEditing(null);
+          onSave={async (data) => {
+            const error = editing === 'new' ? await onCreateCompany(data) : await onUpdateCompany({ ...editing, ...data });
+            if (!error) setEditing(null);
+            return error;
           }}
         />
       )}
@@ -271,7 +286,7 @@ function TenantsSection({
               <button
                 type="button"
                 onClick={() => {
-                  setInternational(disablingPlan, false);
+                  void setInternational(disablingPlan, false);
                   setDisablingPlan(null);
                 }}
                 className={primaryButton}
@@ -400,8 +415,10 @@ function CompanyModal({
   company: Company | null;
   existingSlugs: string[];
   onClose: () => void;
-  onSave: (data: NewCompany) => void;
+  onSave: (data: NewCompany) => Promise<SaveResult>;
 }) {
+  const [busy, setBusy] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [name, setName] = useState(company?.name ?? '');
   const [slug, setSlug] = useState(company?.slug ?? '');
   const [slugTouched, setSlugTouched] = useState(Boolean(company));
@@ -438,7 +455,8 @@ function CompanyModal({
           <button type="button" onClick={onClose} className={secondaryButton}>
             Cancelar
           </button>
-          <button type="submit" form="company-form" disabled={!!error} className={primaryButton}>
+          <button type="submit" form="company-form" disabled={!!error || busy} className={primaryButton}>
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {company ? 'Guardar cambios' : 'Crear CRM'}
           </button>
         </>
@@ -446,11 +464,12 @@ function CompanyModal({
     >
       <form
         id="company-form"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (error) return;
+          if (error || busy) return;
           const view = COUNTRIES[homeCountry].mapView;
-          onSave({
+          setBusy(true);
+          const result = await onSave({
             name: name.trim(),
             slug: effectiveSlug,
             taxId: taxId.trim() || undefined,
@@ -462,6 +481,8 @@ function CompanyModal({
             defaultLng: company && company.homeCountry === homeCountry ? company.defaultLng : view.lng,
             defaultZoom: company && company.homeCountry === homeCountry ? company.defaultZoom : view.zoom,
           });
+          setBusy(false);
+          setServerError(result);
         }}
         className="space-y-4"
       >
@@ -544,7 +565,11 @@ function CompanyModal({
           <ActiveSwitch checked={isActive} onChange={setIsActive} label="CRM activo" />
           <span className="text-[15px] text-slate-300">CRM activo (sus usuarios pueden iniciar sesión)</span>
         </div>
-        {error && <p className="text-sm text-rose-300">{error}</p>}
+        {(serverError || error) && (
+          <p role={serverError ? 'alert' : undefined} className="text-sm text-rose-300">
+            {serverError ?? error}
+          </p>
+        )}
       </form>
     </Modal>
   );
@@ -552,11 +577,15 @@ function CompanyModal({
 
 /* ================================ USUARIOS ================================ */
 
-function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateUser }: AdminModuleProps) {
+function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateUser, invitations }: AdminModuleProps) {
   const [query, setQuery] = useState('');
   const [companyFilter, setCompanyFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [isCreating, setIsCreating] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
+  const [invited, setInvited] = useState<string | null>(null);
+
+  const quickUpdate = async (user: AppUser) => setRowError(await onUpdateUser(user));
 
   const companyName = (id: string | null) =>
     id ? companies.find((c) => c.id === id)?.name ?? 'CRM eliminado' : 'Plataforma';
@@ -600,11 +629,26 @@ function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateU
             <option value="superadmin">Administrador</option>
           </select>
         </div>
-        <button type="button" onClick={() => setIsCreating(true)} className={primaryButton}>
-          <Plus className="h-5 w-5" />
-          Nuevo usuario
+        <button
+          type="button"
+          onClick={() => {
+            setInvited(null);
+            setIsCreating(true);
+          }}
+          className={primaryButton}
+        >
+          {invitations ? <Send className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+          {invitations ? 'Invitar usuario' : 'Nuevo usuario'}
         </button>
       </div>
+
+      {rowError && <ErrorBanner message={rowError} onDismiss={() => setRowError(null)} />}
+      {invited && (
+        <p role="status" className="flex gap-2 border-b border-slate-700 bg-emerald-500/10 px-5 py-3 text-[15px] text-emerald-300">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>Invitación enviada a {invited}. La persona elige su contraseña al abrir el correo; nadie más la conoce.</span>
+        </p>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] text-[15px]">
@@ -639,7 +683,7 @@ function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateU
                     ) : (
                       <select
                         value={user.role}
-                        onChange={(e) => onUpdateUser({ ...user, role: e.target.value as UserRole })}
+                        onChange={(e) => void quickUpdate({ ...user, role: e.target.value as UserRole })}
                         aria-label={`Perfil de ${user.fullName}`}
                         className={`${inputClass} w-40! py-1.5!`}
                       >
@@ -654,7 +698,7 @@ function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateU
                       <ActiveSwitch
                         checked={user.isActive}
                         disabled={isSelf}
-                        onChange={(isActive) => onUpdateUser({ ...user, isActive })}
+                        onChange={(isActive) => void quickUpdate({ ...user, isActive })}
                         label={isSelf ? 'No puedes desactivar tu propio usuario' : user.isActive ? `Desactivar a ${user.fullName}` : `Activar a ${user.fullName}`}
                       />
                       <span className={`text-sm font-semibold ${user.isActive ? 'text-emerald-300' : 'text-slate-400'}`}>
@@ -672,10 +716,14 @@ function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateU
       {isCreating && (
         <UserModal
           companies={companies}
+          invitation={Boolean(invitations)}
           onClose={() => setIsCreating(false)}
-          onSave={(data) => {
-            const error = onCreateUser(data);
-            if (!error) setIsCreating(false);
+          onSave={async (data) => {
+            const error = await onCreateUser(data);
+            if (!error) {
+              setIsCreating(false);
+              if (invitations) setInvited(data.email);
+            }
             return error;
           }}
         />
@@ -686,13 +734,17 @@ function UsersSection({ companies, users, currentUserId, onCreateUser, onUpdateU
 
 function UserModal({
   companies,
+  invitation,
   onClose,
   onSave,
 }: {
   companies: Company[];
+  /** true: se envía una invitación y la persona elige su contraseña (Supabase) */
+  invitation: boolean;
   onClose: () => void;
-  onSave: (data: NewAppUser) => string | null;
+  onSave: (data: NewAppUser) => Promise<SaveResult>;
 }) {
+  const [busy, setBusy] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -704,7 +756,7 @@ function UserModal({
     ? 'Ingresa el nombre.'
     : !/^\S+@\S+\.\S+$/.test(email.trim())
       ? 'Ingresa un email válido.'
-      : password.length < 6
+      : !invitation && password.length < 6
         ? 'La contraseña temporal debe tener al menos 6 caracteres.'
         : role !== 'superadmin' && !companyId
           ? 'Selecciona el CRM al que pertenece.'
@@ -712,35 +764,41 @@ function UserModal({
 
   return (
     <Modal
-      title="Nuevo usuario"
-      subtitle="El usuario solo verá los datos de su CRM (excepto administradores)."
+      title={invitation ? 'Invitar usuario' : 'Nuevo usuario'}
+      subtitle={
+        invitation
+          ? 'Le llegará un correo para elegir su contraseña. Solo verá los datos de su CRM (excepto administradores).'
+          : 'El usuario solo verá los datos de su CRM (excepto administradores).'
+      }
       onClose={onClose}
       footer={
         <>
           <button type="button" onClick={onClose} className={secondaryButton}>
             Cancelar
           </button>
-          <button type="submit" form="user-form" disabled={!!error} className={primaryButton}>
-            Crear usuario
+          <button type="submit" form="user-form" disabled={!!error || busy} className={primaryButton}>
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {invitation ? 'Enviar invitación' : 'Crear usuario'}
           </button>
         </>
       }
     >
       <form
         id="user-form"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (error) return;
-          setServerError(
-            onSave({
-              fullName: fullName.trim(),
-              email: email.trim(),
-              password,
-              role,
-              companyId: role === 'superadmin' ? null : companyId,
-              isActive: true,
-            })
-          );
+          if (error || busy) return;
+          setBusy(true);
+          const result = await onSave({
+            fullName: fullName.trim(),
+            email: email.trim(),
+            password: invitation ? '' : password,
+            role,
+            companyId: role === 'superadmin' ? null : companyId,
+            isActive: true,
+          });
+          setBusy(false);
+          setServerError(result);
         }}
         className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       >
@@ -752,10 +810,12 @@ function UserModal({
           <label htmlFor="us-email" className={labelClass}>Email *</label>
           <input id="us-email" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
         </div>
-        <div>
-          <label htmlFor="us-pass" className={labelClass}>Contraseña temporal *</label>
-          <input id="us-pass" type="text" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
-        </div>
+        {!invitation && (
+          <div>
+            <label htmlFor="us-pass" className={labelClass}>Contraseña temporal *</label>
+            <input id="us-pass" type="text" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+          </div>
+        )}
         <div>
           <label htmlFor="us-role" className={labelClass}>Perfil *</label>
           <select id="us-role" value={role} onChange={(e) => setRole(e.target.value as UserRole)} className={inputClass}>
@@ -783,9 +843,25 @@ function UserModal({
           </select>
         </div>
         {(serverError || error) && (
-          <p className={`text-sm sm:col-span-2 ${serverError ? 'text-rose-300' : 'text-slate-400'}`}>{serverError ?? error}</p>
+          <p role={serverError ? 'alert' : undefined} className={`text-sm sm:col-span-2 ${serverError ? 'text-rose-300' : 'text-slate-400'}`}>
+            {serverError ?? error}
+          </p>
         )}
       </form>
     </Modal>
+  );
+}
+
+function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div role="alert" className="flex items-start justify-between gap-3 border-b border-slate-700 bg-rose-500/10 px-5 py-3 text-[15px] text-rose-300">
+      <span className="flex gap-2">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+        {message}
+      </span>
+      <button type="button" onClick={onDismiss} className="cursor-pointer text-sm font-semibold text-rose-200 hover:underline">
+        Cerrar
+      </button>
+    </div>
   );
 }

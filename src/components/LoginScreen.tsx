@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RevelaLogo } from './RevelaLogo';
-import { Eye, EyeOff, LogIn, Sun, Moon, AlertTriangle, ShieldCheck, Briefcase, UserRound } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Sun, Moon, AlertTriangle, ShieldCheck, Briefcase, UserRound, Loader2, MailCheck } from 'lucide-react';
 import { inputClass, labelClass, primaryButton } from '../lib/styles';
 
 interface DemoAccount {
@@ -11,7 +11,10 @@ interface DemoAccount {
 }
 
 interface LoginScreenProps {
-  onLogin: (email: string, password: string) => string | null;
+  /** Devuelve el mensaje de error, o null si la sesión se inició */
+  onLogin: (email: string, password: string) => string | null | Promise<string | null>;
+  /** Solo con Supabase: envía el enlace para elegir una contraseña nueva */
+  onForgotPassword?: (email: string) => Promise<string | null>;
   demoAccounts: DemoAccount[];
   notice?: string | null;
   theme: 'light' | 'dark';
@@ -36,15 +39,37 @@ const PROFILES = [
   },
 ];
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, demoAccounts, notice, theme, onToggleTheme }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLogin,
+  onForgotPassword,
+  demoAccounts,
+  notice,
+  theme,
+  onToggleTheme,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(onLogin(email, password));
+    setBusy(true);
+    setResetSent(false);
+    const message = await onLogin(email, password);
+    setBusy(false);
+    setError(message);
+  };
+
+  const handleForgot = async () => {
+    if (!onForgotPassword) return;
+    setBusy(true);
+    const message = await onForgotPassword(email);
+    setBusy(false);
+    setError(message);
+    setResetSent(message === null);
   };
 
   return (
@@ -147,13 +172,32 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, demoAccounts,
               </div>
             )}
 
-            <button type="submit" className={`${primaryButton} w-full py-3`}>
-              <LogIn className="h-5 w-5" />
+            {resetSent && (
+              <p role="status" className="flex gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-[15px] text-emerald-300">
+                <MailCheck className="mt-0.5 h-5 w-5 shrink-0" />
+                <span>Si ese email tiene una cuenta en Revela, te llegará un enlace para elegir una contraseña nueva.</span>
+              </p>
+            )}
+
+            <button type="submit" disabled={busy} className={`${primaryButton} w-full py-3`}>
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
               Ingresar
             </button>
+
+            {onForgotPassword && (
+              <button
+                type="button"
+                onClick={handleForgot}
+                disabled={busy}
+                className="w-full cursor-pointer text-center text-[15px] font-semibold text-indigo-300 hover:text-indigo-200 disabled:cursor-default disabled:opacity-60"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
           </form>
 
           {/* Cuentas de demostración */}
+          {demoAccounts.length > 0 && (
           <div className="mt-7 border-t border-slate-700 pt-5">
             <p className="text-sm font-bold uppercase tracking-wider text-slate-400">Cuentas de demostración</p>
             <div className="mt-3 space-y-2">
@@ -177,6 +221,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, demoAccounts,
               ))}
             </div>
           </div>
+          )}
         </section>
       </div>
     </div>

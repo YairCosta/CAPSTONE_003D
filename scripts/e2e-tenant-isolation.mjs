@@ -266,8 +266,8 @@ const collectTenantText = async ({ manager, skipAudit = false }) => {
 const noneOf = (text, words) => words.filter((w) => text.includes(w));
 
 try {
-  // Sin ?pruebas la app es la pública: solo la cuenta de demostración
-  await page.goto(APP_URL, { waitUntil: 'networkidle2' });
+  // Sin ?pruebas la app es la pública: solo la cuenta de demostración (?demo: aunque .env.local apunte a Supabase)
+  await page.goto(`${APP_URL}/?demo`, { waitUntil: 'networkidle2' });
   await page.evaluate(() => sessionStorage.clear());
   await page.reload({ waitUntil: 'networkidle2' });
   const loginTexto = await page.evaluate(() => document.body.innerText);

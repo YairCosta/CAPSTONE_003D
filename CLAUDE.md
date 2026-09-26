@@ -2,7 +2,7 @@
 
 CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en un mapa por zona (comuna, distrito…), mide qué se vende y dónde, y opera en varios países. Tesis de Duoc UC; se pilotea con una empresa real.
 
-**Stack:** React 19 + TypeScript + Vite + Tailwind v4 + Leaflet. Datos en memoria (`src/data/mockGeoData.ts`): la app carga solo la **cuenta demo** (`TENANT_DEMO_ID`, "Revela Demo"); GeoDemo, Norte y Sur son CRMs de prueba que solo aparecen con `?pruebas` en desarrollo (los usa `npm run test:e2e`), y el administrador de plataforma solo existe en desarrollo (`demoDataFor`); Supabase con PostGIS: **las migraciones 0001–0014 ya están aplicadas** en el proyecto `gacvtkzmqnrvzmidjdst` (São Paulo), pero **la app todavía no se conecta** a la base.
+**Stack:** React 19 + TypeScript + Vite + Tailwind v4 + Leaflet. Datos en memoria (`src/data/mockGeoData.ts`): la app carga solo la **cuenta demo** (`TENANT_DEMO_ID`, "Revela Demo"); GeoDemo, Norte y Sur son CRMs de prueba que solo aparecen con `?pruebas` en desarrollo (los usa `npm run test:e2e`), y el administrador de plataforma solo existe en desarrollo (`demoDataFor`); Supabase con PostGIS: **las migraciones 0001–0014 ya están aplicadas** en el proyecto `gacvtkzmqnrvzmidjdst` (São Paulo), y la app se conecta **por etapas** con `VITE_DATA_SOURCE=supabase` en `.env.local` (hoy: login con Supabase Auth y administración de CRMs y usuarios; el resto de los módulos sigue en memoria). Por defecto usa la demo; `?demo` la fuerza en desarrollo. Ver `docs/BASE_DE_DATOS.md` §6.
 
 ## Antes de cambiar la base de datos
 
@@ -36,9 +36,9 @@ No se pueden debilitar sin decirlo explícitamente:
 | Carpeta | Contenido |
 |---|---|
 | `src/components/` | Módulos de la interfaz (KPI y mapa, Pipeline, Contacto, Gerencia, Auditoría, Admin; `StageAdminModule` existe pero su pestaña está oculta, ver `src/lib/permissions.ts`) |
-| `src/lib/` | Lógica pura y reutilizable: guards, monedas, catálogo, métricas, exportación |
+| `src/lib/` | Lógica pura y reutilizable: guards, monedas, catálogo, métricas, exportación. La capa de datos de Supabase va en `src/lib/db/` |
 | `src/data/` | Registro de países (`countries.ts`) y datos de ejemplo (`mockGeoData.ts`) |
-| `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`) y API de tipos de cambio, dentro de Vite |
+| `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase), dentro de Vite |
 | `supabase/migrations/` | Esquema de la base de datos |
 | `docs/` | Base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
 | `scripts/` | Pruebas de aislamiento, exportación y punta a punta |
@@ -54,6 +54,7 @@ npm run test:export  # pruebas de la exportación a Excel
 npm run test:ai      # asistente IA con OpenAI simulado (sin clave real)
 npm run test:sql     # sintaxis y convenciones de las migraciones (parser de PostgreSQL)
 npm run test:db      # pruebas funcionales contra la base de Supabase enlazada (lo deshace todo)
+npm run test:supabase # capa de datos e invitaciones con Supabase simulado (sin conexión)
 npm run test:e2e     # punta a punta con Chrome (requiere npm run dev en marcha)
 npx tsc -b && npm run lint && npm run build
 npm run diagramas   # regenera los diagramas de componentes y estados (docs/diagramas/)

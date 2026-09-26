@@ -150,3 +150,23 @@ Todo queda en estado `CODIGO_NO_DESPLEGADO`: falta la migración y el despliegue
 Nada en este expediente acredita cumplimiento. Sin ambiente productivo no hay release, ni
 configuración, ni observación de runtime, y por eso **ningún control quedó en estado
 `PROBADO_CON_EVIDENCIA_VIGENTE`**.
+
+## Actualización 25-09-2026 (noche) · Login y administración con Supabase
+
+Se agrega; lo anterior no se modifica.
+
+- **Login con Supabase Auth** (`VITE_DATA_SOURCE=supabase`): la contraseña va directo a Supabase,
+  que la guarda con hash; la app no la guarda ni la puede leer. Un usuario o CRM desactivado queda
+  fuera en el acto.
+- **Alta por invitación**: el administrador (o el gerente, solo en su CRM) invita por correo y la
+  persona elige su contraseña. Nadie más la conoce. La clave secreta de Supabase queda solo en el
+  servidor y los registros del servidor no llevan correos ni nombres.
+- **Evidencia**: `npm run test:supabase` (20 pruebas sin conexión) y
+  `evidence/prueba-plataforma-supabase-2026-09-25.txt` (42 pruebas contra la base real, todas
+  deshechas al terminar).
+- **H-13 sigue abierto**: la cuenta demo conserva sus contraseñas públicas de demostración. Se
+  cierra cuando la demo se sirva desde Supabase o se retire del paquete publicado.
+- **Hueco conocido**: el gerente todavía no puede administrar a su equipo en la base (solo el
+  administrador escribe `profiles`); se resuelve en la etapa de Gerencia.
+
+Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).

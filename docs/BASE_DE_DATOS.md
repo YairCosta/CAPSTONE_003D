@@ -140,6 +140,25 @@ Diferencias a resolver al conectar la base:
 
 Las reglas de la app (`src/lib/tenantGuards.ts`) son una **segunda capa**: dan buena experiencia de usuario, pero la garantía real la da la base con RLS y triggers. Un cambio no puede quitar la regla de la base y dejar solo la de la app.
 
+### Conexión de la app, por etapas
+
+La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`src/lib/dataSource.ts`):
+
+- `demo` (por defecto): datos de ejemplo en memoria, como siempre.
+- `supabase`: la base real. En desarrollo, `?demo` o `?pruebas` en la URL fuerzan la demo, así `npm run test:e2e` nunca toca la base.
+
+| Etapa | Qué usa la base | Estado |
+|---|---|---|
+| 1. Sesión y plataforma | Login con Supabase Auth, perfil y CRM de la sesión, Admin → CRMs (crear, editar, activar, plan y países) y Admin → Usuarios (invitar, perfil, activar) | **Conectada** |
+| 2. Gerencia → Usuarios | Equipo del CRM administrado por el gerente | Pendiente: requiere una política nueva, hoy solo el administrador escribe `profiles` |
+| 3. Leads, empresas cliente, contactos y actividades | Pipeline, captura, registro de contacto, derechos del titular | Pendiente |
+| 4. Catálogo, etapas y auditoría | Gerencia → Catálogo, historial y reversión | Pendiente |
+| 5. Exportación | `export_tenant_snapshot()` | Pendiente (el botón queda desactivado con Supabase) |
+
+Mientras una etapa no esté conectada, el usuario de un CRM ve un aviso: lo que cambie en esos módulos no se guarda al recargar.
+
+La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app, funciones puras), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas) y `platform.ts` (CRMs y usuarios). Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
+
 ## 7. Estado actual
 
 | Migración | Contenido |
@@ -174,7 +193,7 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 25 pruebas funcionales de privacidad y aislamiento
+npm run test:db                               # 42 pruebas funcionales: privacidad, aislamiento y administración
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un

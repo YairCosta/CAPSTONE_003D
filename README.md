@@ -27,7 +27,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 |---|---|
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Mapa | Leaflet, mapas base de Esri |
-| Base de datos | PostgreSQL 17 + PostGIS en Supabase (esquema aplicado, app aún sin conectar) |
+| Base de datos | PostgreSQL 17 + PostGIS en Supabase (login y administración conectados; el resto por etapas) |
 | Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
 
 ## Cómo ejecutarlo
@@ -37,8 +37,10 @@ npm install
 npm run dev
 ```
 
-La aplicación queda en `http://localhost:5173`. Los datos son de ejemplo y viven en memoria: se
-reinician al recargar la página.
+La aplicación queda en `http://localhost:5173`. Por defecto los datos son de ejemplo y viven en
+memoria: se reinician al recargar la página. Con `VITE_DATA_SOURCE=supabase` en `.env.local`, el
+login y la administración de la plataforma usan la base real de Supabase (ver `docs/USUARIOS.md`);
+en desarrollo, `?demo` en la URL vuelve a la demo.
 
 Cuentas de demostración (solo local):
 
@@ -61,6 +63,7 @@ npm run test:export   # exportación a Excel
 npm run test:ai       # asistente de IA (OpenAI simulado)
 npm run test:sql      # migraciones de la base de datos
 npm run test:db       # reglas de la base real de Supabase (lo deshace todo al terminar)
+npm run test:supabase # conexión con Supabase e invitaciones, con Supabase simulado
 npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
 ```
 

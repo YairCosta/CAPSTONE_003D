@@ -10,6 +10,11 @@ import { StageAdminModule } from './components/StageAdminModule';
 import { ManagerModule, type NewClientAccount } from './components/ManagerModule';
 import { AdminModule } from './components/AdminModule';
 import { LoginScreen } from './components/LoginScreen';
+import { SetPasswordScreen } from './components/SetPasswordScreen';
+import { usingSupabase } from './lib/dataSource';
+import { supabase, initialAuthLinkError, initialAuthLinkType } from './lib/supabaseClient';
+import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswordFromLink, signIn, signOut } from './lib/db/auth';
+import { insertCompany, inviteUser, loadPlatform, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
 import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
 import { newId } from './lib/ids';
@@ -74,7 +79,15 @@ import {
 } from './lib/privacy';
 import { buildSubjectExport } from './lib/subjectExport';
 import { CHANNEL_LABEL } from './lib/agenda';
-import { mockTerritories, defaultStageConfigs, demoAccounts, platformAdminAccount, platformAdminUser, demoDataFor } from './data/mockGeoData';
+import {
+  mockTerritories,
+  defaultStageConfigs,
+  demoAccounts,
+  platformAdminAccount,
+  platformAdminUser,
+  demoDataFor,
+  type DemoData,
+} from './data/mockGeoData';
 import type {
   AppUser,
   AuditEntry,
@@ -91,7 +104,7 @@ import type {
   StageConfig,
 } from './types/crm';
 import { ROLE_LABEL, ROLE_TABS, authenticate, canCaptureLeads, canMoveLeadBackwards, canRevertChanges, type ActiveTab } from './lib/permissions';
-import { Users, Target, CheckCircle2, DollarSign, Trophy, Map as MapIcon, Boxes } from 'lucide-react';
+import { Users, Target, CheckCircle2, DollarSign, Trophy, Map as MapIcon, Boxes, Database, Loader2 } from 'lucide-react';
 import { computeTerritoryMetrics } from './lib/metrics';
 import { AuditModule } from './components/AuditModule';
 import {
@@ -120,10 +133,18 @@ const THEME_KEY = 'revela-theme';
 // ?pruebas en el servidor de desarrollo; nunca en la app compilada ni en el login.
 // El administrador de plataforma solo existe en desarrollo: al construir, esta rama se elimina y
 // su cuenta no queda en los archivos publicados. En producción vive en Supabase Auth.
-const initialData = demoDataFor({
-  testTenants: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas'),
-  extraUsers: import.meta.env.DEV ? [platformAdminUser] : [],
-});
+// Con Supabase (VITE_DATA_SOURCE=supabase) no se carga nada de ejemplo: los datos llegan de la base
+// después de iniciar sesión, filtrados por RLS.
+const initialData: DemoData = usingSupabase
+  ? { companies: [], users: [], accounts: [], leads: [], activities: [], catalog: [] }
+  : demoDataFor({
+      testTenants: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas'),
+      extraUsers: import.meta.env.DEV ? [platformAdminUser] : [],
+    });
+const db = usingSupabase ? supabase : null;
+
+const EXPORT_PENDING_REASON =
+  'La exportación se habilita cuando los leads y el resto de los datos del CRM estén conectados a la base.';
 
 const DISPLAY_CURRENCY_KEY = 'revela-display-currency';
 
@@ -191,7 +212,13 @@ export function App() {
   const [stageConfigsByTenant, setStageConfigsByTenant] = useState<Record<string, StageConfig[]>>({});
 
   // Sesión y navegación
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readStorage(SESSION_KEY));
+  // En la demo la sesión se recuerda en localStorage; con Supabase la guarda Supabase Auth
+  const [sessionUserId, setSessionUserId] = useState<string | null>(() => (db ? null : readStorage(SESSION_KEY)));
+  // Con Supabase no se muestra el login hasta saber si ya había una sesión abierta
+  const [authReady, setAuthReady] = useState(!db);
+  // Enlace de invitación o recuperación: la persona elige su contraseña antes de entrar
+  const [passwordLink, setPasswordLink] = useState<'invite' | 'recovery' | null>(db ? initialAuthLinkType : null);
+  const [authNotice, setAuthNotice] = useState<string | null>(db ? initialAuthLinkError : null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('kpi');
   const [selectedTerritoryId, setSelectedTerritoryId] = useState<string | null>(null);
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
@@ -330,21 +357,96 @@ export function App() {
   const leadCountsByCountry = useMemo(() => countByCountry(tenantLeads), [tenantLeads]);
 
   // ---------- Sesión ----------
-  const handleLogin = (email: string, password: string): string | null => {
-    const result = authenticate(email, password, users, companies);
-    if (!result.ok) return result.error;
-
-    setSessionUserId(result.user.id);
-    writeStorage(SESSION_KEY, result.user.id);
-    setActiveTab(ROLE_TABS[result.user.role][0]);
+  const openSession = (user: AppUser) => {
+    setSessionUserId(user.id);
+    setActiveTab(ROLE_TABS[user.role][0]);
     setKpiFilters(emptyKpiFilters);
     setCountrySelection(null);
     setSelectedTerritoryId(null);
     setSelectedLeadIdForContact(null);
+  };
+
+  // Con Supabase: perfil de quien entra y todo lo que RLS le deja ver. Si el usuario o su CRM están
+  // desactivados, la sesión de Auth se cierra de inmediato.
+  const enterWithSupabase = async (userId: string): Promise<string | null> => {
+    if (!db) return 'Supabase no está configurado.';
+    const perfil = await loadSessionProfile(db, userId);
+    if (!perfil.ok) {
+      await signOut(db);
+      return perfil.error;
+    }
+    const { user, company } = perfil.data;
+    if (!user.isActive || (user.role !== 'superadmin' && !company?.isActive)) {
+      await signOut(db);
+      return 'Tu usuario o tu CRM está desactivado. Habla con el administrador.';
+    }
+    const plataforma = await loadPlatform(db);
+    if (!plataforma.ok) {
+      await signOut(db);
+      return plataforma.error;
+    }
+    const visibles = plataforma.data.users.some((u) => u.id === user.id)
+      ? plataforma.data.users
+      : [user, ...plataforma.data.users];
+    setCompanies(plataforma.data.companies);
+    setUsers(visibles);
+    openSession(user);
     return null;
   };
 
+  const handleLogin = async (email: string, password: string): Promise<string | null> => {
+    if (db) {
+      setAuthNotice(null);
+      const sesion = await signIn(db, email, password);
+      if (!sesion.ok) return sesion.error;
+      return enterWithSupabase(sesion.data);
+    }
+
+    const result = authenticate(email, password, users, companies);
+    if (!result.ok) return result.error;
+    writeStorage(SESSION_KEY, result.user.id);
+    openSession(result.user);
+    return null;
+  };
+
+  // Al abrir la app con Supabase: se retoma la sesión guardada o la que trae un enlace de invitación
+  useEffect(() => {
+    if (!db) return;
+    let vigente = true;
+    if (initialAuthLinkError) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    void db.auth.getSession().then(async ({ data }) => {
+      if (data.session && vigente) {
+        const error = await enterWithSupabase(data.session.user.id);
+        if (error && vigente) setAuthNotice(error);
+      }
+      if (vigente) setAuthReady(true);
+    });
+    const { data: suscripcion } = db.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setPasswordLink('recovery');
+      if (event === 'SIGNED_OUT') setSessionUserId(null);
+    });
+    return () => {
+      vigente = false;
+      suscripcion.subscription.unsubscribe();
+    };
+    // Solo al montar: enterWithSupabase usa los setters, que son estables
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLogout = () => {
+    if (db) {
+      void signOut(db);
+      // Lo cargado de la base no queda en memoria para la siguiente persona de este navegador
+      setCompanies([]);
+      setUsers([]);
+      setAccounts([]);
+      setAllLeads([]);
+      setAllActivities([]);
+      setCatalog([]);
+      setAuditLog([]);
+      setComplianceAccessLog([]);
+    }
+    setPasswordLink(null);
     setSessionUserId(null);
     writeStorage(SESSION_KEY, null);
     setIsCaptureModalOpen(false);
@@ -961,9 +1063,15 @@ export function App() {
   };
 
   // ---------- Administración de plataforma ----------
-  const handleCreateCompany = (data: NewCompany) => {
-    if (!canAdminister) return;
-    const company = normalizeCompanyCountries({ ...data, id: newId('tenant'), createdAt: new Date().toISOString() });
+  const handleCreateCompany = async (data: NewCompany): Promise<string | null> => {
+    if (!canAdminister) return 'Solo el administrador de la plataforma puede crear CRMs.';
+    const draft = normalizeCompanyCountries({ ...data, id: newId('tenant'), createdAt: new Date().toISOString() });
+    let company = draft;
+    if (db) {
+      const creado = await insertCompany(db, draft);
+      if (!creado.ok) return creado.error;
+      company = creado.data;
+    }
     setCompanies((prev) => [...prev, company]);
     record({
       companyId: company.id,
@@ -973,6 +1081,7 @@ export function App() {
       entityLabel: company.name,
       summary: `CRM creado por el administrador de la plataforma`,
     });
+    return null;
   };
 
   // ---------- Portabilidad: exportación de los datos de un CRM (solo administrador) ----------
@@ -1010,15 +1119,22 @@ export function App() {
     );
   };
 
-  const handleUpdateCompany = (updated: Company) => {
-    if (!canAdminister) return;
+  const handleUpdateCompany = async (updated: Company): Promise<string | null> => {
+    if (!canAdminister) return 'Solo el administrador de la plataforma puede modificar CRMs.';
     const before = companies.find((c) => c.id === updated.id);
-    const safe = sanitizeCompanyUpdate(before, updated, currentUser);
-    if (!safe || !before) return;
-    setCompanies((prev) => prev.map((c) => (c.id === safe.id ? safe : c)));
+    const sanitized = sanitizeCompanyUpdate(before, updated, currentUser);
+    if (!sanitized || !before) return 'No se pudo guardar el CRM.';
+    let safe = sanitized;
+    if (db) {
+      const guardado = await saveCompanyInDb(db, sanitized);
+      if (!guardado.ok) return guardado.error;
+      safe = { ...guardado.data, lastExportedAt: before.lastExportedAt, lastExportedBy: before.lastExportedBy };
+    }
+    const saved = safe;
+    setCompanies((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
 
     const changes = diffFields(before, safe, companyFields);
-    if (changes.length === 0) return;
+    if (changes.length === 0) return null;
     const onlyActivation = changes.length === 1 && changes[0].field === 'isActive';
     record({
       companyId: safe.id,
@@ -1029,16 +1145,24 @@ export function App() {
       summary: changes.map((c) => c.label).join(', '),
       changes,
     });
+    return null;
   };
 
-  const handleCreateUser = (data: NewAppUser): string | null => {
+  // Con Supabase el usuario no se crea con una contraseña: se le envía una invitación y la elige él
+  const handleCreateUser = async (data: NewAppUser): Promise<string | null> => {
     if (!canAdminister) return 'Solo el administrador de la plataforma puede crear usuarios.';
     const invalid = validateNewUser(data, companies, currentUser);
     if (invalid) return invalid;
     const email = data.email.trim().toLowerCase();
     if (users.some((u) => u.email.toLowerCase() === email)) return 'Ya existe un usuario con ese email.';
-    const user: AppUser = { ...data, email, id: newId('user'), createdAt: new Date().toISOString() };
-    setUsers((prev) => [...prev, user]);
+    let user: AppUser = { ...data, email, id: newId('user'), createdAt: new Date().toISOString() };
+    if (db) {
+      const invitado = await inviteUser(db, { ...data, email });
+      if (!invitado.ok) return invitado.error;
+      user = invitado.data;
+    }
+    const created = user;
+    setUsers((prev) => [...prev, created]);
     if (user.companyId) {
       record({
         companyId: user.companyId,
@@ -1046,21 +1170,28 @@ export function App() {
         entity: 'user',
         entityId: user.id,
         entityLabel: user.fullName,
-        summary: `Usuario creado con perfil ${ROLE_LABEL[user.role]}`,
+        summary: db ? `Invitación enviada con perfil ${ROLE_LABEL[user.role]}` : `Usuario creado con perfil ${ROLE_LABEL[user.role]}`,
       });
     }
     return null;
   };
 
-  const handleUpdateUser = (updated: AppUser) => {
-    if (!canAdminister) return;
+  const handleUpdateUser = async (updated: AppUser): Promise<string | null> => {
+    if (!canAdminister) return 'Solo el administrador de la plataforma puede modificar usuarios.';
     const before = users.find((u) => u.id === updated.id);
-    const safe = sanitizeUserUpdate(before, updated, currentUser);
-    if (!safe || !before) return;
-    setUsers((prev) => prev.map((u) => (u.id === safe.id ? safe : u)));
+    const sanitized = sanitizeUserUpdate(before, updated, currentUser);
+    if (!sanitized || !before) return 'No se pudo guardar el usuario.';
+    let safe = sanitized;
+    if (db) {
+      const guardado = await updateProfile(db, sanitized);
+      if (!guardado.ok) return guardado.error;
+      safe = guardado.data;
+    }
+    const saved = safe;
+    setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)));
 
     const changes = diffFields(before, safe, userFields);
-    if (changes.length === 0 || !safe.companyId) return;
+    if (changes.length === 0 || !safe.companyId) return null;
     const onlyActivation = changes.length === 1 && changes[0].field === 'isActive';
     record({
       companyId: safe.companyId,
@@ -1071,6 +1202,7 @@ export function App() {
       summary: changes.map((c) => c.label).join(', '),
       changes,
     });
+    return null;
   };
 
   // ---------- Usuarios del propio CRM (gerencia) ----------
@@ -1254,13 +1386,18 @@ export function App() {
 
   // ---------- Contraseña propia ----------
   // Cada persona cambia la suya: ni el gerente ni la plataforma pueden verla ni fijarla por ella.
-  const handleChangeOwnPassword = (current: string, next: string, confirm: string): string | null => {
+  const handleChangeOwnPassword = async (current: string, next: string, confirm: string): Promise<string | null> => {
     const stored = users.find((u) => u.id === currentUser?.id);
     if (!stored) return 'No se encontró tu usuario.';
-    const invalid = validatePasswordChange(stored.password, { current, next, confirm });
-    if (invalid) return invalid;
-
-    setUsers((prev) => prev.map((u) => (u.id === stored.id ? { ...u, password: next } : u)));
+    if (db) {
+      // Supabase Auth comprueba la actual y guarda la nueva con hash; la app nunca la conserva
+      const error = await changeOwnPassword(db, stored.email, { current, next, confirm });
+      if (error) return error;
+    } else {
+      const invalid = validatePasswordChange(stored.password, { current, next, confirm });
+      if (invalid) return invalid;
+      setUsers((prev) => prev.map((u) => (u.id === stored.id ? { ...u, password: next } : u)));
+    }
     // La auditoría deja constancia del hecho, nunca de la contraseña
     if (stored.companyId) {
       record({
@@ -1276,14 +1413,39 @@ export function App() {
   };
 
   // ---------- Login ----------
+  if (!authReady) {
+    return (
+      <div role="status" className="flex min-h-screen items-center justify-center gap-3 bg-slate-950 text-[15px] text-slate-400">
+        <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+        Abriendo Revela…
+      </div>
+    );
+  }
+
   if (!currentUser || !isSessionValid) {
     return (
       <LoginScreen
         onLogin={handleLogin}
-        demoAccounts={import.meta.env.DEV ? [...demoAccounts, platformAdminAccount] : demoAccounts}
-        notice={sessionUserId ? 'Tu sesión se cerró porque el usuario o su CRM fue desactivado.' : null}
+        onForgotPassword={db ? (email) => requestPasswordReset(db, email) : undefined}
+        demoAccounts={db ? [] : import.meta.env.DEV ? [...demoAccounts, platformAdminAccount] : demoAccounts}
+        notice={authNotice ?? (sessionUserId ? 'Tu sesión se cerró porque el usuario o su CRM fue desactivado.' : null)}
         theme={theme}
         onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
+  if (db && passwordLink) {
+    return (
+      <SetPasswordScreen
+        mode={passwordLink}
+        email={currentUser.email}
+        onSubmit={async (next, confirm) => {
+          const error = await setPasswordFromLink(db, next, confirm);
+          if (!error) setPasswordLink(null);
+          return error;
+        }}
+        onCancel={handleLogout}
       />
     );
   }
@@ -1402,6 +1564,17 @@ export function App() {
       />
 
       <main className={`mx-auto flex-1 w-full px-6 py-6 ${currentTab === 'kanban' ? 'max-w-none' : 'max-w-7xl'}`}>
+        {/* CONEXIÓN POR ETAPAS: con Supabase, la sesión y el CRM vienen de la base; los módulos aún no */}
+        {db && tenantId && (
+          <div role="status" className="mb-4 flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[15px] text-amber-200">
+            <Database className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>
+              Tu sesión y tu CRM ya vienen de la base real. Leads, empresas, contactos, catálogo, usuarios del equipo y
+              auditoría se conectan en las próximas etapas: por ahora lo que cambies en esos módulos no se guarda al recargar.
+            </span>
+          </div>
+        )}
+
         {/* PLAN INTERNACIONAL: países visibles en los módulos de datos.
             La auditoría no se filtra por país: es el historial completo del CRM. */}
         {tenantId && currentTab !== 'audit' && (
@@ -1595,6 +1768,8 @@ export function App() {
             onComplianceAccess={recordComplianceAccess}
             onCreateUser={handleCreateUser}
             onUpdateUser={handleUpdateUser}
+            invitations={Boolean(db)}
+            exportDisabledReason={db ? EXPORT_PENDING_REASON : undefined}
           />
         )}
       </main>

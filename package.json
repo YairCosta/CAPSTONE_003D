@@ -13,6 +13,7 @@
     "test:ai": "node --experimental-strip-types --no-warnings scripts/test-ai-providers.mts",
     "test:sql": "node scripts/test-migrations.mjs",
     "test:db": "node scripts/test-db-remoto.mjs",
+    "test:supabase": "node --experimental-strip-types --no-warnings scripts/test-supabase.mts",
     "diagramas": "node scripts/generar-diagramas.mjs",
     "evidencia": "node scripts/generar-evidencia.mjs",
     "test:e2e": "node scripts/e2e-tenant-isolation.mjs",

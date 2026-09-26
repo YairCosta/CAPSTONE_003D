@@ -1,4 +1,4 @@
-import type { CountryCode, CurrencyCode } from '../data/countries';
+import type { CountryCode, CurrencyCode } from '../data/countries.ts';
 
 export type CommercialStatus =
   | 'new'
