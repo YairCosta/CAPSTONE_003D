@@ -224,6 +224,18 @@ BEGIN
         res := res || jsonb_build_object('prueba', 'El gerente no escribe en el historial de otro CRM', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
     END;
 
+    -- ------------------------------------------------------------ SERVIDOR con la clave secreta (invitaciones)
+    EXECUTE 'RESET ROLE';
+    PERFORM set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, TRUE);
+    EXECUTE 'SET LOCAL ROLE service_role';
+    BEGIN
+        SELECT count(*) INTO v_count FROM public.profiles WHERE id = u_admin AND role = 'superadmin';
+        UPDATE public.profiles SET full_name = 'Vendedor Prueba' WHERE id = u_agent_a;
+        res := res || jsonb_build_object('prueba', 'El servidor lee y escribe perfiles para invitar (0016)', 'ok', v_count = 1, 'detalle', v_count);
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'El servidor lee y escribe perfiles para invitar (0016)', 'ok', FALSE, 'detalle', SQLERRM);
+    END;
+
     -- ------------------------------------------------------------ visitante SIN sesión (anon)
     EXECUTE 'RESET ROLE';
     PERFORM set_config('request.jwt.claims', json_build_object('role', 'anon')::text, TRUE);

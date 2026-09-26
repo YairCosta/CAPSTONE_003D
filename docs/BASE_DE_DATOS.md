@@ -178,6 +178,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` (filas ↔ tipos de la app,
 | 0013 | Corrige `export_tenant_snapshot()`: usaba `first_name`/`last_name` (borradas en 0007); agrega `lead_contacts` y `lead_privacy_requests` al formato v2 |
 | 0014 | Permisos de funciones: nada para `anon`, funciones de trigger e internas fuera de la API, `search_path` fijo en `set_updated_at()` |
 | 0015 | Gerencia edita a su equipo (`Perfiles: gestión gerente` + `trg_profiles_guard_update`); el administrador registra sus acciones en el historial del CRM y la base firma cada entrada (`trg_audit_log_set_actor`) |
+| 0016 | Permisos de tablas para `service_role` (el servidor que invita usuarios): faltaban desde la 0012 y toda invitación se rechazaba |
 
 ## 8. Revisión automática
 
@@ -194,13 +195,13 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 55 pruebas funcionales: privacidad, aislamiento, administración y equipos
+npm run test:db                               # 56 pruebas funcionales: privacidad, aislamiento, administración y equipos
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 el 26-09-2026**. Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 y 0016 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 
