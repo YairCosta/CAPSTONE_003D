@@ -2,7 +2,7 @@
 
 Este documento es la **fuente de verdad** del modelo de datos: qué significa cada tabla, qué reglas nunca se rompen y cómo hacer cambios sin dañar datos. Antes de modificar la base (persona o IA), leer esto.
 
-Motor: **PostgreSQL 15 + PostGIS** (Supabase). Migraciones en `supabase/migrations/`.
+Motor: **PostgreSQL 17.6 + PostGIS 3.3 + pg_cron** (Supabase, proyecto `gacvtkzmqnrvzmidjdst`, región São Paulo `sa-east-1`). Migraciones en `supabase/migrations/`.
 
 ## 1. Glosario
 
@@ -35,6 +35,7 @@ De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e import
 9. lead_contacts                (→ leads; personas del lead, una principal)
 10. lead_items                  (→ leads, catalog_items)
 11. lead_activities             (→ leads)
+    lead_privacy_requests       (→ leads; solicitudes del titular)
 12. data_exports                (auditoría de exportaciones)
 13. audit_log                   (historial de cambios del CRM)
     geocoding_cache             (global, sin tenant)
@@ -61,10 +62,12 @@ Estas reglas están **en la base de datos**, no solo en la aplicación. Si un ca
 2. **Países.** Un lead, empresa cliente o zona solo existe en un país habilitado para su CRM. La zona y la empresa cliente de un lead son del mismo país que el lead (migración 0004).
 3. **Catálogo.** Un `lead_item` apunta a un ítem del mismo CRM que el lead (migración 0005).
 4. **Dinero.** Los montos se guardan en su moneda (`currency_code`) y **nunca convertidos**. La conversión a US$ es solo para mostrar, con tasa referencial.
-5. **Historial.** `lead_activities` y `audit_log` no se editan ni se borran; guardan el nombre de la persona aunque su usuario se elimine.
+5. **Historial.** `lead_activities` y `audit_log` no se editan ni se borran (los usuarios no tienen `UPDATE` ni `DELETE`); guardan el nombre de quien actuó aunque su usuario se elimine. **Única excepción:** `anonymize_lead_internal()` borra lo conversado en la bitácora de un titular anonimizado (Ley 21.719, art. 7). `audit_log` **nunca guarda valores personales**: un trigger los quita de `changes` y `revert_snapshot` aunque la app los envíe.
 6. **Contraseñas.** Solo en `auth.users`. Nunca en tablas propias ni en exportaciones.
 7. **Desactivar en vez de borrar.** Empresas cliente, ítems del catálogo, usuarios y CRMs usan `is_active`. Si tiene historial, se desactiva.
 8. **Un solo nombre por persona.** `full_name`, no `first_name` + `last_name`: los apellidos compuestos y los nombres de otros países no se dividen bien.
+9. **Derechos del titular (0012).** Con una solicitud pendiente, el lead no se edita ni admite contactos; un titular anonimizado no se re-identifica; los prospectos sin contactar en 30 días se anonimizan solos (pg_cron, 03:15 UTC). Solo `resolve_lead_privacy_request()` resuelve, y solo gerencia.
+10. **Permisos explícitos (0012, 0014).** Sin sesión (`anon`) no se lee ninguna tabla ni se ejecuta ninguna función. Con sesión (`authenticated`) se accede siempre a través de RLS. Las funciones de trigger y las internas no se exponen como RPC.
 
 ## 4. Convenciones
 
@@ -88,6 +91,8 @@ Estas reglas están **en la base de datos**, no solo en la aplicación. Si un ca
 3. Índice por `company_id` (o compuesto con lo que se filtre).
 4. `COMMENT ON TABLE` explicando qué es.
 5. Trigger que valide que sus referencias son del mismo CRM.
+6. **`GRANT` explícito a `authenticated`** con solo las operaciones que correspondan: el proyecto no expone tablas automáticamente y las funciones nuevas nacen sin permisos (0014).
+7. Si guarda datos personales: agregarla a `anonymize_lead_internal()` y a `export_tenant_snapshot()`.
 
 ## 5. Cómo hacer cambios
 
@@ -150,6 +155,9 @@ Las reglas de la app (`src/lib/tenantGuards.ts`) son una **segunda capa**: dan b
 | 0009 | `leads.job_title`: cargo del contacto (opcional, nunca en blanco) |
 | 0010 | `lead_contacts`: varias personas por lead (expandir + copiar; contraer queda para después) y `lead_activities.contact_name` |
 | 0011 | Moneda elegida por lead: `lead_allowed_currencies()` y el trigger valida que sea de un país del CRM o USD |
+| 0012 | Derechos del titular: origen y base del dato, `lead_privacy_requests`, bloqueo, anonimización, borrado automático de prospectos (pg_cron), auditoría sin valores personales y permisos explícitos |
+| 0013 | Corrige `export_tenant_snapshot()`: usaba `first_name`/`last_name` (borradas en 0007); agrega `lead_contacts` y `lead_privacy_requests` al formato v2 |
+| 0014 | Permisos de funciones: nada para `anon`, funciones de trigger e internas fuera de la API, `search_path` fijo en `set_updated_at()` |
 
 ## 8. Revisión automática
 
@@ -159,6 +167,24 @@ npm run test:sql
 
 Analiza las migraciones con el parser oficial de PostgreSQL (`libpg-query`) y verifica: sintaxis SQL y PL/pgSQL, numeración sin repetidos, que ninguna tabla se cree dos veces, que los cambios destructivos vengan advertidos, que toda tabla con `company_id` tenga RLS, que todas las tablas tengan `COMMENT ON` y que las funciones `SECURITY DEFINER` fijen `search_path`.
 
-No reemplaza aplicarlas en una base real: no valida que una columna exista o que un tipo calce. Eso se ve con `npx supabase db push`.
+No reemplaza aplicarlas en una base real: no valida que una columna exista o que un tipo calce.
 
-⚠️ **Ninguna se ha ejecutado todavía contra una base real.** La primera vez habrá errores de SQL que corregir; es normal. Hasta el primer despliegue, las migraciones se pueden ajustar libremente. Después, solo se agregan nuevas.
+**Contra la base real** (requiere `npx supabase login` y `npx supabase link` del dueño del proyecto):
+
+```bash
+npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
+npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
+npm run test:db                               # 25 pruebas funcionales de privacidad y aislamiento
+```
+
+`npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
+error forzado que deshace todo: la base queda exactamente como estaba.
+
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase. Desde ahora **ninguna migración
+aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
+local no podía ver (la exportación, corregida en 0013).
+
+Avisos de seguridad aceptados: 15 funciones `SECURITY DEFINER` ejecutables por `authenticated`. Son la
+API de la app o las usan las políticas RLS, y cada una valida dentro quién la llama (por ejemplo,
+exportar exige superadmin y resolver una solicitud exige gerencia). Los avisos de rendimiento
+(`auth_rls_initplan`, políticas permisivas múltiples) quedan para cuando el volumen lo justifique.

@@ -2,7 +2,7 @@
 
 CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en un mapa por zona (comuna, distrito…), mide qué se vende y dónde, y opera en varios países. Tesis de Duoc UC; se pilotea con una empresa real.
 
-**Stack:** React 19 + TypeScript + Vite + Tailwind v4 + Leaflet. Datos en memoria (`src/data/mockGeoData.ts`): la app carga solo la **cuenta demo** (`TENANT_DEMO_ID`, "Revela Demo"); GeoDemo, Norte y Sur son CRMs de prueba que solo aparecen con `?pruebas` en desarrollo (los usa `npm run test:e2e`), y el administrador de plataforma solo existe en desarrollo (`demoDataFor`); Supabase con PostGIS preparado en `supabase/migrations/` pero **todavía no conectado**.
+**Stack:** React 19 + TypeScript + Vite + Tailwind v4 + Leaflet. Datos en memoria (`src/data/mockGeoData.ts`): la app carga solo la **cuenta demo** (`TENANT_DEMO_ID`, "Revela Demo"); GeoDemo, Norte y Sur son CRMs de prueba que solo aparecen con `?pruebas` en desarrollo (los usa `npm run test:e2e`), y el administrador de plataforma solo existe en desarrollo (`demoDataFor`); Supabase con PostGIS: **las migraciones 0001–0014 ya están aplicadas** en el proyecto `gacvtkzmqnrvzmidjdst` (São Paulo), pero **la app todavía no se conecta** a la base.
 
 ## Antes de cambiar la base de datos
 
@@ -14,6 +14,7 @@ Reglas cortas:
 - Toda tabla de datos: `company_id`, RLS, índice, `COMMENT ON` y trigger que valide que sus referencias son del mismo CRM.
 - Si la app y la base se contradicen, gana lo documentado en `docs/BASE_DE_DATOS.md`.
 - Después de tocar una migración: `npm run test:sql` (revisa sintaxis, RLS, `COMMENT ON` y `search_path`).
+- Las migraciones aplicadas **nunca se editan**. Para aplicar: `npx supabase db push`, y después `npx supabase db lint --linked --level error` y `npm run test:db`.
 
 ## Invariantes del producto
 
@@ -52,6 +53,7 @@ npm run test:tenant  # pruebas de aislamiento entre CRMs y reglas de negocio
 npm run test:export  # pruebas de la exportación a Excel
 npm run test:ai      # asistente IA con OpenAI simulado (sin clave real)
 npm run test:sql     # sintaxis y convenciones de las migraciones (parser de PostgreSQL)
+npm run test:db      # pruebas funcionales contra la base de Supabase enlazada (lo deshace todo)
 npm run test:e2e     # punta a punta con Chrome (requiere npm run dev en marcha)
 npx tsc -b && npm run lint && npm run build
 npm run diagramas   # regenera los diagramas de componentes y estados (docs/diagramas/)

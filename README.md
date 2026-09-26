@@ -27,7 +27,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 |---|---|
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Mapa | Leaflet, mapas base de Esri |
-| Base de datos | PostgreSQL + PostGIS en Supabase (esquema listo, aún sin conectar) |
+| Base de datos | PostgreSQL 17 + PostGIS en Supabase (esquema aplicado, app aún sin conectar) |
 | Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
 
 ## Cómo ejecutarlo
@@ -60,6 +60,7 @@ npm run test:tenant   # aislamiento entre CRMs y reglas de negocio
 npm run test:export   # exportación a Excel
 npm run test:ai       # asistente de IA (OpenAI simulado)
 npm run test:sql      # migraciones de la base de datos
+npm run test:db       # reglas de la base real de Supabase (lo deshace todo al terminar)
 npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
 ```
 

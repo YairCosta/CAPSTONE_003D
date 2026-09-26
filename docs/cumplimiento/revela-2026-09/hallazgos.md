@@ -43,6 +43,8 @@ y disponible para el asistente de IA.
 hay región elegida, ni cláusulas, ni información al titular.
 **Remediación:** elegir región, documentar el mecanismo y declararlo en la política. **Bloqueante
 antes del despliegue.**
+**Avance 25-09-2026:** región elegida, **São Paulo (`sa-east-1`)**: la más cercana, porque Supabase no
+tiene servidores en Chile. Sigue siendo transferencia internacional; falta el mecanismo y declararlo.
 
 ### H-06 · Alta · No hay canal ni procedimiento para ejercer derechos
 **Requisito:** arts. 4, 10 y 11. **Hecho:** no existe dirección de contacto, ni plazos, ni

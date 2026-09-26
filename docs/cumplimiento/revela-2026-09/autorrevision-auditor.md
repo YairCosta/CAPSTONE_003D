@@ -74,3 +74,21 @@ corregir AC-03. **Corregido:** revertir conserva siempre el estado de privacidad
 
 **Lección:** una prueba que pasa por la pantalla no demuestra una regla. Cada control del expediente
 debe tener al menos una prueba directa contra el guard.
+
+## Aplicación en la base real (25-09-2026)
+
+**Migración generada para el proveedor real y aplicada:** ✅ Las 14 migraciones quedaron aplicadas en
+el proyecto de Supabase (región São Paulo). El punto que seguía pendiente de la checklist se cierra
+para la base; la app todavía no la usa.
+
+**Prueba operacional en destino no productivo:** la base es la futura productiva, pero al momento de
+la prueba **no tenía datos ni usuarios reales**. Las 25 pruebas se ejecutan dentro de una transacción
+que se deshace al final, y se verificó que la base quedó vacía (0 CRMs, 0 leads, 0 usuarios).
+
+**AC-05 · Hallazgo sobre trabajo anterior:** el lint contra la base encontró que
+`export_tenant_snapshot()` (0006) leía columnas eliminadas en 0007. Ninguna prueba local podía verlo.
+Corregido en 0013, que además agrega `lead_contacts` y `lead_privacy_requests` a la exportación.
+
+**Evidencia:** `evidence/prueba-base-supabase-2026-09-25.txt` (25/25). Antes de aplicar 0013 y 0014,
+la misma prueba dio 23/25, y fallaron justamente los dos puntos que esas migraciones corrigen, lo que
+demuestra que las pruebas detectan el problema.

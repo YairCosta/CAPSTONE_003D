@@ -1309,8 +1309,8 @@
     },
     {
       "archivo": "autorrevision-auditor.md",
-      "bytes": 5595,
-      "sha256": "f7e77d9fa8664e2d3628e450b3a99a1cfc642647661a1f960bf60d996e4be256"
+      "bytes": 6749,
+      "sha256": "c449f2fcd8818d81a37b83ce8885e6cad748f87747302c60f070f6030b5e61c4"
     },
     {
       "archivo": "case.json",
@@ -1318,9 +1318,14 @@
       "sha256": "1368e642c7d8e6e9bf21c18ec255b1b8bb4278245742376414ae4448069ec12a"
     },
     {
+      "archivo": "evidence/prueba-base-supabase-2026-09-25.txt",
+      "bytes": 1487,
+      "sha256": "f3592ecfd06581202d67f0dd40a50eab061ecd8da6d0c23e5e06047011291f96"
+    },
+    {
       "archivo": "hallazgos.md",
-      "bytes": 8620,
-      "sha256": "7dd0e3da2f86a72cc79e2b4ffd3c665080dd8eab7f0a64b9aa4d9b8eb7e0a6df"
+      "bytes": 8830,
+      "sha256": "5a689bbcc858e12a9647121efca7a1c042313fb5b67752479219df3c5f2cd553"
     },
     {
       "archivo": "legal-status.md",
@@ -1388,5 +1393,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-26T00:39:00.174Z"
+  "generadoUtc": "2026-09-26T01:24:20.178Z"
 }

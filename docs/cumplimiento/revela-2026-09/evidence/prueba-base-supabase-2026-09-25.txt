@@ -1,0 +1,27 @@
+✓ Aislamiento: el usuario del CRM A ve solo sus 3 leads
+✓ El usuario base registra la solicitud y la base fija su nombre real
+✓ Una sola solicitud pendiente por lead
+✓ Bloqueo: un lead con solicitud pendiente no se mueve de etapa
+✓ Bloqueo: no se registra contacto con un lead bloqueado
+✓ Solo gerencia resuelve: el usuario base no puede
+✓ La bitácora no se edita por la API
+✓ La anonimización interna no se puede llamar por la API
+✓ Un gerente de otro CRM no resuelve la solicitud
+✓ Aislamiento: el gerente del CRM B no ve leads del CRM A
+✓ Aprobar anonimiza: sin nombre, correo, teléfono, notas ni coordenadas
+✓ Aprobar conserva la operación: empresa cliente del lead
+✓ Aprobar borra también los otros contactos del lead
+✓ Aprobar borra lo conversado en la bitácora
+✓ Aprobar borra la dirección de la caché de geocodificación
+✓ Un titular anonimizado no se vuelve a cargar
+✓ La anonimización no se deshace editando
+✓ La auditoría no guarda valores personales aunque la app los envíe
+✓ Sin sesión no se leen tablas
+✓ Sin sesión no se ejecutan funciones (0014)
+✓ El prospecto con 40 días sin contacto se anonimiza solo
+✓ El prospecto de 5 días se mantiene
+✓ El borrado automático queda en la auditoría por empresa, no por persona
+✓ La tarea diaria de borrado está programada
+✓ La exportación funciona e incluye contactos y solicitudes (0013)
+
+25/25 pruebas contra la base de Supabase OK (todo se deshizo al terminar)
