@@ -392,17 +392,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           {/* ================= VISTA EXPANDIDA ================= */}
                           {isExpanded && (
                             <div className="px-3 pb-3 pt-1 border-t border-slate-700 space-y-2.5 text-sm">
-                              {/* Dirección y Geocodificación PostGIS */}
+                              {/* Dirección (la ubicación en el mapa es la zona, nunca un punto) */}
                               <div className="flex items-start space-x-1.5 text-slate-400 text-[13px]">
                                 <MapPin className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
                                 <div>
                                   <span className="text-slate-300">{lead.rawAddress}</span>
-                                  {lead.latitude && lead.longitude && (
-                                    <span className="block text-xs text-emerald-400 mt-0.5">
-                                      ✓ PostGIS WGS84 ({lead.latitude.toFixed(3)},{' '}
-                                      {lead.longitude.toFixed(3)})
-                                    </span>
-                                  )}
                                 </div>
                               </div>
 

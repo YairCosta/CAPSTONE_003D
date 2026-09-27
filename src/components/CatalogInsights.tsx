@@ -160,8 +160,8 @@ export const CatalogInsights: React.FC<CatalogInsightsProps> = ({ leads, catalog
 
   const mapLeads = useMemo(() => leadsWithItems(leads, selectedIds, scope), [leads, selectedIds, scope]);
 
-  // Color de cada punto: el de la primera búsqueda que coincide con el lead
-  const pointColorFor = useCallback(
+  // Color de cada lead en la burbuja de su zona: el de la primera búsqueda que coincide con él
+  const leadColorFor = useCallback(
     (lead: Lead) =>
       searchGroups.find((g) => (lead.items ?? []).some((line) => g.ids.has(line.itemId)))?.color,
     [searchGroups]
@@ -430,8 +430,8 @@ export const CatalogInsights: React.FC<CatalogInsightsProps> = ({ leads, catalog
               theme={theme}
               countries={countries}
               catalog={catalog}
-              pointColorFor={searchGroups.length > 0 ? pointColorFor : undefined}
-              pointLegend={searchGroups.length > 0 ? searchGroups.map((g) => ({ label: g.label, color: g.color })) : undefined}
+              leadColorFor={searchGroups.length > 0 ? leadColorFor : undefined}
+              colorLegend={searchGroups.length > 0 ? searchGroups.map((g) => ({ label: g.label, color: g.color })) : undefined}
               highlightItemIds={searchGroups.length > 0 ? selectedIds : undefined}
               zoneMetric={zoneMetric}
               onZoneMetricChange={setZoneMetric}

@@ -76,8 +76,6 @@ export interface Lead {
   currency?: CurrencyCode;
   rawAddress: string;
   normalizedAddress?: string;
-  latitude?: number;
-  longitude?: number;
   geocodingStatus: GeocodingStatus;
   assignedTerritoryId?: string;
   createdAt: string;

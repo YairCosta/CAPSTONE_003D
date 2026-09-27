@@ -214,7 +214,7 @@ test('sanitizeLeadUpdate: no permite mover un lead a un país no habilitado', ()
 });
 
 test('sanitizeLeadUpdate: la zona y la empresa cliente deben ser del país del lead', () => {
-  const own = lead('la1', A, { assignedTerritoryId: 'z-cl', latitude: 1, longitude: 1 });
+  const own = lead('la1', A, { assignedTerritoryId: 'z-cl' });
   const moved = sanitizeLeadUpdate(own, { ...own, countryCode: 'PE' }, A, [], CL_PE, ZONES, [], 'manager');
   assert.equal(moved?.assignedTerritoryId, undefined);
   assert.equal(moved?.geocodingStatus, 'manual_review');
@@ -1047,12 +1047,13 @@ test('Revertir: restaura el negocio pero no revive datos personales borrados', (
   assert.equal(tras.noContact, true);
 });
 
-test('Anonimizar: borra dirección exacta, coordenadas y la bitácora de esa persona', () => {
-  const conPunto = lead('l-geo', A, { rawAddress: 'Los Aromos 123', latitude: -33.4, longitude: -70.6, assignedTerritoryId: 'z-cl' });
+test('Anonimizar: borra la dirección exacta y la bitácora de esa persona, y conserva la zona', () => {
+  const conPunto = lead('l-geo', A, { rawAddress: 'Los Aromos 123', normalizedAddress: 'Los Aromos 123, Providencia, Chile', assignedTerritoryId: 'z-cl' });
   const anonimo = anonymizeLeadOfTenant(conPunto, A, '2026-09-25T00:00:00Z')!;
-  assert.equal(anonimo.latitude, undefined);
-  assert.equal(anonimo.longitude, undefined);
+  assert.equal(anonimo.normalizedAddress, undefined);
   assert.ok(!anonimo.rawAddress.includes('Aromos'));
+  // Revela no guarda coordenadas: ni el lead original ni el anonimizado las tienen
+  assert.ok(!('latitude' in anonimo) && !('longitude' in anonimo));
   assert.equal(anonimo.assignedTerritoryId, 'z-cl'); // la zona se conserva para las métricas
 
   const bitacora = [

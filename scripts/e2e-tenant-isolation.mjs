@@ -360,14 +360,20 @@ try {
   const whereBoth = await page.$eval('[role=status]', (el) => el.textContent);
   check('El mapa admite varias búsquedas a la vez', chips === 2 && !whereBoth.startsWith('1 leads'), `${chips} búsquedas · ${whereBoth}`);
 
-  // Ficha del lead al hacer clic en un punto del mapa
-  await page.evaluate(() => {
-    const marker = [...document.querySelectorAll('main path.leaflet-interactive')].find((p) => p.getAttribute('stroke') === '#ffffff');
-    marker?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  });
+  // El mapa trabaja por zona: no dibuja un punto por lead (minimización, migración 0019)
+  const puntosDeLeads = await page.evaluate(
+    () => [...document.querySelectorAll('main path.leaflet-interactive')].filter((p) => p.getAttribute('stroke') === '#ffffff').length
+  );
+  check('El mapa no dibuja la ubicación de cada lead, solo sus zonas', puntosDeLeads === 0, `${puntosDeLeads} puntos`);
+  // Lista de la zona al hacer clic en su burbuja: qué compra cada lead, sin datos de contacto
+  await page.evaluate(() => document.querySelector('main .zone-bubble')?.click());
   await sleep(500);
-  const popup = await page.$eval('.leaflet-popup-content', (el) => el.innerText).catch(() => '');
-  check('Al hacer clic en un punto se ve la ficha del lead (tipo, productos y valor)', /tipo de lead/i.test(popup) && /valor/i.test(popup), popup.replace(/\s+/g, ' ').slice(0, 160));
+  const panelZona = await page.$eval('main aside[aria-label^="Leads de"]', (el) => el.innerText).catch(() => '');
+  check(
+    'Al hacer clic en la burbuja de una zona se ven sus leads (tipo, productos y valor), sin teléfonos',
+    /tipo de lead/i.test(panelZona) && /valor/i.test(panelZona) && !/\+5[16]/.test(panelZona),
+    panelZona.replace(/\s+/g, ' ').slice(0, 160)
+  );
   await clickText('main button', 'Zonas y mapa');
   await sleep(300);
 
@@ -1112,9 +1118,10 @@ try {
   await tab('KPI y Mapa');
   const kpiAntes = await mainText();
   const ganadoAntes = kpiAntes.match(/Ganado\s+([^\n]+)/)?.[1] ?? '';
-  const zonasAntes = await page.evaluate(() =>
-    [...document.querySelectorAll('.zone-label')].map((e) => e.textContent).join(' / ')
-  );
+  // Color de cada zona: es lo que cambia cuando cambian sus cierres
+  const coloresDeZonas = () =>
+    page.evaluate(() => [...document.querySelectorAll('main path.leaflet-interactive')].map((p) => p.getAttribute('fill')).join(' '));
+  const zonasAntes = await coloresDeZonas();
 
   // Se descarta un lead YA GANADO: el dinero ganado y el color de su zona tienen que bajar
   await tab('Pipeline');
@@ -1144,9 +1151,7 @@ try {
     /en curso · \d+ ganad\w+ · \d+ descartad\w+/.test(kpiDespues),
     kpiDespues.slice(0, 160).replace(/\s+/g, ' ')
   );
-  const zonasDespues = await page.evaluate(() =>
-    [...document.querySelectorAll('.zone-label')].map((e) => e.textContent).join(' / ')
-  );
+  const zonasDespues = await coloresDeZonas();
   check('El mapa repinta la zona que dejó de tener cierres', zonasAntes !== zonasDespues, `${zonasAntes}\n    → ${zonasDespues}`);
 
   // El ranking de zonas líderes sigue a los botones "Colorear por" del mapa
@@ -1161,8 +1166,8 @@ try {
     porDinero.includes('dinero') && porCierres.includes('leads cerrados'),
     `${porDinero} → ${porCierres}`
   );
-  // Tras redibujar las zonas (cambió "Colorear por"), ninguna zona ni la leyenda tapan un punto.
-  // Se mira con el mapa en Chile: en la vista de dos países los puntos de una ciudad se superponen entre sí.
+  // Tras redibujar las zonas (cambió "Colorear por"), ninguna zona ni la leyenda tapan la burbuja de una zona.
+  // Se mira con el mapa en Chile: en la vista de dos países las zonas de una ciudad quedan muy juntas.
   // Foco del mapa (no el filtro de países de arriba, que también dice "Chile" y lo desactivaría)
   const enfocarMapa = (pais) =>
     page.evaluate((p) => {
@@ -1176,20 +1181,25 @@ try {
   await sleep(1500);
   await clickText('main button', '$ ganado');
   await sleep(500);
-  const puntosTapados = await page.evaluate(() => {
+  const burbujasTapadas = await page.evaluate(() => {
     document.querySelector('.leaflet-container')?.scrollIntoView({ block: 'center' });
-    const puntos = [...document.querySelectorAll('.leaflet-pane path')].filter((p) => p.getAttribute('fill-opacity') === '1');
-    const tapados = [];
-    for (const p of puntos) {
-      const r = p.getBoundingClientRect();
+    const burbujas = [...document.querySelectorAll('main .zone-bubble')];
+    const tapadas = [];
+    for (const b of burbujas) {
+      const r = b.getBoundingClientRect();
       if (r.width === 0) continue; // fuera del área visible
       const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (encima === p || encima?.getAttribute?.('fill-opacity') === '1') continue; // el punto u otro punto
-      tapados.push(encima?.tagName === 'path' ? 'una zona' : 'la leyenda u otro elemento');
+      if (encima?.closest('.zone-bubble') === b) continue;
+      const otra = encima?.closest('.zone-label-content')?.querySelector('.zone-name')?.textContent;
+      tapadas.push(otra ? `la etiqueta de ${otra}` : encima?.tagName === 'path' ? 'una zona' : 'la leyenda u otro elemento');
     }
-    return tapados;
+    return { total: burbujas.length, tapadas };
   });
-  check('Los puntos del mapa quedan sobre las zonas y la leyenda (se pueden clickear)', puntosTapados.length === 0, puntosTapados.join(', '));
+  check(
+    'Las burbujas de las zonas quedan sobre las zonas y la leyenda (se pueden clickear)',
+    burbujasTapadas.total > 0 && burbujasTapadas.tapadas.length === 0,
+    `${burbujasTapadas.total} burbujas; tapadas por: ${burbujasTapadas.tapadas.join(', ')}`
+  );
   await enfocarMapa('Todos');
 
   // Las tablas de Gerencia caben sin barra horizontal en un notebook (1024 px, zoom de Windows incluido)

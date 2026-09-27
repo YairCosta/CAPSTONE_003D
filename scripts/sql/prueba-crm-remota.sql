@@ -97,14 +97,19 @@ BEGIN
     INSERT INTO public.client_accounts (id, company_id, country_code, name) VALUES (acc_a, co_a, 'CL', 'Minera Etapa 3');
 
     INSERT INTO public.leads (id, company_id, created_by, full_name, job_title, email, commercial_status, estimated_deal_value,
-                              currency_code, raw_address, latitude, longitude, geocoding_status, assigned_territory_id,
+                              currency_code, raw_address, geocoding_status, assigned_territory_id,
                               client_account_id, country_code, value_source, data_origin, consent_status, consent_at)
     VALUES (lead_1, co_a, u_agent_a, 'Ana Contacto', 'Jefa de TI', 'ana@prueba.invalid', 'new', 0,
-            'CLP', 'Av. Prueba 123', -33.43, -70.61, 'success', zona_cl,
+            'CLP', 'Av. Prueba 123', 'success', zona_cl,
             acc_a, 'CL', 'items', 'form', 'inquiry', NOW());
 
-    SELECT extensions.ST_Y(location::extensions.geometry) INTO v_num FROM public.leads WHERE id = lead_1;
-    res := res || jsonb_build_object('prueba', 'La ubicación espacial del lead se calcula desde latitud y longitud (0017)', 'ok', v_num = -33.43, 'detalle', v_num);
+    -- Minimización (0019): el lead se ubica por zona; la base rechaza coordenadas
+    BEGIN
+        UPDATE public.leads SET latitude = -33.43, longitude = -70.61 WHERE id = lead_1;
+        res := res || jsonb_build_object('prueba', 'La base no guarda coordenadas de un lead, solo su zona (0019)', 'ok', FALSE, 'detalle', 'se guardaron');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'La base no guarda coordenadas de un lead, solo su zona (0019)', 'ok', SQLSTATE = '23514', 'detalle', SQLSTATE);
+    END;
 
     SELECT full_name INTO v_text FROM public.lead_contacts WHERE lead_id = lead_1 AND is_primary;
     res := res || jsonb_build_object('prueba', 'El contacto principal se copia solo a lead_contacts (0017)', 'ok', v_text = 'Ana Contacto', 'detalle', v_text);

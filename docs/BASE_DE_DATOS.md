@@ -185,6 +185,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0016 | Permisos de tablas para `service_role` (el servidor que invita usuarios): faltaban desde la 0012 y toda invitación se rechazaba |
 | 0017 | Etapa 3: `zone_catalog` (zonas de referencia por país) copiadas solas a cada CRM, vista `territories_geojson` para el mapa, `leads.location` desde latitud y longitud, espejo del contacto principal en `lead_contacts` y eliminación de empresas cliente sin leads por gerencia |
 | 0018 | Corrige la 0017: los triggers que copian las zonas pasan a `SECURITY DEFINER` (crear un CRM fallaba) |
+| 0019 | Minimización: los leads se ubican por zona, nunca por coordenada. Borra las coordenadas y la caché de geocodificación, agrega `leads_sin_coordenadas` y retira `rpc_update_lead_coordinates()` de la API. Paso "la base lo rechaza": las columnas `latitude`, `longitude` y `location` se eliminan en una migración posterior (contraer) |
 
 ## 8. Revisión automática
 
@@ -207,7 +208,7 @@ npm run test:db                               # 81 pruebas funcionales: privacid
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0018 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

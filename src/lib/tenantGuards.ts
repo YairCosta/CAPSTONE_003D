@@ -241,8 +241,6 @@ export function sanitizeLeadUpdate(
       ? {}
       : {
           assignedTerritoryId: undefined,
-          latitude: undefined,
-          longitude: undefined,
           geocodingStatus: 'manual_review' as const,
         }),
     ...personales,

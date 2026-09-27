@@ -1,0 +1,89 @@
+
+Privacidad y aislamiento
+✓ Aislamiento: el usuario del CRM A ve solo sus 3 leads
+✓ El usuario base registra la solicitud y la base fija su nombre real
+✓ Una sola solicitud pendiente por lead
+✓ Bloqueo: un lead con solicitud pendiente no se mueve de etapa
+✓ Bloqueo: no se registra contacto con un lead bloqueado
+✓ Solo gerencia resuelve: el usuario base no puede
+✓ La bitácora no se edita por la API
+✓ La anonimización interna no se puede llamar por la API
+✓ Un gerente de otro CRM no resuelve la solicitud
+✓ Aislamiento: el gerente del CRM B no ve leads del CRM A
+✓ Aprobar anonimiza: sin nombre, correo, teléfono, notas ni coordenadas
+✓ Aprobar conserva la operación: empresa cliente del lead
+✓ Aprobar borra también los otros contactos del lead
+✓ Aprobar borra lo conversado en la bitácora
+✓ Aprobar borra la dirección de la caché de geocodificación
+✓ Un titular anonimizado no se vuelve a cargar
+✓ La anonimización no se deshace editando
+✓ La auditoría no guarda valores personales aunque la app los envíe
+✓ Sin sesión no se leen tablas
+✓ Sin sesión no se ejecutan funciones (0014)
+✓ El prospecto con 40 días sin contacto se anonimiza solo
+✓ El prospecto de 5 días se mantiene
+✓ El borrado automático queda en la auditoría por empresa, no por persona
+✓ La tarea diaria de borrado está programada
+✓ La exportación funciona e incluye contactos y solicitudes (0013)
+
+Administración de la plataforma
+✓ El administrador crea un CRM con sus países (Chile y Perú)
+✓ Dos CRMs no pueden tener el mismo identificador
+✓ Plan Nacional: Perú deja de estar habilitado sin borrar su configuración
+✓ El administrador ajusta los países habilitados de un CRM
+✓ El administrador cambia el perfil y desactiva a un usuario
+✓ Un usuario de CRM no puede quedar sin CRM
+✓ El administrador no se desactiva a sí mismo (0015)
+✓ El administrador ve todos los CRMs
+✓ El administrador deja sus acciones en el historial del CRM (0015)
+✓ El historial de un CRM es de su gerencia: el administrador no lo lee
+✓ El administrador exporta un CRM y la exportación queda registrada (etapa 5)
+✓ El usuario base lee su propio perfil al iniciar sesión
+✓ El usuario base no edita a su equipo
+✓ El gerente solo ve su propio CRM
+✓ El gerente ve a su equipo y no a los administradores de plataforma
+✓ El gerente no puede crear CRMs
+✓ El gerente no puede cambiar el plan de su CRM
+✓ El gerente no puede habilitar países
+✓ El gerente desactiva y reactiva a alguien de su equipo (0015)
+✓ El gerente cambia el nombre y el perfil de alguien de su equipo (0015)
+✓ El gerente no cambia el email de nadie
+✓ El gerente no mueve a nadie a otro CRM
+✓ El gerente no convierte a nadie en administrador
+✓ El gerente no se desactiva a sí mismo (el CRM no queda sin gerencia)
+✓ Nadie se asciende a administrador desde su sesión
+✓ El gerente no edita usuarios de otro CRM ni al administrador
+✓ El gerente no exporta su CRM completo ni ve el registro de exportaciones
+✓ El gerente ve en su historial lo que hizo el administrador
+✓ La base firma cada entrada con su autor real, la hora actual y sin revertir (0015)
+✓ El gerente no escribe en el historial de otro CRM
+✓ El servidor lee y escribe perfiles para invitar (0016)
+✓ Sin sesión no se puede leer la lista de usuarios
+✓ Sin sesión no se puede leer la lista de CRMs
+
+Trabajo diario del CRM (etapa 3)
+✓ Un CRM nuevo recibe solo las zonas de sus países (10: Chile y Perú)
+✓ Un CRM de plan Nacional recibe solo las de su país (5)
+✓ Al activar el plan Internacional llegan las zonas del país nuevo
+✓ El mapa lee las zonas del CRM con su polígono en GeoJSON
+✓ Gerencia crea un servicio con su precio por país
+✓ Gerencia guarda y vuelve a editar una etapa del pipeline (etapa 4)
+✓ La probabilidad de una etapa va de 0 a 100
+✓ La base no guarda coordenadas de un lead, solo su zona (0019)
+✓ El contacto principal se copia solo a lead_contacts (0017)
+✓ Editar el contacto del lead actualiza su copia
+✓ Con productos, el valor del lead se calcula en la base (3 × 50.000)
+✓ Un lead guarda más de una persona de contacto
+✓ El usuario base registra un contacto y avanza la etapa
+✓ La bitácora de contactos no se edita
+✓ Un lead no usa zonas de otro CRM
+✓ Un lead de Chile no queda en una zona de Perú
+✓ El usuario base no elimina empresas cliente
+✓ El usuario base no configura etapas
+✓ Otro CRM no ve leads, contactos, productos, zonas, catálogo ni etapas ajenos
+✓ Gerencia elimina empresas sin leads; las que tienen leads se quedan (0017)
+✓ Con una solicitud pendiente el lead no se mueve
+✓ Aprobar borra los datos personales y conserva el negocio (valor 150.000)
+✓ Anonimizar deja solo el contacto principal, sin nombre
+
+81/81 pruebas contra la base de Supabase OK (todo se deshizo al terminar)

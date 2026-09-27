@@ -1343,9 +1343,14 @@
       "sha256": "9837720df64c8295eb1d4f2aff7fbedbce4c7feef059c667505c23068c170125"
     },
     {
+      "archivo": "evidence/prueba-zonas-sin-coordenadas-2026-09-26.txt",
+      "bytes": 4889,
+      "sha256": "2d169e01c73079006966dd9c336823cc09b7f8c71723f3c46dfe4e5985d8bc4a"
+    },
+    {
       "archivo": "hallazgos.md",
-      "bytes": 13717,
-      "sha256": "25312491a6f6059669737eb4fb93109d5fe4587781e2441ef7528f447d357325"
+      "bytes": 14791,
+      "sha256": "56949787f9666385e9a9e794e637e5936f77c7e9fcfd1cfca54f0437280d2bbf"
     },
     {
       "archivo": "legal-status.md",
@@ -1413,5 +1418,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-27T00:25:54.067Z"
+  "generadoUtc": "2026-09-27T00:57:55.999Z"
 }

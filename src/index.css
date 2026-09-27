@@ -170,16 +170,62 @@ html.dark {
   display: none;
 }
 
+.zone-label .zone-label-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .zone-label .zone-name {
-  display: block;
   font-size: 13px;
   font-weight: 700;
 }
 
-.zone-label .zone-pct {
-  display: block;
-  font-size: 16px;
-  font-weight: 900;
+.zone-label .zone-detail {
+  font-size: 12px;
+  color: var(--color-slate-400);
+}
+
+.leaflet-tooltip.zone-label-hover::before {
+  display: none;
+}
+
+/* Zona elegida: su lista de leads está abierta en el panel del mapa */
+.leaflet-tooltip.zone-label-selected {
+  border-color: var(--color-indigo-400);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-indigo-500) 45%, transparent);
+}
+
+/* Burbuja con la cantidad de leads de la zona (un color por búsqueda en el catálogo) */
+.zone-label .zone-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-indigo-600);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.zone-label .zone-bubble-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.zone-label .zone-bubble-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid #fff;
+}
+
+.zone-label .zone-bubble-text {
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .leaflet-popup-content-wrapper,

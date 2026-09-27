@@ -225,3 +225,20 @@ Se agrega; lo anterior no se modifica.
   la base real, todas deshechas al terminar) y `npm run test:supabase` (39 sin conexión).
 
 Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 26-09-2026 (noche) · H-12: la ubicación es la zona, nunca la coordenada
+
+Se agrega; lo anterior no se modifica.
+
+- **Decisión técnica sobre H-12**: Revela deja de tener coordenadas de los leads. El mapa muestra
+  zonas con la cantidad de leads y, al elegir una, su lista sin dirección, teléfono ni correo.
+- **La base lo garantiza** (migración 0019): se borraron las coordenadas guardadas y la caché de
+  geocodificación, y la restricción `leads_sin_coordenadas` rechaza cualquier coordenada nueva.
+  La exportación ya no trae latitud ni longitud.
+- **Lo que queda para el abogado**: si alguna vez se quiere ubicar por dirección exacta, la base
+  legal y el aviso al titular. La dirección se conserva como dato de contacto.
+- **Evidencia**: `evidence/prueba-zonas-sin-coordenadas-2026-09-26.txt` (81 pruebas contra la base,
+  entre ellas "La base no guarda coordenadas de un lead, solo su zona (0019)") y el e2e ("El mapa no
+  dibuja la ubicación de cada lead, solo sus zonas").
+
+Estado: `CODIGO_NO_DESPLEGADO` (sin release en producción).

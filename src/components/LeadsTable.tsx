@@ -136,7 +136,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads, showCountry = fal
                     {lead.geocodingStatus === 'success' ? (
                       <span className="inline-flex items-center space-x-1 text-emerald-400 font-medium">
                         <CheckCircle2 className="h-4 w-4" />
-                        <span>Punto WGS84 ({lead.latitude?.toFixed(4)}, {lead.longitude?.toFixed(4)})</span>
+                        <span>En su {COUNTRIES[lead.countryCode].zoneLabel.singular.toLowerCase()}</span>
                       </span>
                     ) : lead.geocodingStatus === 'pending' ? (
                       <span className="inline-flex items-center space-x-1 text-amber-400 font-medium">

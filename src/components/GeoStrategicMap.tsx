@@ -5,19 +5,19 @@ import type { CatalogItem, CommercialStatus, Lead, TerritoryMetric } from '../ty
 import { isManualValue } from '../lib/catalog';
 import { STATUS_LABEL } from '../lib/stages';
 import { computeZoneResults, zoneResultValue, type ZoneMetric } from '../lib/metrics';
-import { contactLine, leadSubtitle, leadTitle } from '../lib/contacts';
-import { formatDate } from '../lib/styles';
-import { Map as MapIcon, BarChart3, DollarSign, Trophy, Globe2 } from 'lucide-react';
+import { leadSubtitle, leadTitle } from '../lib/contacts';
+import { Map as MapIcon, BarChart3, DollarSign, Trophy, Globe2, X, Users } from 'lucide-react';
 import { COUNTRIES, zoneLabelFor, type CountryCode } from '../data/countries';
 import { formatLeadMoney, formatMoney, leadCurrency } from '../lib/currency';
-import { useMoney, type MoneyApi } from '../lib/money';
+import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
 
+// El mapa trabaja por zona, nunca por punto: cada zona muestra cuántos leads tiene y, al elegirla,
+// se abre la lista de sus leads. Revela no guarda coordenadas de los leads (minimización de datos,
+// Ley 21.719; ver docs/LEY_21719.md).
+
 type ViewMode = 'map' | 'bars';
-
-const LEAD_POINTS_PANE = 'puntosLeads';
 type BarMetric = 'leads' | 'pipeline';
-
 type CountryFocus = 'all' | CountryCode;
 
 interface GeoStrategicMapProps {
@@ -28,11 +28,11 @@ interface GeoStrategicMapProps {
   theme: 'light' | 'dark';
   countries: CountryCode[]; // países visibles; con más de uno aparece la vista por país
   frameKey?: string; // al cambiar, el mapa vuelve a encuadrar las zonas (ej. otro producto buscado)
-  catalog?: CatalogItem[]; // para mostrar los productos y servicios en la ficha del lead
-  // Colores de punto personalizados (ej. uno por búsqueda); si no se indican, el color es por etapa
-  pointColorFor?: (lead: Lead) => string | undefined;
-  pointLegend?: { label: string; color: string }[];
-  highlightItemIds?: Set<string>; // ítems buscados: se destacan en la ficha del lead
+  catalog?: CatalogItem[]; // para mostrar los productos y servicios de cada lead en la lista de la zona
+  // Grupos de color (ej. uno por búsqueda del catálogo): la burbuja de cada zona cuenta sus leads por color
+  leadColorFor?: (lead: Lead) => string | undefined;
+  colorLegend?: { label: string; color: string }[];
+  highlightItemIds?: Set<string>; // ítems buscados: se destacan en la lista de la zona
   // Métrica de "Colorear por". Si se entrega, la controla el padre (así el ranking de zonas
   // usa el mismo criterio que el mapa); si no, el mapa la maneja solo.
   zoneMetric?: ZoneMetric;
@@ -47,11 +47,11 @@ const TILE_URLS = {
 };
 const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
 
-
-const POINT_COLORS = { won: '#059669', lost: '#E11D48', active: '#4F46E5' };
-
-const pointColor = (status: CommercialStatus) =>
-  status === 'won' ? POINT_COLORS.won : status === 'lost' ? POINT_COLORS.lost : POINT_COLORS.active;
+const STAGE_COLORS = { won: '#059669', lost: '#E11D48', active: '#4F46E5' };
+const stageColor = (status: CommercialStatus) =>
+  status === 'won' ? STAGE_COLORS.won : status === 'lost' ? STAGE_COLORS.lost : STAGE_COLORS.active;
+const BUBBLE_COLOR = '#4F46E5';
+const PANEL_WIDTH = 330;
 
 // Construye nodos con textContent para no inyectar HTML con datos del usuario
 function node(tag: string, className: string, text?: string): HTMLElement {
@@ -61,101 +61,36 @@ function node(tag: string, className: string, text?: string): HTMLElement {
   return element;
 }
 
-const ITEM_TYPE_TAG = {
-  product: { label: 'Producto', className: 'bg-indigo-500/15 text-indigo-300' },
-  service: { label: 'Servicio', className: 'bg-emerald-500/15 text-emerald-300' },
-} as const;
-
-// Ficha del lead al hacer clic en su punto: qué tipo de lead es y qué compra o contrata
-function buildLeadPopup(
-  lead: Lead,
-  zoneName: string | undefined,
-  catalog: CatalogItem[],
-  highlight: Set<string> | undefined,
-  money: MoneyApi
+// Etiqueta de la zona, en su centro. Compacta (una línea: nombre y burbuja) para que zonas vecinas
+// no se tapen; el resultado de la zona lo dice su color, y aparece completo al pasar el mouse y en
+// el panel. Las zonas sin leads no llevan etiqueta fija: su nombre aparece al pasar el mouse.
+function buildZoneLabel(
+  territory: TerritoryMetric,
+  detail: string,
+  groups: { color: string; count: number }[],
+  onClick: () => void
 ): HTMLElement {
-  const root = node('div', 'w-[270px] space-y-2.5');
-
-  // Encabezado: empresa (o persona natural), persona de contacto y etapa
-  const header = node('div', 'flex items-start justify-between gap-2');
-  const title = node('div', 'min-w-0');
-  title.appendChild(node('div', 'text-[15px] font-bold leading-tight', leadTitle(lead)));
-  if (leadSubtitle(lead)) title.appendChild(node('div', 'text-[13px] text-slate-400', leadSubtitle(lead)));
-  if (!lead.companyName?.trim()) title.appendChild(node('div', 'text-sm font-medium text-indigo-400', 'Persona natural'));
-  header.appendChild(title);
-  const badge = node('span', 'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold text-[#fff]', STATUS_LABEL[lead.commercialStatus]);
-  badge.style.backgroundColor = pointColor(lead.commercialStatus);
-  header.appendChild(badge);
-  root.appendChild(header);
-
-  // Tipo de lead según lo que incluye: productos, servicios o ambos
-  const items = lead.items ?? [];
-  const types = new Set(items.map((line) => catalog.find((i) => i.id === line.itemId)?.type).filter(Boolean));
-  const kind =
-    types.size === 0 ? 'Sin productos ni servicios' : types.size === 2 ? 'Productos y servicios' : types.has('product') ? 'Productos' : 'Servicios';
-  const kindRow = node('div', 'flex items-center justify-between border-t border-slate-700 pt-2 text-[13px]');
-  kindRow.appendChild(node('span', 'font-semibold uppercase tracking-wide text-slate-400', 'Tipo de lead'));
-  kindRow.appendChild(node('span', 'font-bold text-slate-200', kind));
-  root.appendChild(kindRow);
-
-  if (items.length > 0) {
-    const list = node('ul', 'space-y-1');
-    for (const line of items) {
-      const item = catalog.find((i) => i.id === line.itemId);
-      const isMatch = highlight?.has(line.itemId);
-      const li = node('li', `flex items-center gap-1.5 text-[13px] ${isMatch ? 'font-bold text-slate-100' : 'text-slate-300'}`);
-      if (item) {
-        const tag = ITEM_TYPE_TAG[item.type];
-        li.appendChild(node('span', `shrink-0 rounded px-1.5 text-[10px] font-bold uppercase ${tag.className}`, tag.label));
-      }
-      li.appendChild(node('span', 'min-w-0 flex-1 truncate', `${item?.name ?? 'Ítem'}${item?.billing === 'monthly' ? ' (mensual)' : ''}`));
-      li.appendChild(node('span', 'shrink-0 text-slate-400', `×${line.quantity}`));
-      list.appendChild(li);
-    }
-    root.appendChild(list);
-  }
-
-  // Valor, ubicación y contacto
-  const value = node('div', 'flex items-center justify-between border-t border-slate-700 pt-2');
-  value.appendChild(node('span', 'text-[13px] font-semibold uppercase tracking-wide text-slate-400', 'Valor'));
-  const amount = node('span', 'text-[15px] font-black', money.fmtLead(lead));
-  if (isManualValue(lead)) {
-    amount.appendChild(node('span', 'ml-1.5 rounded border border-slate-600 px-1 align-middle text-[10px] font-semibold uppercase text-slate-400', 'manual'));
-  }
-  value.appendChild(amount);
-  root.appendChild(value);
-  // Negociado en otra moneda: se muestra también el monto real guardado
-  if (money.isForeign(lead)) {
-    root.appendChild(node('div', 'text-right text-[13px] text-slate-400', `Negociado en ${formatLeadMoney(lead)}`));
-  }
-
-  const zoneLabel = COUNTRIES[lead.countryCode].zoneLabel.singular;
-  root.appendChild(node('div', 'text-[13px] text-slate-400', lead.rawAddress));
-  root.appendChild(
-    node('div', 'text-[13px] text-slate-400', `${zoneLabel}: ${zoneName ?? 'sin asignar'} · ${COUNTRIES[lead.countryCode].name}`)
-  );
-  const contact = [lead.phone, lead.email].filter(Boolean).join(' · ');
-  if (contact) root.appendChild(node('div', 'text-[13px] text-slate-400', contact));
-  const otros = lead.contacts ?? [];
-  if (otros.length > 0) {
-    root.appendChild(
-      node('div', 'text-[13px] text-slate-400', `Otros contactos: ${otros.map(contactLine).join(' · ')}`)
-    );
-  }
-  root.appendChild(
-    node(
-      'div',
-      'text-xs text-slate-500',
-      `Ingresado ${formatDate(lead.createdAt)}${lead.lastContactedAt ? ` · último contacto ${formatDate(lead.lastContactedAt)}` : ''}`
-    )
-  );
-  return root;
-}
-
-function buildZoneLabel(territory: TerritoryMetric, detail: string): HTMLElement {
-  const root = node('div', '');
+  const root = node('div', 'zone-label-content');
+  root.title = `${territory.territoryName}: ${detail}`;
   root.appendChild(node('span', 'zone-name', territory.territoryName));
-  root.appendChild(node('span', 'zone-pct', detail));
+  const total = groups.reduce((acc, g) => acc + g.count, 0);
+  if (total > 0) {
+    const bubble = node('span', 'zone-bubble');
+    bubble.setAttribute('role', 'button');
+    bubble.setAttribute('aria-label', `Ver los ${total} leads de ${territory.territoryName}`);
+    for (const group of groups) {
+      const part = node('span', 'zone-bubble-part');
+      const dot = node('span', 'zone-bubble-dot');
+      dot.style.backgroundColor = group.color;
+      part.appendChild(dot);
+      part.appendChild(node('span', '', String(group.count)));
+      bubble.appendChild(part);
+    }
+    bubble.appendChild(node('span', 'zone-bubble-text', total === 1 ? 'lead' : 'leads'));
+    root.appendChild(bubble);
+  }
+  L.DomEvent.disableClickPropagation(root);
+  root.addEventListener('click', onClick);
   return root;
 }
 
@@ -175,6 +110,77 @@ function zoneColor(value: number, max: number): string {
   return ZONE_SCALE[Math.max(0, index)].color;
 }
 
+const ITEM_TYPE_TAG = {
+  product: { label: 'Producto', className: 'bg-indigo-500/15 text-indigo-300' },
+  service: { label: 'Servicio', className: 'bg-emerald-500/15 text-emerald-300' },
+} as const;
+
+// Un lead en la lista de la zona: quién es, en qué etapa está, qué compra y cuánto vale.
+// Sin dirección, teléfono ni correo: el mapa es para ver el negocio; el contacto está en la ficha.
+function ZoneLeadCard({ lead, catalog, highlight }: { lead: Lead; catalog: CatalogItem[]; highlight?: Set<string> }) {
+  const money = useMoney();
+  const items = lead.items ?? [];
+  const types = new Set(items.map((line) => catalog.find((i) => i.id === line.itemId)?.type).filter(Boolean));
+  const kind =
+    types.size === 0 ? 'Sin productos ni servicios' : types.size === 2 ? 'Productos y servicios' : types.has('product') ? 'Productos' : 'Servicios';
+
+  return (
+    <li className="space-y-2 rounded-xl border border-slate-700 bg-slate-950/50 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[15px] font-bold leading-tight text-slate-100">{leadTitle(lead)}</p>
+          {leadSubtitle(lead) && <p className="text-[13px] text-slate-400">{leadSubtitle(lead)}</p>}
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold text-[#fff]"
+          style={{ backgroundColor: stageColor(lead.commercialStatus) }}
+        >
+          {STATUS_LABEL[lead.commercialStatus]}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-slate-700 pt-2 text-[13px]">
+        <span className="font-semibold uppercase tracking-wide text-slate-400">Tipo de lead</span>
+        <span className="font-bold text-slate-200">{kind}</span>
+      </div>
+      {items.length > 0 && (
+        <ul className="space-y-1">
+          {items.map((line) => {
+            const item = catalog.find((i) => i.id === line.itemId);
+            const tag = item ? ITEM_TYPE_TAG[item.type] : null;
+            return (
+              <li
+                key={line.itemId}
+                className={`flex items-center gap-1.5 text-[13px] ${highlight?.has(line.itemId) ? 'font-bold text-slate-100' : 'text-slate-300'}`}
+              >
+                {tag && <span className={`shrink-0 rounded px-1.5 text-[10px] font-bold uppercase ${tag.className}`}>{tag.label}</span>}
+                <span className="min-w-0 flex-1 truncate">
+                  {item?.name ?? 'Ítem'}
+                  {item?.billing === 'monthly' ? ' (mensual)' : ''}
+                </span>
+                <span className="shrink-0 text-slate-400">×{line.quantity}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div className="flex items-center justify-between border-t border-slate-700 pt-2">
+        <span className="text-[13px] font-semibold uppercase tracking-wide text-slate-400">Valor</span>
+        <span className="text-[15px] font-black text-slate-100">
+          {money.fmtLead(lead)}
+          {isManualValue(lead) && (
+            <span className="ml-1.5 rounded border border-slate-600 px-1 align-middle text-[10px] font-semibold uppercase text-slate-400">
+              manual
+            </span>
+          )}
+        </span>
+      </div>
+      {money.isForeign(lead) && <p className="text-right text-[13px] text-slate-400">Negociado en {formatLeadMoney(lead)}</p>}
+    </li>
+  );
+}
+
 export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   leads,
   territories,
@@ -184,8 +190,8 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   countries,
   frameKey,
   catalog = [],
-  pointColorFor,
-  pointLegend,
+  leadColorFor,
+  colorLegend,
   highlightItemIds,
   zoneMetric: zoneMetricProp,
   onZoneMetricChange,
@@ -205,7 +211,6 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.LayerGroup | null>(null);
   const zonesLayerRef = useRef<L.LayerGroup | null>(null);
-  const pointsLayerRef = useRef<L.LayerGroup | null>(null);
   const legendRef = useRef<HTMLDivElement>(null);
 
   // Vista por país: "Todos" o un país concreto (si ese país deja de estar visible se vuelve a "Todos")
@@ -221,12 +226,23 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
     () => (countryFocus === 'all' ? leads : leads.filter((l) => l.countryCode === countryFocus)),
     [leads, countryFocus]
   );
-  // Los descartados siguen apareciendo como puntos en el mapa (sirve ver dónde se pierde),
-  // pero no cuentan en el ranking de zonas ni en los ingresos estimados.
+  // Los descartados siguen en la lista de su zona (sirve ver dónde se pierde), pero no cuentan en
+  // el ranking de zonas ni en los ingresos estimados.
   const activeFocusLeads = useMemo(() => focusLeads.filter((l) => l.commercialStatus !== 'lost'), [focusLeads]);
   const initialView = COUNTRIES[countries[0] ?? 'CL'].mapView;
   const zoneLabel = zoneLabelFor(focusCountries).toLowerCase();
   const money = useMoney();
+
+  const selectedZone = focusTerritories.find((t) => t.territoryId === selectedTerritoryId) ?? null;
+  const selectedZoneLeads = useMemo(
+    () =>
+      selectedZone
+        ? focusLeads
+            .filter((l) => l.assignedTerritoryId === selectedZone.territoryId)
+            .sort((a, b) => money.toDisplay(b.estimatedDealValue, leadCurrency(b)) - money.toDisplay(a.estimatedDealValue, leadCurrency(a)))
+        : [],
+    [selectedZone, focusLeads, money]
+  );
 
   const handleFocusCountry = (focus: CountryFocus) => {
     setCountryFocus(focus);
@@ -245,11 +261,6 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
     );
     mapRef.current = map;
     zonesLayerRef.current = L.layerGroup().addTo(map);
-    // Los puntos van en su propia capa, por encima de las zonas (overlayPane = 400). Si compartieran capa,
-    // cada vez que las zonas se redibujan (al cambiar "Colorear por", la moneda o la zona elegida)
-    // quedarían pintadas encima y se tragarían el clic sobre el punto.
-    map.createPane(LEAD_POINTS_PANE).style.zIndex = '450';
-    pointsLayerRef.current = L.layerGroup().addTo(map);
 
     // Recalcula el tamaño del mapa cuando cambia el alto/ancho de su contenedor
     const resizeObserver = new ResizeObserver(() => map.invalidateSize());
@@ -261,7 +272,6 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       mapRef.current = null;
       tileRef.current = null;
       zonesLayerRef.current = null;
-      pointsLayerRef.current = null;
     };
     // La vista inicial solo se usa al crear el mapa; luego encuadra el efecto de encuadre
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -292,6 +302,27 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
     return stats;
   }, [focusTerritories, focusLeads, zoneMetric, money]);
 
+  // Cuántos leads tiene cada zona, separados por color (un grupo por búsqueda, o uno solo)
+  const zoneGroups = useMemo(() => {
+    const groups = new Map<string, Map<string, number>>();
+    for (const lead of focusLeads) {
+      if (!lead.assignedTerritoryId) continue;
+      const color = leadColorFor?.(lead) ?? BUBBLE_COLOR;
+      const byColor = groups.get(lead.assignedTerritoryId) ?? new Map<string, number>();
+      byColor.set(color, (byColor.get(color) ?? 0) + 1);
+      groups.set(lead.assignedTerritoryId, byColor);
+    }
+    const order = colorLegend?.map((c) => c.color) ?? [BUBBLE_COLOR];
+    return new Map(
+      [...groups].map(([zoneId, byColor]) => [
+        zoneId,
+        [...byColor]
+          .map(([color, count]) => ({ color, count }))
+          .sort((a, b) => order.indexOf(a.color) - order.indexOf(b.color)),
+      ])
+    );
+  }, [focusLeads, leadColorFor, colorLegend]);
+
   const zoneDetail = (territory: TerritoryMetric) => {
     const stats = zoneStats.get(territory.territoryId);
     if (!stats || (zoneMetric === 'money' ? stats.money : stats.deals) === 0) return 'sin cierres';
@@ -300,7 +331,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       : `${stats.deals} ${stats.deals === 1 ? 'cierre' : 'cierres'}`;
   };
 
-  // Zonas pintadas según su rendimiento: gris sin resultados, y de rojo a verde según lo ganado
+  // Zonas pintadas según su rendimiento, con su etiqueta y burbuja al centro
   useEffect(() => {
     const layer = zonesLayerRef.current;
     if (!layer) return;
@@ -313,6 +344,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       const stats = zoneStats.get(territory.territoryId);
       const color = zoneColor(stats?.comparable ?? 0, max);
       const empty = color === ZONE_EMPTY_COLOR;
+      const toggle = () => onSelectTerritory(isSelected ? null : territory.territoryId);
       const zone = L.geoJSON(
         { type: 'Feature', properties: {}, geometry: territory.geojsonPolygon } as GeoJSON.Feature,
         {
@@ -325,51 +357,26 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
           },
         }
       );
-      zone.on('click', () => onSelectTerritory(isSelected ? null : territory.territoryId));
-      zone.bindTooltip(buildZoneLabel(territory, zoneDetail(territory)), {
-        permanent: true,
-        direction: 'center',
-        className: 'zone-label',
-      });
+      zone.on('click', toggle);
+      const groups = zoneGroups.get(territory.territoryId) ?? [];
+      if (groups.length > 0 || isSelected) {
+        zone.bindTooltip(buildZoneLabel(territory, zoneDetail(territory), groups, toggle), {
+          permanent: true,
+          interactive: true,
+          direction: 'center',
+          className: `zone-label${isSelected ? ' zone-label-selected' : ''}`,
+        });
+      } else {
+        const hover = node('div', 'zone-label-content');
+        hover.appendChild(node('span', 'zone-name', territory.territoryName));
+        hover.appendChild(node('span', 'zone-detail', `sin leads · ${zoneDetail(territory)}`));
+        zone.bindTooltip(hover, { sticky: true, direction: 'top', className: 'zone-label zone-label-hover' });
+      }
       layer.addLayer(zone);
     });
     // zoneDetail se deriva de zoneStats y de la métrica elegida
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, focusTerritories, zoneStats, zoneMetric, selectedTerritoryId, onSelectTerritory]);
-
-  // Puntos de cada lead
-  useEffect(() => {
-    const layer = pointsLayerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
-
-    focusLeads
-      .filter((lead) => lead.latitude && lead.longitude)
-      .forEach((lead) => {
-        L.circleMarker([lead.latitude!, lead.longitude!], {
-          pane: LEAD_POINTS_PANE,
-          radius: 8,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: pointColorFor?.(lead) ?? pointColor(lead.commercialStatus),
-          fillOpacity: 1,
-        })
-          .bindPopup(
-            () =>
-              buildLeadPopup(
-                lead,
-                territories.find((t) => t.territoryId === lead.assignedTerritoryId)?.territoryName,
-                catalog,
-                highlightItemIds,
-                money
-              ),
-            { maxWidth: 320 }
-          )
-          .addTo(layer);
-      });
-    // Las funciones de color y los datos de la ficha se recalculan junto con los leads visibles
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, focusLeads, pointColorFor, catalog, highlightItemIds, money]);
+  }, [view, focusTerritories, zoneStats, zoneGroups, zoneMetric, selectedTerritoryId, onSelectTerritory]);
 
   // Encuadre: la zona seleccionada, las zonas del país elegido o las de todos los países visibles
   useEffect(() => {
@@ -383,11 +390,11 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       type: 'FeatureCollection',
       features: target.map((t) => ({ type: 'Feature', properties: {}, geometry: t.geojsonPolygon })),
     } as GeoJSON.FeatureCollection).getBounds();
-    // Se deja libre el alto de la leyenda (abajo a la izquierda) para que no tape puntos ni zonas
+    // Se deja libre el alto de la leyenda (abajo a la izquierda) y, con una zona elegida, el panel de sus leads
     const legendHeight = legendRef.current?.offsetHeight ?? 0;
     map.flyToBounds(bounds, {
       paddingTopLeft: [40, 40],
-      paddingBottomRight: [40, 40 + legendHeight],
+      paddingBottomRight: [40 + (selectedTerritoryId ? PANEL_WIDTH : 0), 40 + legendHeight],
       duration: 0.6,
       maxZoom: 14,
     });
@@ -480,11 +487,50 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
         <div className="relative isolate min-h-0 flex-1">
           <div ref={containerRef} className="h-full w-full" />
 
+          {/* Leads de la zona elegida */}
+          {selectedZone && (
+            <aside
+              aria-label={`Leads de ${selectedZone.territoryName}`}
+              className="absolute right-3 top-3 z-[1000] flex max-h-[calc(100%-24px)] flex-col rounded-xl border border-slate-600 bg-slate-900/95 shadow-xl"
+              style={{ width: PANEL_WIDTH }}
+            >
+              <div className="flex items-start justify-between gap-2 border-b border-slate-700 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[15px] font-bold text-slate-100">
+                    {isMultiCountry && <CountryFlag code={selectedZone.countryCode} title={COUNTRIES[selectedZone.countryCode].name} />}
+                    {selectedZone.territoryName}
+                  </p>
+                  <p className="text-[13px] text-slate-400">
+                    {selectedZoneLeads.length} {selectedZoneLeads.length === 1 ? 'lead' : 'leads'} en esta{' '}
+                    {COUNTRIES[selectedZone.countryCode].zoneLabel.singular.toLowerCase()} · {zoneDetail(selectedZone)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onSelectTerritory(null)}
+                  aria-label={`Cerrar la lista de leads de ${selectedZone.territoryName}`}
+                  className="cursor-pointer rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              {selectedZoneLeads.length === 0 ? (
+                <p className="px-4 py-4 text-[15px] text-slate-400">Esta zona no tiene leads con los filtros actuales.</p>
+              ) : (
+                <ul className="min-h-0 space-y-2 overflow-y-auto p-3">
+                  {selectedZoneLeads.map((lead) => (
+                    <ZoneLeadCard key={lead.id} lead={lead} catalog={catalog} highlight={highlightItemIds} />
+                  ))}
+                </ul>
+              )}
+            </aside>
+          )}
+
           {/* Leyenda */}
           <div ref={legendRef} className="absolute bottom-6 left-3 z-[1000] space-y-1.5 rounded-xl border border-slate-600 bg-slate-900/95 px-3.5 py-2.5 text-sm text-slate-300 shadow-md">
-            {pointLegend && (
+            {colorLegend && (
               <div className="flex max-w-[420px] flex-wrap items-center gap-x-4 gap-y-1">
-                {pointLegend.map((entry) => (
+                {colorLegend.map((entry) => (
                   <span key={entry.label} className="flex items-center gap-1.5">
                     <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
                     {entry.label}
@@ -492,23 +538,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
                 ))}
               </div>
             )}
-            {!pointLegend && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: POINT_COLORS.active }} />
-                  En gestión
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: POINT_COLORS.won }} />
-                  Ganado
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: POINT_COLORS.lost }} />
-                  Perdido
-                </span>
-              </div>
-            )}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-700 pt-1.5 text-[13px] text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-400">
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: ZONE_EMPTY_COLOR, opacity: 0.5 }} />
                 Sin cierres
@@ -524,7 +554,10 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
                 {zoneMetric === 'money' ? ` (en ${money.display})` : ''}
               </span>
             </div>
-            <div className="text-[13px] text-slate-400">Haz clic en un punto para ver la ficha del lead</div>
+            <div className="flex items-center gap-1.5 border-t border-slate-700 pt-1.5 text-[13px] text-slate-400">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              La burbuja de cada zona cuenta sus leads. Haz clic en ella o en la zona para verlos.
+            </div>
           </div>
         </div>
       ) : (

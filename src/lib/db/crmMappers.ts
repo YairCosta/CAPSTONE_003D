@@ -94,7 +94,7 @@ export function accountToRow(account: ClientAccount) {
 // ------------------------------------------------------------------ leads
 export const LEAD_COLUMNS =
   'id, company_id, full_name, job_title, email, phone, commercial_status, estimated_deal_value, currency_code, raw_address, ' +
-  'normalized_address, latitude, longitude, geocoding_status, assigned_territory_id, last_contacted_at, notes, client_account_id, ' +
+  'normalized_address, geocoding_status, assigned_territory_id, last_contacted_at, notes, client_account_id, ' +
   'country_code, value_source, data_origin, consent_status, consent_at, no_contact, anonymized_at, anonymized_reason, created_at';
 
 export interface LeadRow {
@@ -109,8 +109,6 @@ export interface LeadRow {
   currency_code: string | null;
   raw_address: string;
   normalized_address: string | null;
-  latitude: number | null;
-  longitude: number | null;
   geocoding_status: string | null;
   assigned_territory_id: string | null;
   last_contacted_at: string | null;
@@ -153,8 +151,6 @@ export function leadFromRow(row: LeadRow, extras: LeadExtras): Lead {
     currency: currency && currency !== COUNTRIES[countryCode].currency ? currency : undefined,
     rawAddress: row.raw_address,
     normalizedAddress: optional(row.normalized_address),
-    latitude: optional(row.latitude),
-    longitude: optional(row.longitude),
     geocodingStatus: (row.geocoding_status ?? 'pending') as GeocodingStatus,
     assignedTerritoryId: optional(row.assigned_territory_id),
     createdAt: row.created_at,
@@ -190,8 +186,6 @@ export function leadToRow(lead: Lead) {
     currency_code: lead.currency ?? COUNTRIES[lead.countryCode].currency,
     raw_address: lead.rawAddress.trim() || 'Dirección por confirmar',
     normalized_address: blank(lead.normalizedAddress),
-    latitude: lead.latitude ?? null,
-    longitude: lead.longitude ?? null,
     geocoding_status: lead.geocodingStatus,
     assigned_territory_id: lead.assignedTerritoryId ?? null,
     last_contacted_at: lead.lastContactedAt ?? null,

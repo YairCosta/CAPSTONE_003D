@@ -127,9 +127,6 @@ export const anonymizeLead = (lead: Lead, at: string, reason: 'request' | 'reten
   phone: undefined,
   rawAddress: 'Dirección eliminada',
   normalizedAddress: undefined,
-  // Un punto exacto en el mapa identifica tanto como el nombre; se conserva solo la zona
-  latitude: undefined,
-  longitude: undefined,
   notes: undefined,
   contacts: [],
   noContact: true,
@@ -177,8 +174,6 @@ export const LEAD_PERSONAL_FIELDS = [
   'contacts',
   'rawAddress',
   'normalizedAddress',
-  'latitude',
-  'longitude',
   'notes',
 ] as const satisfies readonly (keyof Lead)[];
 

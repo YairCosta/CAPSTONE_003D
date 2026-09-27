@@ -1,26 +1,21 @@
 import type { GeocodingStatus, TerritoryMetric } from '../types/crm.ts';
 import { COUNTRIES } from '../data/countries.ts';
 
-// Ubicación sin API externa: el usuario elige la zona (comuna, distrito…) y el lead se ubica dentro de ella.
+// Ubicación por zona: el usuario elige la zona (comuna, distrito…) y el lead queda asignado a ella.
+// Revela no calcula ni guarda coordenadas: para saber qué se vende y dónde basta la zona, y la
+// coordenada de una persona natural es un dato que no hace falta tener (minimización, Ley 21.719;
+// la base lo impide desde la migración 0019).
 // La zona llega completa (con su polígono): en la demo viene de los datos de ejemplo y con Supabase,
 // de la tabla territories del CRM.
 export type LocatableZone = Pick<TerritoryMetric, 'territoryId' | 'territoryName' | 'countryCode' | 'geojsonPolygon'>;
 
 export interface GeocodeOutcome {
   geocodingStatus: GeocodingStatus;
-  latitude?: number;
-  longitude?: number;
   assignedTerritoryId?: string;
   normalizedAddress?: string;
 }
 
-function hashString(value: string): number {
-  let hash = 0;
-  for (const char of value) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return Math.abs(hash);
-}
-
-// Centro aproximado (promedio de vértices) del polígono de una zona
+/** Centro aproximado de una zona (promedio de los vértices de su primer anillo): ahí va su burbuja en el mapa. */
 export function zoneCenter(territory: LocatableZone | undefined): { latitude: number; longitude: number } | null {
   if (!territory) return null;
   // Polygon: [anillo, ...]; MultiPolygon: [[anillo, ...], ...]. Se usa el primer anillo exterior.
@@ -33,29 +28,13 @@ export function zoneCenter(territory: LocatableZone | undefined): { latitude: nu
   return { latitude, longitude };
 }
 
-// Ubica el lead dentro de la zona elegida. La misma dirección siempre cae en el mismo punto.
+/** Asigna el lead a la zona elegida. Sin zona, queda para revisión en Gerencia → Leads sin zona. */
 export function locateInCommune(territory: LocatableZone | undefined, rawAddress: string): GeocodeOutcome {
-  const center = zoneCenter(territory);
-
-  if (!territory || !center) {
-    return {
-      geocodingStatus: 'manual_review',
-      latitude: undefined,
-      longitude: undefined,
-      assignedTerritoryId: undefined,
-      normalizedAddress: undefined,
-    };
+  if (!territory) {
+    return { geocodingStatus: 'manual_review', assignedTerritoryId: undefined, normalizedAddress: undefined };
   }
-
-  const spread = 0.008;
-  const hash = hashString(`${territory.territoryId}|${rawAddress.trim().toLowerCase()}`);
-  const jitterLat = ((hash % 1000) / 1000 - 0.5) * spread;
-  const jitterLng = ((Math.floor(hash / 1000) % 1000) / 1000 - 0.5) * spread;
-
   return {
     geocodingStatus: 'success',
-    latitude: center.latitude + jitterLat,
-    longitude: center.longitude + jitterLng,
     assignedTerritoryId: territory.territoryId,
     normalizedAddress: `${rawAddress.trim()}, ${territory.territoryName}, ${COUNTRIES[territory.countryCode].name}`,
   };

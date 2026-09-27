@@ -664,7 +664,7 @@ export function App() {
       tenantTerritories.some((t) => t.territoryId === input.assignedTerritoryId && t.countryCode === input.countryCode);
     const location = territoryOk
       ? {}
-      : { assignedTerritoryId: undefined, latitude: undefined, longitude: undefined, geocodingStatus: 'manual_review' as const };
+      : { assignedTerritoryId: undefined, geocodingStatus: 'manual_review' as const };
     const now = new Date().toISOString();
     const name = input.companyName?.trim();
 

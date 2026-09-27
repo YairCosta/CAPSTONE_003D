@@ -31,7 +31,7 @@ import {
   territoryFromRow,
 } from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
-import { locateInCommune } from '../src/lib/geocoding.ts';
+import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
 import type { ClientAccount, Lead } from '../src/types/crm.ts';
 import { buildAuditEntry } from '../src/lib/audit.ts';
 import { authorizeInvite, type InviteCaller } from '../src/lib/userAdmin.ts';
@@ -272,7 +272,7 @@ test('Privacidad: el lead muestra la solicitud pendiente aunque haya otras resue
   assert.equal(privacyRequestFor('sin-solicitudes', filas), undefined);
 });
 
-test('Zonas: el polígono de la base ubica al lead dentro de su zona', () => {
+test('Zonas: el lead queda asignado a su zona, sin coordenadas', () => {
   const zona = territoryFromRow({
     id: 'z1', company_id: CRM_A, country_code: 'CL', name: 'Providencia', code: 'PROV-01', color_hex: '#3B82F6',
     polygon: { type: 'MultiPolygon', coordinates: [[[[-70.63, -33.42], [-70.585, -33.415], [-70.59, -33.445], [-70.635, -33.44], [-70.63, -33.42]]]] },
@@ -280,8 +280,13 @@ test('Zonas: el polígono de la base ubica al lead dentro de su zona', () => {
   const ubicado = locateInCommune(zona, 'Av. Providencia 1234');
   assert.equal(ubicado.assignedTerritoryId, 'z1');
   assert.equal(ubicado.geocodingStatus, 'success');
-  assert.ok(ubicado.latitude! < -33.4 && ubicado.latitude! > -33.46);
+  assert.equal(ubicado.normalizedAddress, 'Av. Providencia 1234, Providencia, Chile');
+  // Minimización: la ubicación es la zona; no se calcula ningún punto
+  assert.ok(!('latitude' in ubicado) && !('longitude' in ubicado));
   assert.equal(locateInCommune(undefined, 'x').geocodingStatus, 'manual_review');
+  // El centro de la zona (para su burbuja en el mapa) sí se calcula, desde el polígono
+  const centro = zoneCenter(zona)!;
+  assert.ok(centro.latitude < -33.4 && centro.latitude > -33.46);
 });
 
 test('Errores: los mensajes de las reglas de Revela se muestran; los técnicos no', () => {

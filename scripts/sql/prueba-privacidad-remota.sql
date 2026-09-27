@@ -46,7 +46,7 @@ BEGIN
                               latitude, longitude, currency_code, consent_status, consent_at, client_account_id)
     VALUES
         (lead_1, co_a, 'Ana Titular', 'ana@prueba.invalid', '+56 9 1111 1111', 'Prefiere la tarde',
-         'Los Aromos 123', 'hash-prueba-1', -33.4, -70.6, 'CLP', 'inquiry', NOW(), acc_a),
+         'Los Aromos 123', 'hash-prueba-1', NULL, NULL, 'CLP', 'inquiry', NOW(), acc_a),
         (lead_2, co_a, 'Pedro Prospecto', 'pedro@prueba.invalid', NULL, NULL, 'Calle 2', NULL, NULL, NULL,
          'CLP', 'not_requested', NOW() - INTERVAL '40 days', acc_a),
         (lead_3, co_a, 'Rosa Reciente', NULL, NULL, NULL, 'Calle 3', NULL, NULL, NULL,
