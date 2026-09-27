@@ -45,15 +45,28 @@ BEGIN
 
     -- ------------------------------------------------------------ zonas copiadas solas (0017)
     SELECT count(*) INTO v_count FROM public.territories WHERE company_id = co_a;
-    res := res || jsonb_build_object('prueba', 'Un CRM nuevo recibe solo las zonas de sus países (10: Chile y Perú)', 'ok', v_count = 10, 'detalle', v_count);
+    res := res || jsonb_build_object('prueba', 'Un CRM nuevo recibe las zonas oficiales de sus países (345 comunas + 1.893 distritos)', 'ok', v_count = 2238, 'detalle', v_count);
+
+    SELECT count(DISTINCT region_code), count(*) FILTER (WHERE region_code IS NULL OR region_name IS NULL OR province_name IS NULL OR region_order IS NULL)
+    INTO v_count, v_text FROM public.territories WHERE company_id = co_a;
+    res := res || jsonb_build_object('prueba', 'Cada zona trae su región y provincia (16 regiones de Chile + 25 departamentos de Perú) (0020)',
+        'ok', v_count = 41 AND v_text = '0', 'detalle', jsonb_build_object('regiones', v_count, 'sin_region', v_text));
+
+    SELECT count(*) INTO v_count FROM public.territories WHERE company_id = co_a AND name = 'Miraflores';
+    res := res || jsonb_build_object('prueba', 'Dos zonas pueden llamarse igual: Perú tiene 4 distritos Miraflores (el código las distingue) (0020)',
+        'ok', v_count = 4, 'detalle', v_count);
+
+    SELECT count(*) INTO v_count FROM public.territories
+    WHERE company_id = co_a AND ((country_code = 'CL' AND code !~ '^CL-[0-9]{5}$') OR (country_code = 'PE' AND code !~ '^PE-[0-9]{6}$'));
+    res := res || jsonb_build_object('prueba', 'Las zonas usan el código oficial: CL + código comunal, PE + ubigeo (0020)', 'ok', v_count = 0, 'detalle', v_count);
 
     SELECT count(*) INTO v_count FROM public.territories WHERE company_id = co_b;
-    res := res || jsonb_build_object('prueba', 'Un CRM de plan Nacional recibe solo las de su país (5)', 'ok', v_count = 5, 'detalle', v_count);
+    res := res || jsonb_build_object('prueba', 'Un CRM de plan Nacional recibe solo las de su país (345 comunas)', 'ok', v_count = 345, 'detalle', v_count);
 
     INSERT INTO public.company_countries (company_id, country_code) VALUES (co_b, 'PE') ON CONFLICT DO NOTHING;
     UPDATE public.companies SET plan = 'international' WHERE id = co_b;
     SELECT count(*) INTO v_count FROM public.territories WHERE company_id = co_b AND country_code = 'PE';
-    res := res || jsonb_build_object('prueba', 'Al activar el plan Internacional llegan las zonas del país nuevo', 'ok', v_count = 5, 'detalle', v_count);
+    res := res || jsonb_build_object('prueba', 'Al activar el plan Internacional llegan las zonas del país nuevo (1.893 distritos)', 'ok', v_count = 1893, 'detalle', v_count);
     UPDATE public.companies SET plan = 'national' WHERE id = co_b;
 
     SELECT id INTO zona_cl FROM public.territories WHERE company_id = co_a AND country_code = 'CL' ORDER BY name LIMIT 1;
@@ -64,8 +77,8 @@ BEGIN
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_a, 'role', 'authenticated')::text, TRUE);
     EXECUTE 'SET LOCAL ROLE authenticated';
 
-    SELECT count(*), bool_and(polygon ->> 'type' = 'MultiPolygon') INTO v_count, v_bool FROM public.territories_geojson;
-    res := res || jsonb_build_object('prueba', 'El mapa lee las zonas del CRM con su polígono en GeoJSON', 'ok', v_count = 10 AND v_bool, 'detalle', v_count);
+    SELECT count(*), bool_and(polygon ->> 'type' = 'MultiPolygon' AND region_name IS NOT NULL) INTO v_count, v_bool FROM public.territories_geojson;
+    res := res || jsonb_build_object('prueba', 'El mapa lee las zonas del CRM con su polígono en GeoJSON y su región', 'ok', v_count = 2238 AND v_bool, 'detalle', v_count);
 
     INSERT INTO public.catalog_items (id, company_id, item_type, name, billing_type, is_active)
     VALUES (item_1, co_a, 'service', 'Soporte mensual', 'monthly', TRUE);

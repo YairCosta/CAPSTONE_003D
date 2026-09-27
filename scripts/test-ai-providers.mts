@@ -28,7 +28,7 @@ const test = (name: string, fn: () => void | Promise<void>) => {
   );
 };
 
-const PAISES = [{ code: 'CL', name: 'Chile', zoneLabel: 'Comuna', currency: 'CLP', zones: ['Providencia'] }];
+const PAISES = [{ code: 'CL', name: 'Chile', zoneLabel: 'Comuna', regionLabel: 'Región', currency: 'CLP', regions: ['Metropolitana de Santiago'] }];
 
 // Respuesta simulada de OpenAI
 const respuesta = (message: object, status = 200) =>

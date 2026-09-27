@@ -30,13 +30,15 @@ export function resolveProvider(env: { AI_PROVIDER?: string; OPENAI_API_KEY?: st
   return env.OPENAI_API_KEY && !env.GEMINI_API_KEY ? 'openai' : 'gemini';
 }
 
-// País habilitado para el CRM, con sus zonas (comunas en Chile, distritos en Perú…)
+// País habilitado para el CRM y sus regiones. Las zonas no se envían: son cientos por país (345
+// comunas en Chile, 1.893 distritos en Perú); el asistente usa el nombre oficial y la app la busca.
 export interface ChatCountry {
   code: string;
   name: string;
   zoneLabel: string;
+  regionLabel: string;
   currency: string;
-  zones: string[];
+  regions: string[];
 }
 
 interface ChatContext {
@@ -72,7 +74,6 @@ export const LEAD_STATUS_VALUES = ['nuevo', 'contactado', 'calificado', 'propues
 // ------------------------------------------------------------------ esquemas de las tools
 export function buildToolDeclarations(countries: ChatCountry[]): FunctionDeclaration[] {
   const countryNames = countries.map((c) => c.name);
-  const zones = Array.from(new Set(countries.flatMap((c) => c.zones)));
   const zoneLabels = Array.from(new Set(countries.map((c) => c.zoneLabel.toLowerCase()))).join(' o ') || 'comuna';
   const isMultiCountry = countries.length > 1;
   const countryParam = (description: string) => ({
@@ -155,9 +156,14 @@ export function buildToolDeclarations(countries: ChatCountry[]): FunctionDeclara
           commune: {
             type: Type.STRING,
             description:
-              `Zona del lead (${zoneLabels}) para ubicarlo en el mapa. Debe ser una de la lista permitida para su país; ` +
-              'si la dirección no corresponde a ninguna, omite este campo.',
-            ...(zones.length ? { enum: zones } : {}),
+              `Zona del lead (${zoneLabels}) para ubicarlo en el mapa: su nombre oficial, ej. "Providencia" o "Miraflores". ` +
+              'Si no sabes cuál es, omite este campo.',
+          },
+          region: {
+            type: Type.STRING,
+            description:
+              'Región o departamento de la zona, ej. "Metropolitana de Santiago" o "Lima". Indícala siempre que la sepas: ' +
+              'hay zonas con el mismo nombre en regiones distintas.',
           },
           notes: { type: Type.STRING, description: 'Notas del contacto, ej. "Interesados tras primera llamada".' },
           status: {
@@ -197,9 +203,9 @@ function buildSystemInstruction(context: ChatContext): string {
     `- Países habilitados en este CRM: ${context.countries.map((c) => c.name).join(', ') || 'Chile'}. No busques ni guardes leads de otros países; si lo piden, explica que ese país no está habilitado.`,
     ...context.countries.map(
       (c) =>
-        `- ${c.name}: la zona se llama ${c.zoneLabel.toLowerCase()} y los montos van en ${c.currency}. ${c.zoneLabel}s con zona en el mapa: ${c.zones.join(', ') || 'ninguna'}.`
+        `- ${c.name}: la zona se llama ${c.zoneLabel.toLowerCase()}, se agrupa por ${c.regionLabel.toLowerCase()} y los montos van en ${c.currency}. ${c.regionLabel}s: ${c.regions.join(', ') || 'sin datos'}.`
     ),
-    '- Si la empresa está fuera de las zonas de su país, guarda sin zona y avisa que quedará en "Leads sin zona" para gerencia.',
+    '- Al guardar, indica la zona con su nombre oficial y su región. Si la app responde que la zona no existe o es ambigua, el lead queda en "Leads sin zona" para gerencia: avísale al usuario.',
     context.countries.length > 1
       ? '- Hay varios países: indica siempre el país en search_potential_leads y save_lead_to_crm. Si el usuario no lo dice y no se deduce de la zona, pregunta.'
       : '',
@@ -284,8 +290,9 @@ function parseContext(value: unknown): ChatContext {
           code: str(c.code, 4).toUpperCase(),
           name: str(c.name, 60),
           zoneLabel: str(c.zoneLabel, 30) || 'Zona',
+          regionLabel: str(c.regionLabel, 30) || 'Región',
           currency: str(c.currency, 4).toUpperCase(),
-          zones: strings(c.zones, 80, 100),
+          regions: strings(c.regions, 80, 40),
         }))
         .filter((c) => /^[A-Z]{2}$/.test(c.code) && c.name)
         .slice(0, 20)
@@ -293,7 +300,7 @@ function parseContext(value: unknown): ChatContext {
 
   // Compatibilidad con clientes anteriores que solo enviaban comunas de Chile
   if (countries.length === 0 && Array.isArray(ctx.communes)) {
-    countries.push({ code: 'CL', name: 'Chile', zoneLabel: 'Comuna', currency: 'CLP', zones: strings(ctx.communes, 80, 100) });
+    countries.push({ code: 'CL', name: 'Chile', zoneLabel: 'Comuna', regionLabel: 'Región', currency: 'CLP', regions: [] });
   }
 
   return {

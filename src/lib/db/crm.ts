@@ -72,7 +72,9 @@ export async function loadTenantData(db: SupabaseClient, companyId: string): Pro
           db.from('catalog_item_prices').select('catalog_item_id, country_code, price').order('catalog_item_id').order('country_code').range(from, to)
       ),
       fetchAll<StageRow>(de('pipeline_stage_configs', STAGE_COLUMNS, 'order_index')),
-      fetchAll<TerritoryRow>(de('territories_geojson', 'id, company_id, country_code, name, code, color_hex, polygon', 'name')),
+      fetchAll<TerritoryRow>(
+        de('territories_geojson', 'id, company_id, country_code, name, code, color_hex, polygon, region_code, region_name, province_name, region_order', 'code')
+      ),
     ]);
     return {
       ok: true,

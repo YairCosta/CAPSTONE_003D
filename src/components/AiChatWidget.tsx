@@ -75,7 +75,7 @@ interface AiChatWidgetProps {
   userName: string;
   tenantName: string;
   // Países habilitados del CRM con sus zonas: la IA solo busca y guarda leads en ellos
-  countries: { code: string; name: string; zoneLabel: string; currency: string; zones: string[] }[];
+  countries: { code: string; name: string; zoneLabel: string; regionLabel: string; currency: string; regions: string[] }[];
   onSaveLead: (args: Record<string, unknown>) => Record<string, unknown>;
   // Buscar y mover leads existentes: sin estas dos, "mueve a X a descartado" terminaba creando un duplicado
   onFindLeads: (args: Record<string, unknown>) => Record<string, unknown>;

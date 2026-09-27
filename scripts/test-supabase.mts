@@ -32,6 +32,8 @@ import {
 } from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
 import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
+import { findZonesByName, groupZonesForSelect, regionsOf } from '../src/lib/zones.ts';
+import { readFileSync } from 'node:fs';
 import type { ClientAccount, Lead } from '../src/types/crm.ts';
 import { buildAuditEntry } from '../src/lib/audit.ts';
 import { authorizeInvite, type InviteCaller } from '../src/lib/userAdmin.ts';
@@ -342,6 +344,63 @@ test('Exportación: el JSON de la base arma los mismos datos que la carga normal
   assert.deepEqual(datos.catalog[0].prices, { CL: 50000, PE: 180 });
   assert.equal(datos.stages[0].label, 'Cerrado');
   assert.equal(datos.territories[0].geojsonPolygon.type, 'MultiPolygon');
+});
+
+// ------------------------------------------------------------------ zonas oficiales por región
+const oficiales = (pais: string) =>
+  (JSON.parse(readFileSync(`datos/zonas/zonas-${pais}.geojson`, 'utf8')) as { features: { properties: Record<string, string | number> }[] }).features.map(
+    ({ properties: p }) => ({
+      territoryId: String(p.code),
+      territoryName: String(p.name),
+      countryCode: String(p.country_code) as 'CL' | 'PE',
+      regionCode: String(p.region_code),
+      regionName: String(p.region_name),
+      provinceName: String(p.province_name),
+      regionOrder: Number(p.region_order),
+    })
+  );
+const comunas = oficiales('cl');
+const distritos = oficiales('pe');
+
+test('Zonas oficiales: 345 comunas en 16 regiones y 1.893 distritos en 25 departamentos, con códigos únicos', () => {
+  assert.equal(comunas.length, 345);
+  assert.equal(regionsOf(comunas).length, 16);
+  assert.equal(distritos.length, 1893);
+  assert.equal(regionsOf(distritos).length, 25);
+  assert.equal(new Set([...comunas, ...distritos].map((z) => z.territoryId)).size, 345 + 1893);
+  assert.ok(comunas.every((z) => /^CL-\d{5}$/.test(z.territoryId)) && distritos.every((z) => /^PE-\d{6}$/.test(z.territoryId)));
+  assert.equal(comunas.find((z) => z.territoryId === 'CL-13123')?.territoryName, 'Providencia');
+});
+
+test('Zonas: Chile ordena sus regiones de norte a sur; Perú, alfabético y con tildes', () => {
+  const chile = regionsOf(comunas).map((r) => r.name);
+  assert.equal(chile[0], 'Arica y Parinacota');
+  assert.equal(chile.at(-1), 'Magallanes y de la Antártica Chilena');
+  assert.ok(chile.indexOf('Metropolitana de Santiago') < chile.indexOf('Ñuble'));
+  const peru = regionsOf(distritos).map((r) => r.name);
+  assert.deepEqual(peru.slice(0, 3), ['Amazonas', 'Áncash', 'Apurímac']);
+  assert.ok(peru.includes('Junín') && peru.includes('San Martín'));
+});
+
+test('Zonas: sin región, la lista va agrupada por región; con región, por provincia', () => {
+  assert.equal(groupZonesForSelect(comunas).length, 16);
+  const santiago = groupZonesForSelect(comunas, 'CL-13');
+  assert.equal(santiago.reduce((acc, g) => acc + g.zones.length, 0), 52);
+  assert.ok(santiago.some((g) => g.label === 'Provincia de Santiago'));
+  // Los dos Miraflores del departamento de Lima quedan en provincias distintas
+  const lima = groupZonesForSelect(distritos, 'PE-15');
+  const miraflores = lima.filter((g) => g.zones.some((z) => z.territoryName === 'Miraflores')).map((g) => g.label);
+  assert.deepEqual(miraflores.sort(), ['Provincia de Lima', 'Provincia de Yauyos']);
+});
+
+test('Zonas: el asistente encuentra la zona por nombre y pide la región si hay varias', () => {
+  assert.deepEqual(findZonesByName(comunas, 'nunoa').map((z) => z.territoryId), ['CL-13120']);
+  assert.equal(findZonesByName(distritos, 'Rímac').length, 1);
+  assert.equal(findZonesByName(distritos, 'Santa Rosa').length, 10);
+  assert.equal(findZonesByName(distritos, 'Miraflores').length, 4);
+  assert.deepEqual(findZonesByName(distritos, 'Miraflores', 'Lima').map((z) => z.territoryId), ['PE-150122']);
+  assert.deepEqual(findZonesByName(distritos, 'Miraflores', 'Arequipa').map((z) => z.regionName), ['Arequipa']);
+  assert.deepEqual(findZonesByName(distritos, 'Lugar inexistente'), []);
 });
 
 // ------------------------------------------------------------------ quién invita a quién

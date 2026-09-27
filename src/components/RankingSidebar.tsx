@@ -70,6 +70,8 @@ export const RankingSidebar: React.FC<RankingSidebarProps> = ({
       ? countries.map((code) => ({ code, items: territories.filter((t) => t.countryCode === code) }))
       : [{ code: countries[0], items: territories }]
   )
+    // Un país tiene cientos de zonas: el ranking muestra las que tienen leads
+    .map((g) => ({ ...g, items: g.items.filter((t) => t.leadCount > 0 || t.territoryId === selectedTerritoryId) }))
     .filter((g) => g.items.length > 0)
     .map((g) => ({ ...g, items: [...g.items].sort(byValue) }));
 

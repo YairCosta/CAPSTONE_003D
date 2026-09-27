@@ -17,7 +17,8 @@
     "diagramas": "node scripts/generar-diagramas.mjs",
     "evidencia": "node scripts/generar-evidencia.mjs",
     "test:e2e": "node scripts/e2e-tenant-isolation.mjs",
-    "expediente": "node scripts/generar-expediente.mjs"
+    "expediente": "node scripts/generar-expediente.mjs",
+    "zonas": "node scripts/importar-zonas.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
@@ -39,6 +40,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "libpg-query": "^18.1.5",
+    "mapshaper": "^0.7.68",
     "oxlint": "^1.81.0",
     "puppeteer-core": "^25.11.0",
     "typescript": "~6.0.2",

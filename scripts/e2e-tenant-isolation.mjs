@@ -360,12 +360,24 @@ try {
   const whereBoth = await page.$eval('[role=status]', (el) => el.textContent);
   check('El mapa admite varias búsquedas a la vez', chips === 2 && !whereBoth.startsWith('1 leads'), `${chips} búsquedas · ${whereBoth}`);
 
-  // El mapa trabaja por zona: no dibuja un punto por lead (minimización, migración 0019)
-  const puntosDeLeads = await page.evaluate(
-    () => [...document.querySelectorAll('main path.leaflet-interactive')].filter((p) => p.getAttribute('stroke') === '#ffffff').length
+  // El mapa trabaja por zona: sus únicos marcadores son las etiquetas de zona o región (minimización,
+  // migración 0019). Las zonas se dibujan en un canvas, así que no hay un elemento por lead que contar.
+  const marcadores = await page.evaluate(() => {
+    const todos = [...document.querySelectorAll('main .leaflet-marker-icon')];
+    return { total: todos.length, ajenos: todos.filter((m) => !m.classList.contains('zone-label')).length };
+  });
+  check(
+    'El mapa no dibuja la ubicación de cada lead, solo etiquetas de sus zonas o regiones',
+    marcadores.total > 0 && marcadores.ajenos === 0,
+    `${marcadores.total} marcadores, ${marcadores.ajenos} que no son etiquetas`
   );
-  check('El mapa no dibuja la ubicación de cada lead, solo sus zonas', puntosDeLeads === 0, `${puntosDeLeads} puntos`);
-  // Lista de la zona al hacer clic en su burbuja: qué compra cada lead, sin datos de contacto
+  // Lista de la zona al hacer clic en su burbuja: qué compra cada lead, sin datos de contacto. De lejos
+  // el mapa muestra una burbuja por región: se hace clic en ella para acercarse y después en la zona.
+  if (!(await page.$('main .zone-bubble'))) {
+    await page.evaluate(() => document.querySelector('main .region-bubble')?.click());
+    await page.waitForSelector('main .zone-bubble', { timeout: 4000 }).catch(() => {});
+    await sleep(400);
+  }
   await page.evaluate(() => document.querySelector('main .zone-bubble')?.click());
   await sleep(500);
   const panelZona = await page.$eval('main aside[aria-label^="Leads de"]', (el) => el.innerText).catch(() => '');
@@ -1118,9 +1130,19 @@ try {
   await tab('KPI y Mapa');
   const kpiAntes = await mainText();
   const ganadoAntes = kpiAntes.match(/Ganado\s+([^\n]+)/)?.[1] ?? '';
-  // Color de cada zona: es lo que cambia cuando cambian sus cierres
-  const coloresDeZonas = () =>
-    page.evaluate(() => [...document.querySelectorAll('main path.leaflet-interactive')].map((p) => p.getAttribute('fill')).join(' '));
+  // Imagen del canvas donde se pintan las zonas: su color es lo que cambia cuando cambian sus cierres.
+  // Se espera a que termine el vuelo del mapa para comparar dos cuadros quietos.
+  const coloresDeZonas = async () => {
+    await sleep(1500);
+    return page.evaluate(() => {
+      const canvas = document.querySelector('main .leaflet-overlay-pane canvas');
+      if (!canvas) return 'sin canvas';
+      const datos = canvas.toDataURL();
+      let h = 0;
+      for (let i = 0; i < datos.length; i++) h = (h * 31 + datos.charCodeAt(i)) | 0;
+      return `canvas ${canvas.width}x${canvas.height} #${(h >>> 0).toString(16)}`;
+    });
+  };
   const zonasAntes = await coloresDeZonas();
 
   // Se descarta un lead YA GANADO: el dinero ganado y el color de su zona tienen que bajar
@@ -1183,15 +1205,15 @@ try {
   await sleep(500);
   const burbujasTapadas = await page.evaluate(() => {
     document.querySelector('.leaflet-container')?.scrollIntoView({ block: 'center' });
-    const burbujas = [...document.querySelectorAll('main .zone-bubble')];
+    const burbujas = [...document.querySelectorAll('main .zone-bubble, main .region-bubble')];
     const tapadas = [];
     for (const b of burbujas) {
       const r = b.getBoundingClientRect();
       if (r.width === 0) continue; // fuera del área visible
       const encima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (encima?.closest('.zone-bubble') === b) continue;
+      if (encima?.closest('.zone-bubble, .region-bubble') === b) continue;
       const otra = encima?.closest('.zone-label-content')?.querySelector('.zone-name')?.textContent;
-      tapadas.push(otra ? `la etiqueta de ${otra}` : encima?.tagName === 'path' ? 'una zona' : 'la leyenda u otro elemento');
+      tapadas.push(otra ? `la etiqueta de ${otra}` : ['CANVAS', 'path'].includes(encima?.tagName) ? 'una zona' : 'la leyenda u otro elemento');
     }
     return { total: burbujas.length, tapadas };
   });

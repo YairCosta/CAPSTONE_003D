@@ -22,6 +22,8 @@ export interface CountryConfig {
   currency: CurrencyCode;
   locale: string;
   zoneLabel: { singular: string; plural: string; gender: 'f' | 'm' };
+  // Primer nivel de la división administrativa: agrupa las zonas en los selectores y en el mapa
+  regionLabel: { singular: string; plural: string };
   adminHierarchy: string;
   phonePrefix: string;
   addressExample: string;
@@ -37,6 +39,7 @@ export const COUNTRIES: Record<CountryCode, CountryConfig> = {
     currency: 'CLP',
     locale: 'es-CL',
     zoneLabel: { singular: 'Comuna', plural: 'Comunas', gender: 'f' },
+    regionLabel: { singular: 'Región', plural: 'Regiones' },
     adminHierarchy: 'Región → Provincia → Comuna',
     phonePrefix: '+56 9 ',
     addressExample: 'Av. Providencia 1900',
@@ -50,6 +53,7 @@ export const COUNTRIES: Record<CountryCode, CountryConfig> = {
     currency: 'PEN',
     locale: 'es-PE',
     zoneLabel: { singular: 'Distrito', plural: 'Distritos', gender: 'm' },
+    regionLabel: { singular: 'Departamento', plural: 'Departamentos' },
     adminHierarchy: 'Departamento → Provincia → Distrito',
     phonePrefix: '+51 ',
     addressExample: 'Av. José Larco 1150',

@@ -32,6 +32,7 @@ import { acceptLeads, diffTenantData, snapshotFor, type TenantSnapshot } from '.
 import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
 import { newId, newUuid } from './lib/ids';
+import { findZonesByName, regionsOf } from './lib/zones';
 import { CountryBar } from './components/CountryBar';
 import { CountryFlag } from './components/CountryFlag';
 import { COUNTRIES, type CountryCode } from './data/countries';
@@ -829,12 +830,16 @@ export function App() {
     if (countryArg && !requestedCountry) {
       return { ok: false, error: `El país "${text(args.country)}" no está habilitado para este CRM.` };
     }
-    const zoneName = normalize(text(args.commune));
-    const commune = zoneName
-      ? tenantTerritories.find(
-          (t) => normalize(t.territoryName) === zoneName && (!requestedCountry || t.countryCode === requestedCountry)
+    // La zona se busca por su nombre oficial (sin tildes ni mayúsculas) y, si la hay, su región.
+    // Si hay varias con ese nombre (en Perú hay 10 "Santa Rosa"), no se adivina: queda sin zona.
+    const zoneMatches = text(args.commune)
+      ? findZonesByName(
+          tenantTerritories.filter((t) => !requestedCountry || t.countryCode === requestedCountry),
+          text(args.commune),
+          text(args.region) || undefined
         )
-      : undefined;
+      : [];
+    const commune = zoneMatches.length === 1 ? zoneMatches[0] : undefined;
     const countryCode: CountryCode = requestedCountry ?? commune?.countryCode ?? selectedCountries[0];
     const account = tenantAccounts.find(
       (a) => a.countryCode === countryCode && normalize(a.name) === normalize(companyName)
@@ -914,10 +919,17 @@ export function App() {
       status: statusLabel,
       country: COUNTRIES[countryCode].name,
       commune: commune?.territoryName ?? null,
+      region: commune?.regionName ?? null,
       ...(commune
         ? {}
         : {
-            note: `Sin ${COUNTRIES[countryCode].zoneLabel.singular.toLowerCase()}: quedó en Gerencia → Leads sin zona.`,
+            note:
+              zoneMatches.length > 1
+                ? `Hay ${zoneMatches.length} ${COUNTRIES[countryCode].zoneLabel.plural.toLowerCase()} con ese nombre (${zoneMatches
+                    .map((z) => z.regionName ?? z.provinceName)
+                    .filter(Boolean)
+                    .join(', ')}): quedó en Gerencia → Leads sin zona. Indica la región para ubicarlo.`
+                : `Sin ${COUNTRIES[countryCode].zoneLabel.singular.toLowerCase()}: quedó en Gerencia → Leads sin zona.`,
           }),
     };
   };
@@ -1968,12 +1980,7 @@ export function App() {
           catalog={tenantCatalog}
           countries={enabledCountries}
           defaultCountry={selectedCountries[0]}
-          zones={tenantTerritories.map((t) => ({
-            id: t.territoryId,
-            name: t.territoryName,
-            countryCode: t.countryCode,
-            geojsonPolygon: t.geojsonPolygon,
-          }))}
+          zones={tenantTerritories}
         />
       )}
 
@@ -1988,7 +1995,8 @@ export function App() {
             name: COUNTRIES[code].name,
             zoneLabel: COUNTRIES[code].zoneLabel.singular,
             currency: COUNTRIES[code].currency,
-            zones: tenantTerritories.filter((t) => t.countryCode === code).map((t) => t.territoryName),
+            regionLabel: COUNTRIES[code].regionLabel.singular,
+            regions: regionsOf(tenantTerritories.filter((t) => t.countryCode === code)).map((r) => r.name),
           }))}
           onSaveLead={handleAiSaveLead}
           onFindLeads={handleAiFindLeads}

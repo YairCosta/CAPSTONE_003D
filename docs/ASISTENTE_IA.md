@@ -60,10 +60,14 @@ Al conectar Supabase, puede moverse al servidor (insert en `leads` con RLS) sin 
 | `search_potential_leads` | `query`, `location`, `industry`, `country` | Servidor (Google Places) |
 | `find_leads_in_crm` | `query`*, `country` | Navegador |
 | `update_lead_stage` | `lead_id`*, `status`* | Navegador |
-| `save_lead_to_crm` | `company_name`*, `status`*, `phone` (de la empresa), `address`, `commune`, `notes`, `estimated_value` | Navegador |
+| `save_lead_to_crm` | `company_name`*, `status`*, `phone` (de la empresa), `address`, `commune`, `region`, `notes`, `estimated_value` | Navegador |
 
 `status`: `nuevo`, `contactado`, `calificado`, `propuesta`, `pago_pendiente`, `ganado`, `perdido`.
-`commune`: una de las comunas con zona en el mapa; si falta, el lead queda en **Gerencia → Leads sin comuna**.
+`commune`: nombre oficial de la zona (comuna, distrito); `region`: su región o departamento. El asistente ya no recibe la lista
+de zonas (son 345 comunas y 1.893 distritos): recibe las **regiones** de cada país y la app busca la zona por nombre, sin
+importar tildes ni mayúsculas (`findZonesByName`, `src/lib/zones.ts`). Si el nombre se repite (Perú tiene 4 Miraflores y 10
+Santa Rosa), la región lo resuelve; si aun así hay varias o ninguna, **no se adivina**: el lead queda en
+**Gerencia → Leads sin zona** y la respuesta le dice al asistente cuántas hay y en qué regiones, para que lo explique.
 
 ### Buscar antes de modificar
 

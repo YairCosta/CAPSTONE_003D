@@ -11,6 +11,7 @@ import { COUNTRIES, zoneLabelFor, type CountryCode } from '../data/countries';
 import { formatLeadMoney, formatMoney, leadCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
 import { CountryFlag } from './CountryFlag';
+import { zoneCenter } from '../lib/geocoding';
 
 // El mapa trabaja por zona, nunca por punto: cada zona muestra cuántos leads tiene y, al elegirla,
 // se abre la lista de sus leads. Revela no guarda coordenadas de los leads (minimización de datos,
@@ -52,6 +53,10 @@ const stageColor = (status: CommercialStatus) =>
   status === 'won' ? STAGE_COLORS.won : status === 'lost' ? STAGE_COLORS.lost : STAGE_COLORS.active;
 const BUBBLE_COLOR = '#4F46E5';
 const PANEL_WIDTH = 330;
+// Más lejos que este zoom, las etiquetas por comuna se tapan entre sí: se agrupan por región
+const REGION_ZOOM = 9;
+
+type BubbleGroup = { color: string; count: number };
 
 // Construye nodos con textContent para no inyectar HTML con datos del usuario
 function node(tag: string, className: string, text?: string): HTMLElement {
@@ -64,35 +69,44 @@ function node(tag: string, className: string, text?: string): HTMLElement {
 // Etiqueta de la zona, en su centro. Compacta (una línea: nombre y burbuja) para que zonas vecinas
 // no se tapen; el resultado de la zona lo dice su color, y aparece completo al pasar el mouse y en
 // el panel. Las zonas sin leads no llevan etiqueta fija: su nombre aparece al pasar el mouse.
-function buildZoneLabel(
-  territory: TerritoryMetric,
-  detail: string,
-  groups: { color: string; count: number }[],
-  onClick: () => void
-): HTMLElement {
-  const root = node('div', 'zone-label-content');
-  root.title = `${territory.territoryName}: ${detail}`;
-  root.appendChild(node('span', 'zone-name', territory.territoryName));
+function buildBubble(className: string, groups: BubbleGroup[], ariaLabel: string): HTMLElement {
   const total = groups.reduce((acc, g) => acc + g.count, 0);
-  if (total > 0) {
-    const bubble = node('span', 'zone-bubble');
-    bubble.setAttribute('role', 'button');
-    bubble.setAttribute('aria-label', `Ver los ${total} leads de ${territory.territoryName}`);
-    for (const group of groups) {
-      const part = node('span', 'zone-bubble-part');
-      const dot = node('span', 'zone-bubble-dot');
-      dot.style.backgroundColor = group.color;
-      part.appendChild(dot);
-      part.appendChild(node('span', '', String(group.count)));
-      bubble.appendChild(part);
-    }
-    bubble.appendChild(node('span', 'zone-bubble-text', total === 1 ? 'lead' : 'leads'));
-    root.appendChild(bubble);
+  const bubble = node('span', className);
+  bubble.setAttribute('role', 'button');
+  bubble.setAttribute('aria-label', ariaLabel);
+  for (const group of groups) {
+    const part = node('span', 'zone-bubble-part');
+    const dot = node('span', 'zone-bubble-dot');
+    dot.style.backgroundColor = group.color;
+    part.appendChild(dot);
+    part.appendChild(node('span', '', String(group.count)));
+    bubble.appendChild(part);
   }
+  bubble.appendChild(node('span', 'zone-bubble-text', total === 1 ? 'lead' : 'leads'));
+  return bubble;
+}
+
+function buildLabel(name: string, title: string, bubble: HTMLElement | null, onClick: () => void, extraClass = ''): HTMLElement {
+  const root = node('div', `zone-label-content ${extraClass}`.trim());
+  root.title = title;
+  root.appendChild(node('span', 'zone-name', name));
+  if (bubble) root.appendChild(bubble);
   L.DomEvent.disableClickPropagation(root);
+  L.DomEvent.disableScrollPropagation(root);
   root.addEventListener('click', onClick);
   return root;
 }
+
+// Marcador centrado en un punto con una etiqueta HTML (el contenido se arma con nodos, sin HTML crudo)
+const labelMarker = (lat: number, lng: number, content: HTMLElement, className: string) => {
+  const wrapper = node('div', 'zone-label-anchor');
+  wrapper.appendChild(content);
+  return L.marker([lat, lng], {
+    icon: L.divIcon({ html: wrapper, className: `zone-label ${className}`.trim(), iconSize: undefined }),
+    keyboard: false,
+    riseOnHover: true,
+  });
+};
 
 // Escala de rendimiento de la zona: gris = todavía sin resultados; después de rojo (lo más bajo) a verde (lo más alto)
 const ZONE_SCALE = [
@@ -211,7 +225,9 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.LayerGroup | null>(null);
   const zonesLayerRef = useRef<L.LayerGroup | null>(null);
+  const labelsLayerRef = useRef<L.LayerGroup | null>(null);
   const legendRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(COUNTRIES[countries[0] ?? 'CL'].mapView.zoom);
 
   // Vista por país: "Todos" o un país concreto (si ese país deja de estar visible se vuelve a "Todos")
   const isMultiCountry = countries.length > 1;
@@ -255,12 +271,15 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   useEffect(() => {
     if (view !== 'map' || !containerRef.current) return;
 
-    const map = L.map(containerRef.current, { zoomControl: true, maxZoom: 16 }).setView(
+    // Canvas: con cientos o miles de zonas es mucho más liviano que un SVG por zona
+    const map = L.map(containerRef.current, { zoomControl: true, maxZoom: 16, preferCanvas: true }).setView(
       [initialView.lat, initialView.lng],
       initialView.zoom
     );
     mapRef.current = map;
     zonesLayerRef.current = L.layerGroup().addTo(map);
+    labelsLayerRef.current = L.layerGroup().addTo(map);
+    map.on('zoomend', () => setZoom(map.getZoom()));
 
     // Recalcula el tamaño del mapa cuando cambia el alto/ancho de su contenedor
     const resizeObserver = new ResizeObserver(() => map.invalidateSize());
@@ -272,6 +291,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       mapRef.current = null;
       tileRef.current = null;
       zonesLayerRef.current = null;
+      labelsLayerRef.current = null;
     };
     // La vista inicial solo se usa al crear el mapa; luego encuadra el efecto de encuadre
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -323,6 +343,51 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
     );
   }, [focusLeads, leadColorFor, colorLegend]);
 
+  // Centro de cada zona con leads (o elegida): ahí va su etiqueta
+  const zoneCenters = useMemo(() => {
+    const centros = new Map<string, { latitude: number; longitude: number }>();
+    for (const territory of focusTerritories) {
+      if (!zoneGroups.has(territory.territoryId) && territory.territoryId !== selectedTerritoryId) continue;
+      const centro = zoneCenter(territory);
+      if (centro) centros.set(territory.territoryId, centro);
+    }
+    return centros;
+  }, [focusTerritories, zoneGroups, selectedTerritoryId]);
+
+  // Vista lejana: una burbuja por región, en el promedio de los centros de sus zonas con leads
+  const regionBubbles = useMemo(() => {
+    const regiones = new Map<string, { name: string; zones: TerritoryMetric[]; groups: Map<string, number> }>();
+    for (const territory of focusTerritories) {
+      const grupos = zoneGroups.get(territory.territoryId);
+      if (!grupos || !zoneCenters.has(territory.territoryId)) continue;
+      const clave = `${territory.countryCode}|${territory.regionCode ?? territory.territoryId}`;
+      const region = regiones.get(clave) ?? { name: territory.regionName ?? territory.territoryName, zones: [] as TerritoryMetric[], groups: new Map<string, number>() };
+      region.zones.push(territory);
+      for (const g of grupos) region.groups.set(g.color, (region.groups.get(g.color) ?? 0) + g.count);
+      regiones.set(clave, region);
+    }
+    const orden = colorLegend?.map((c) => c.color) ?? [BUBBLE_COLOR];
+    return [...regiones.entries()].map(([clave, region]) => {
+      const centros = region.zones.map((z) => zoneCenters.get(z.territoryId)!);
+      return {
+        key: clave,
+        name: region.name,
+        zones: region.zones,
+        latitude: centros.reduce((acc, c) => acc + c.latitude, 0) / centros.length,
+        longitude: centros.reduce((acc, c) => acc + c.longitude, 0) / centros.length,
+        groups: [...region.groups]
+          .map(([color, count]) => ({ color, count }))
+          .sort((a, b) => orden.indexOf(a.color) - orden.indexOf(b.color)),
+      };
+    });
+  }, [focusTerritories, zoneGroups, zoneCenters, colorLegend]);
+
+  const boundsOf = (zones: TerritoryMetric[]) =>
+    L.geoJSON({
+      type: 'FeatureCollection',
+      features: zones.map((t) => ({ type: 'Feature', properties: {}, geometry: t.geojsonPolygon })),
+    } as GeoJSON.FeatureCollection).getBounds();
+
   const zoneDetail = (territory: TerritoryMetric) => {
     const stats = zoneStats.get(territory.territoryId);
     if (!stats || (zoneMetric === 'money' ? stats.money : stats.deals) === 0) return 'sin cierres';
@@ -331,7 +396,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       : `${stats.deals} ${stats.deals === 1 ? 'cierre' : 'cierres'}`;
   };
 
-  // Zonas pintadas según su rendimiento, con su etiqueta y burbuja al centro
+  // Zonas pintadas según su rendimiento. Al pasar el mouse, su nombre, provincia y resultado.
   useEffect(() => {
     const layer = zonesLayerRef.current;
     if (!layer) return;
@@ -344,67 +409,104 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       const stats = zoneStats.get(territory.territoryId);
       const color = zoneColor(stats?.comparable ?? 0, max);
       const empty = color === ZONE_EMPTY_COLOR;
-      const toggle = () => onSelectTerritory(isSelected ? null : territory.territoryId);
+      const withLeads = zoneGroups.has(territory.territoryId);
       const zone = L.geoJSON(
         { type: 'Feature', properties: {}, geometry: territory.geojsonPolygon } as GeoJSON.Feature,
         {
           style: {
             color,
-            weight: isSelected ? 4 : 2,
-            opacity: 0.9,
+            // Las zonas sin leads (la mayoría) van tenues para que el país no se vea como un mosaico
+            weight: isSelected ? 4 : withLeads ? 2 : 0.6,
+            opacity: withLeads || isSelected ? 0.9 : 0.5,
             fillColor: color,
-            fillOpacity: isSelected ? 0.6 : empty ? 0.12 : 0.4,
+            fillOpacity: isSelected ? 0.6 : empty ? (withLeads ? 0.2 : 0.06) : 0.4,
           },
         }
       );
-      zone.on('click', toggle);
-      const groups = zoneGroups.get(territory.territoryId) ?? [];
-      if (groups.length > 0 || isSelected) {
-        zone.bindTooltip(buildZoneLabel(territory, zoneDetail(territory), groups, toggle), {
-          permanent: true,
-          interactive: true,
-          direction: 'center',
-          className: `zone-label${isSelected ? ' zone-label-selected' : ''}`,
-        });
-      } else {
-        const hover = node('div', 'zone-label-content');
-        hover.appendChild(node('span', 'zone-name', territory.territoryName));
-        hover.appendChild(node('span', 'zone-detail', `sin leads · ${zoneDetail(territory)}`));
-        zone.bindTooltip(hover, { sticky: true, direction: 'top', className: 'zone-label zone-label-hover' });
-      }
+      zone.on('click', () => onSelectTerritory(isSelected ? null : territory.territoryId));
+      const hover = node('div', 'zone-label-content');
+      hover.appendChild(node('span', 'zone-name', territory.territoryName));
+      const lugar = [territory.provinceName && territory.provinceName !== territory.territoryName ? territory.provinceName : '', territory.regionName]
+        .filter(Boolean)
+        .join(', ');
+      hover.appendChild(node('span', 'zone-detail', `${lugar ? `${lugar} · ` : ''}${withLeads ? zoneDetail(territory) : 'sin leads'}`));
+      zone.bindTooltip(hover, { sticky: true, direction: 'top', className: 'zone-label zone-label-hover' });
       layer.addLayer(zone);
     });
     // zoneDetail se deriva de zoneStats y de la métrica elegida
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, focusTerritories, zoneStats, zoneGroups, zoneMetric, selectedTerritoryId, onSelectTerritory]);
 
-  // Encuadre: la zona seleccionada, las zonas del país elegido o las de todos los países visibles
+  // Etiquetas: de cerca, una por zona con leads; de lejos, una por región (se tapaban entre sí)
+  useEffect(() => {
+    const layer = labelsLayerRef.current;
+    const map = mapRef.current;
+    if (!layer || !map) return;
+    layer.clearLayers();
+
+    if (zoom < REGION_ZOOM && !selectedTerritoryId) {
+      for (const region of regionBubbles) {
+        const total = region.groups.reduce((acc, g) => acc + g.count, 0);
+        const bubble = buildBubble('region-bubble', region.groups, `Acercar a ${region.name}: ${total} leads`);
+        const acercar = () =>
+          map.flyToBounds(boundsOf(region.zones), { padding: [60, 60], duration: 0.6, maxZoom: Math.max(REGION_ZOOM + 2, 11) });
+        labelMarker(region.latitude, region.longitude, buildLabel(region.name, `${region.name}: ${total} leads`, bubble, acercar, 'region-label'), 'region-marker').addTo(layer);
+      }
+      return;
+    }
+
+    for (const territory of focusTerritories) {
+      const centro = zoneCenters.get(territory.territoryId);
+      if (!centro) continue;
+      const isSelected = territory.territoryId === selectedTerritoryId;
+      const groups = zoneGroups.get(territory.territoryId) ?? [];
+      const total = groups.reduce((acc, g) => acc + g.count, 0);
+      const bubble = total > 0 ? buildBubble('zone-bubble', groups, `Ver los ${total} leads de ${territory.territoryName}`) : null;
+      const toggle = () => onSelectTerritory(isSelected ? null : territory.territoryId);
+      labelMarker(
+        centro.latitude,
+        centro.longitude,
+        buildLabel(territory.territoryName, `${territory.territoryName}: ${zoneDetail(territory)}`, bubble, toggle),
+        isSelected ? 'zone-label-selected' : ''
+      ).addTo(layer);
+    }
+    // zoneDetail se deriva de zoneStats y de la métrica elegida; boundsOf es una función pura
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, zoom, focusTerritories, zoneCenters, zoneGroups, regionBubbles, zoneStats, zoneMetric, selectedTerritoryId, onSelectTerritory]);
+
+  // Encuadre: la zona elegida; si no, las zonas con leads; si no hay, la vista inicial de cada país.
+  // Nunca el país entero: en Chile incluiría Isla de Pascua y el mapa quedaría en el Pacífico.
+  const zonasConLeadsKey = [...zoneGroups.keys()].sort().join(',');
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const target = selectedTerritoryId
-      ? territories.filter((t) => t.territoryId === selectedTerritoryId)
-      : focusTerritories;
-    if (target.length === 0) return;
-    const bounds = L.geoJSON({
-      type: 'FeatureCollection',
-      features: target.map((t) => ({ type: 'Feature', properties: {}, geometry: t.geojsonPolygon })),
-    } as GeoJSON.FeatureCollection).getBounds();
+    const elegida = selectedTerritoryId ? territories.filter((t) => t.territoryId === selectedTerritoryId) : [];
+    const conLeads = focusTerritories.filter((t) => zoneGroups.has(t.territoryId));
+    const target = elegida.length > 0 ? elegida : conLeads;
     // Se deja libre el alto de la leyenda (abajo a la izquierda) y, con una zona elegida, el panel de sus leads
     const legendHeight = legendRef.current?.offsetHeight ?? 0;
-    map.flyToBounds(bounds, {
-      paddingTopLeft: [40, 40],
-      paddingBottomRight: [40 + (selectedTerritoryId ? PANEL_WIDTH : 0), 40 + legendHeight],
-      duration: 0.6,
-      maxZoom: 14,
-    });
-    // Las geometrías de las zonas son estáticas; solo reencuadrar al cambiar la selección, el país o la vista
+    const padding = {
+      paddingTopLeft: [40, 40] as L.PointTuple,
+      paddingBottomRight: [40 + (selectedTerritoryId ? PANEL_WIDTH : 0), 40 + legendHeight] as L.PointTuple,
+    };
+    if (target.length > 0) {
+      map.flyToBounds(boundsOf(target), { ...padding, duration: 0.6, maxZoom: 14 });
+      return;
+    }
+    const vistas = focusCountries.map((c) => COUNTRIES[c].mapView);
+    if (vistas.length === 1) {
+      map.flyTo([vistas[0].lat, vistas[0].lng], vistas[0].zoom, { duration: 0.6 });
+    } else {
+      map.flyToBounds(L.latLngBounds(vistas.map((v) => [v.lat, v.lng] as L.LatLngTuple)), { ...padding, duration: 0.6, maxZoom: 12 });
+    }
+    // Las geometrías de las zonas son estáticas; solo reencuadrar al cambiar la selección, el país,
+    // la vista o el conjunto de zonas con leads
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedTerritoryId, countryFocus, countries.join(','), frameKey]);
+  }, [view, selectedTerritoryId, countryFocus, countries.join(','), frameKey, zonasConLeadsKey]);
 
   // Datos del gráfico de barras, con los montos en la moneda de la vista
   const barRows = useMemo(() => {
-    const rows = focusTerritories.map((territory) => {
+    const rows = focusTerritories.filter((t) => zoneGroups.has(t.territoryId)).map((territory) => {
       const zoneLeads = activeFocusLeads.filter((l) => l.assignedTerritoryId === territory.territoryId);
       // Ingresos estimados: solo lo que sigue abierto; lo ganado ya tiene su propia métrica
       const pipeline = money.sumLeads(zoneLeads.filter((l) => l.commercialStatus !== 'won'));
@@ -412,7 +514,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
     });
     const valueOf = (r: (typeof rows)[number]) => (barMetric === 'leads' ? r.count : r.pipeline);
     return rows.sort((a, b) => valueOf(b) - valueOf(a)).map((r) => ({ ...r, value: valueOf(r) }));
-  }, [focusTerritories, activeFocusLeads, barMetric, money]);
+  }, [focusTerritories, zoneGroups, activeFocusLeads, barMetric, money]);
 
   const barMax = Math.max(1, ...barRows.map((r) => r.value));
   const barGroups: { code: CountryCode | null; rows: typeof barRows }[] =
@@ -556,7 +658,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
             </div>
             <div className="flex items-center gap-1.5 border-t border-slate-700 pt-1.5 text-[13px] text-slate-400">
               <Users className="h-3.5 w-3.5 shrink-0" />
-              La burbuja de cada zona cuenta sus leads. Haz clic en ella o en la zona para verlos.
+              La burbuja cuenta los leads de cada zona (de lejos, de cada región). Haz clic para verlos.
             </div>
           </div>
         </div>

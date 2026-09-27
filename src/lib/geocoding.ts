@@ -15,14 +15,25 @@ export interface GeocodeOutcome {
   normalizedAddress?: string;
 }
 
-/** Centro aproximado de una zona (promedio de los vértices de su primer anillo): ahí va su burbuja en el mapa. */
+/**
+ * Centro aproximado de una zona, donde va su etiqueta en el mapa: el promedio de los vértices del
+ * contorno de su parte más grande (una comuna con islas no debe quedar rotulada sobre una isla).
+ */
 export function zoneCenter(territory: LocatableZone | undefined): { latitude: number; longitude: number } | null {
   if (!territory) return null;
-  // Polygon: [anillo, ...]; MultiPolygon: [[anillo, ...], ...]. Se usa el primer anillo exterior.
+  // Polygon: [anillo, ...]; MultiPolygon: [[anillo, ...], ...]. Se usa el anillo exterior de cada parte.
   const coords = territory.geojsonPolygon.coordinates;
-  const firstRing = territory.geojsonPolygon.type === 'Polygon' ? coords[0] : coords[0]?.[0];
-  if (!Array.isArray(firstRing) || firstRing.length < 2) return null;
-  const ring: [number, number][] = firstRing.slice(0, -1);
+  const exteriores: [number, number][][] = (territory.geojsonPolygon.type === 'Polygon' ? [coords[0]] : coords.map((p) => p?.[0])).filter(
+    (anillo): anillo is [number, number][] => Array.isArray(anillo) && anillo.length >= 3
+  );
+  if (exteriores.length === 0) return null;
+  const extension = (anillo: [number, number][]) => {
+    const lngs = anillo.map(([lng]) => lng);
+    const lats = anillo.map(([, lat]) => lat);
+    return (Math.max(...lngs) - Math.min(...lngs)) * (Math.max(...lats) - Math.min(...lats));
+  };
+  const mayor = exteriores.reduce((a, b) => (extension(b) > extension(a) ? b : a));
+  const ring: [number, number][] = mayor.slice(0, -1);
   const longitude = ring.reduce((acc, [lng]) => acc + lng, 0) / ring.length;
   const latitude = ring.reduce((acc, [, lat]) => acc + lat, 0) / ring.length;
   return { latitude, longitude };

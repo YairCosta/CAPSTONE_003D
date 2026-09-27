@@ -217,6 +217,12 @@ export interface TerritoryMetric {
     type: 'MultiPolygon' | 'Polygon';
     coordinates: any[];
   };
+  // Región (Chile) o departamento (Perú) y provincia: para elegir primero la región y distinguir
+  // zonas con el mismo nombre (en Perú hay 10 distritos "Santa Rosa")
+  regionCode?: string;
+  regionName?: string;
+  provinceName?: string;
+  regionOrder?: number; // orden de la región en los selectores (Chile de norte a sur)
 }
 
 // Plan del CRM: Nacional (un país) o Internacional (varios países)

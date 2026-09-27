@@ -13,7 +13,8 @@ Los nombres pueden confundir, así que se fijan aquí:
 | **CRM / tenant** | `companies` | La empresa que **contrata** el SaaS. Es la frontera de aislamiento. |
 | **Empresa cliente** | `client_accounts` | Una empresa **a la que le vende** el tenant. Agrupa leads. |
 | **Lead** | `leads` | Persona de contacto y oportunidad comercial. |
-| **Zona** | `territories` | Unidad territorial: comuna (Chile), distrito (Perú), provincia (Argentina). |
+| **Zona** | `territories` | Unidad territorial: comuna (Chile), distrito (Perú), provincia (Argentina). Se identifica por su código oficial (`CL-13123`, `PE-150122`), no por su nombre: Perú tiene 4 distritos Miraflores. |
+| **Región** | `territories.region_code` | Agrupa las zonas: región (Chile), departamento (Perú). Con su provincia y su orden (`region_order`). |
 | **Ítem** | `catalog_items` | Producto o servicio que vende el tenant. |
 | **Usuario** | `profiles` | Persona que entra al sistema (`auth.users` guarda su contraseña). |
 
@@ -136,7 +137,7 @@ La app usa `camelCase` y la base `snake_case`. La conversión va en un solo luga
 Diferencias a resolver al conectar la base:
 - **Moneda del lead:** la app la guarda en `Lead.currency` (vacía = la del país) y la base en `currency_code`. Al conectar, se lee y escribe directo; ver `docs/MONEDAS.md`.
 - **Contraseñas:** `mockUsers` las tiene en texto plano (solo demo). Con Supabase, las gestiona Auth.
-- **Zonas:** los polígonos de ejemplo están dibujados a mano; en producción se cargan los oficiales.
+- **Zonas:** la demo conserva 10 zonas con polígonos esquemáticos (con códigos y regiones oficiales); la base tiene las oficiales: 345 comunas y 1.893 distritos (0020, ver `docs/MULTIPAIS.md`).
 
 Las reglas de la app (`src/lib/tenantGuards.ts`) son una **segunda capa**: dan buena experiencia de usuario, pero la garantía real la da la base con RLS y triggers. Un cambio no puede quitar la regla de la base y dejar solo la de la app.
 
@@ -186,6 +187,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0017 | Etapa 3: `zone_catalog` (zonas de referencia por país) copiadas solas a cada CRM, vista `territories_geojson` para el mapa, `leads.location` desde latitud y longitud, espejo del contacto principal en `lead_contacts` y eliminación de empresas cliente sin leads por gerencia |
 | 0018 | Corrige la 0017: los triggers que copian las zonas pasan a `SECURITY DEFINER` (crear un CRM fallaba) |
 | 0019 | Minimización: los leads se ubican por zona, nunca por coordenada. Borra las coordenadas y la caché de geocodificación, agrega `leads_sin_coordenadas` y retira `rpc_update_lead_coordinates()` de la API. Paso "la base lo rechaza": las columnas `latitude`, `longitude` y `location` se eliminan en una migración posterior (contraer) |
+| 0020 | Zonas oficiales: carga en `zone_catalog` las 345 comunas de Chile (BCN) y los 1.893 distritos de Perú (INEI) con su región, provincia y orden (columnas nuevas también en `territories` y en la vista `territories_geojson`). Convierte las 10 zonas de ejemplo de cada CRM en sus equivalentes oficiales **conservando los leads**, suelta la unicidad del nombre (la identidad es el código) y completa las zonas de todos los CRMs. 3,2 MB: se genera con `npm run zonas` |
 
 ## 8. Revisión automática
 
@@ -202,13 +204,13 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 81 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, etapas y exportación
+npm run test:db                               # 84 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas y exportación
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

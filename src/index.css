@@ -190,14 +190,39 @@ html.dark {
   display: none;
 }
 
+/* Etiquetas fijas del mapa (una por zona con leads, o por región de lejos): marcadores centrados */
+.leaflet-marker-icon.zone-label {
+  background: none;
+  border: none;
+}
+
+.zone-label .zone-label-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--color-slate-900) 88%, transparent);
+  border: 1px solid var(--color-slate-600);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  color: var(--color-slate-100);
+  padding: 4px 10px;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
 /* Zona elegida: su lista de leads está abierta en el panel del mapa */
-.leaflet-tooltip.zone-label-selected {
+.zone-label-selected .zone-label-anchor {
   border-color: var(--color-indigo-400);
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-indigo-500) 45%, transparent);
 }
 
-/* Burbuja con la cantidad de leads de la zona (un color por búsqueda en el catálogo) */
-.zone-label .zone-bubble {
+.zone-label .region-label .zone-name {
+  font-size: 14px;
+}
+
+/* Burbuja con la cantidad de leads de la zona o región (un color por búsqueda en el catálogo) */
+.zone-label .zone-bubble,
+.zone-label .region-bubble {
   display: inline-flex;
   align-items: center;
   gap: 6px;

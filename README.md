@@ -9,8 +9,9 @@ trae una **cuenta de demostración** con datos ficticios, pensada para quien lle
 
 ## Qué hace
 
-- **KPI y mapa:** leads ubicados por comuna o distrito, zonas coloreadas por dinero ganado o por
-  cierres, y ranking de zonas y de productos.
+- **KPI y mapa:** leads ubicados por comuna o distrito (las 345 comunas de Chile y los 1.893
+  distritos de Perú, agrupados por región), zonas coloreadas por dinero ganado o por cierres, y
+  ranking de zonas y de productos. El mapa muestra zonas, nunca la ubicación de un lead.
 - **Pipeline:** tablero por etapas, del lead nuevo hasta ganado o descartado.
 - **Registro de contacto y agenda:** bitácora de cada interacción y calendario de seguimientos.
 - **Gerencia:** empresas cliente, contactos, catálogo de productos y servicios, y usuarios del CRM.

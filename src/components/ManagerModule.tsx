@@ -27,6 +27,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { locateInCommune } from '../lib/geocoding';
+import { ZonePicker } from './ZonePicker';
 import { COUNTRIES, zoneLabelFor, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
 import { formatMoney } from '../lib/currency';
 import { CountryFlag } from './CountryFlag';
@@ -179,9 +180,6 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
     </div>
   );
 };
-
-const sortCommunes = (territories: TerritoryMetric[]) =>
-  [...territories].sort((a, b) => a.territoryName.localeCompare(b.territoryName, 'es'));
 
 /* ======================= MANTENEDOR DE EMPRESAS CLIENTE ======================= */
 
@@ -892,7 +890,6 @@ function LeadContactModal({
   const set = <K extends keyof Lead>(key: K, value: Lead[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   // La empresa y la zona dependen del país del lead
-  const country = COUNTRIES[form.countryCode];
   const countryAccounts = accounts.filter((a) => a.countryCode === form.countryCode);
   const countryZones = territories.filter((t) => t.countryCode === form.countryCode);
   const changeCountry = (code: CountryCode) => {
@@ -1056,20 +1053,17 @@ function LeadContactModal({
           {showErrors && errors.rawAddress && <p className="mt-1 text-sm font-medium text-rose-300">{errors.rawAddress}</p>}
         </div>
         <div>
-          <label htmlFor="lc-commune" className={labelClass}>{country.zoneLabel.singular} *</label>
-          <select
+          <ZonePicker
+            key={form.countryCode}
             id="lc-commune"
+            zones={countryZones}
+            countryCode={form.countryCode}
             value={communeId}
-            onChange={(e) => setCommuneId(e.target.value)}
-            className={`${inputClass} ${showErrors && errors.commune ? errorInput : ''}`}
-          >
-            <option value="">Selecciona…</option>
-            {sortCommunes(countryZones).map((t) => (
-              <option key={t.territoryId} value={t.territoryId}>
-                {t.territoryName}
-              </option>
-            ))}
-          </select>
+            onChange={setCommuneId}
+            required
+            invalid={showErrors && !!errors.commune}
+            errorClassName={errorInput}
+          />
           {showErrors && errors.commune && <p className="mt-1 text-sm font-medium text-rose-300">{errors.commune}</p>}
         </div>
         <div className="sm:col-span-2">
@@ -1192,25 +1186,20 @@ function QueueSection({
                   </div>
                 </div>
                 <div>
-                  <label htmlFor={`commune-${lead.id}`} className={labelClass}>{leadZone} *</label>
-                  <select
+                  <ZonePicker
                     id={`commune-${lead.id}`}
+                    zones={territories.filter((t) => t.countryCode === lead.countryCode)}
+                    countryCode={lead.countryCode}
                     value={communes[lead.id] ?? ''}
-                    aria-invalid={isMissing}
-                    aria-describedby={isMissing ? `commune-error-${lead.id}` : undefined}
-                    onChange={(e) => {
-                      setCommunes((prev) => ({ ...prev, [lead.id]: e.target.value }));
+                    onChange={(zoneId) => {
+                      setCommunes((prev) => ({ ...prev, [lead.id]: zoneId }));
                       setMissing((prev) => ({ ...prev, [lead.id]: false }));
                     }}
-                    className={`${inputClass} ${isMissing ? errorInput : ''}`}
-                  >
-                    <option value="">Selecciona…</option>
-                    {sortCommunes(territories.filter((t) => t.countryCode === lead.countryCode)).map((t) => (
-                      <option key={t.territoryId} value={t.territoryId}>
-                        {t.territoryName}
-                      </option>
-                    ))}
-                  </select>
+                    required
+                    invalid={isMissing}
+                    describedBy={isMissing ? `commune-error-${lead.id}` : undefined}
+                    errorClassName={errorInput}
+                  />
                 </div>
                 <div className="flex items-end">
                   <button type="button" onClick={() => assign(lead)} className={`${primaryButton} w-full`}>

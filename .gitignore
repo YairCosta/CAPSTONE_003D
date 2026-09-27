@@ -30,3 +30,8 @@ e2e-fallo-*.png
 .env
 .env.local
 .env.*.local
+
+# Fuentes oficiales de las zonas (se descargan; solo se versiona el resultado procesado). El SQL
+# generado tampoco: queda dentro de la migración que lo carga.
+datos/zonas/fuentes/
+datos/zonas/zone_catalog.sql

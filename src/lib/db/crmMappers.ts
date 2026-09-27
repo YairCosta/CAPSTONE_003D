@@ -366,6 +366,10 @@ export interface TerritoryRow {
   code: string | null;
   color_hex: string | null;
   polygon: { type: 'MultiPolygon' | 'Polygon'; coordinates: unknown[] } | null;
+  region_code?: string | null;
+  region_name?: string | null;
+  province_name?: string | null;
+  region_order?: number | null;
 }
 
 export const territoryFromRow = (row: TerritoryRow): TerritoryMetric => ({
@@ -379,6 +383,10 @@ export const territoryFromRow = (row: TerritoryRow): TerritoryMetric => ({
   totalCompanyLeads: 0,
   percentage: 0,
   geojsonPolygon: row.polygon ?? { type: 'MultiPolygon', coordinates: [] },
+  regionCode: optional(row.region_code),
+  regionName: optional(row.region_name),
+  provinceName: optional(row.province_name),
+  regionOrder: optional(row.region_order),
 });
 
 // ------------------------------------------------------------------ solicitudes del titular

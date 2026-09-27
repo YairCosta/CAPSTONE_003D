@@ -2,6 +2,7 @@ import React from 'react';
 import type { CommercialStatus, TerritoryMetric } from '../types/crm';
 import { Search, Building2, MapPin, CalendarDays, Filter, X } from 'lucide-react';
 import { COUNTRIES, type CountryCode } from '../data/countries';
+import { groupZonesForSelect } from '../lib/zones';
 
 export type DatePreset = 'all' | 'today' | '7d' | '30d' | 'custom';
 
@@ -58,11 +59,19 @@ export const KpiSearchBar: React.FC<KpiSearchBarProps> = ({
   totalCount,
 }) => {
   const zoneLabels = Array.from(new Set(countries.map((c) => COUNTRIES[c].zoneLabel.singular.toLowerCase())));
-  const byName = (a: TerritoryMetric, b: TerritoryMetric) => a.territoryName.localeCompare(b.territoryName, 'es');
   const zoneOption = (t: TerritoryMetric) => (
     <option key={t.territoryId} value={t.territoryId}>
       {t.territoryName}
     </option>
+  );
+  // Solo las zonas con leads (en un país hay cientos), agrupadas por país y región
+  const zonasConLeads = territories.filter((t) => t.leadCount > 0 || t.territoryId === filters.territoryId);
+  const zoneGroups = countries.flatMap((code) =>
+    groupZonesForSelect(zonasConLeads.filter((t) => t.countryCode === code)).map((grupo) => ({
+      key: `${code}-${grupo.label}`,
+      label: countries.length > 1 ? `${COUNTRIES[code].name} · ${grupo.label}` : grupo.label,
+      zones: grupo.zones,
+    }))
   );
 
   const set = <K extends keyof KpiFilters>(key: K, value: KpiFilters[K]) =>
@@ -149,13 +158,11 @@ export const KpiSearchBar: React.FC<KpiSearchBarProps> = ({
             className={fieldClass}
           >
             <option value="all">Todas las zonas</option>
-            {countries.length > 1
-              ? countries.map((code) => (
-                  <optgroup key={code} label={`${COUNTRIES[code].name} · ${COUNTRIES[code].zoneLabel.plural}`}>
-                    {territories.filter((t) => t.countryCode === code).sort(byName).map(zoneOption)}
-                  </optgroup>
-                ))
-              : [...territories].sort(byName).map(zoneOption)}
+            {zoneGroups.map((grupo) => (
+              <optgroup key={grupo.key} label={grupo.label}>
+                {grupo.zones.map(zoneOption)}
+              </optgroup>
+            ))}
           </select>
         </div>
 

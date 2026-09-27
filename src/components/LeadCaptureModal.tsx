@@ -4,6 +4,7 @@ import { LeadItemsEditor } from './LeadItemsEditor';
 import { fromDraftItems, itemsSubtotal, type DraftLeadItem } from '../lib/catalog';
 import { X, UserPlus, MapPin, Loader2, Save, AlertTriangle } from 'lucide-react';
 import { locateInCommune } from '../lib/geocoding';
+import { ZonePicker } from './ZonePicker';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
 import { ORIGIN_LABEL, PROSPECT_RETENTION_DAYS } from '../lib/privacy';
 import { COUNTRIES, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
@@ -21,7 +22,7 @@ interface LeadCaptureModalProps {
   // Países habilitados para el CRM y zonas de cada uno (comunas, distritos…)
   countries: CountryCode[];
   defaultCountry: CountryCode;
-  zones: { id: string; name: string; countryCode: CountryCode; geojsonPolygon: TerritoryMetric['geojsonPolygon'] }[];
+  zones: TerritoryMetric[];
 }
 
 type FieldErrors = Partial<Record<'fullName' | 'newAccount' | 'email' | 'rawAddress' | 'commune' | 'origin' | 'consent', string>>;
@@ -87,18 +88,12 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
 
   // Si el país elegido dejó de estar habilitado, se vuelve al país por defecto
   const country = COUNTRIES[countries.includes(countryCode) ? countryCode : defaultCountry];
-  const zoneLabel = country.zoneLabel.singular;
   const countryAccounts = accounts.filter((a) => a.countryCode === country.code);
   const activeAccounts = countryAccounts
     .filter((a) => a.isActive)
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const sortedCommunes = zones
-    .filter((z) => z.countryCode === country.code)
-    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const zoneById = (id: string) => {
-    const zone = zones.find((z) => z.id === id);
-    return zone && { territoryId: zone.id, territoryName: zone.name, countryCode: zone.countryCode, geojsonPolygon: zone.geojsonPolygon };
-  };
+  const countryZones = zones.filter((z) => z.countryCode === country.code);
+  const zoneById = (id: string) => countryZones.find((z) => z.territoryId === id);
 
   const handleCountryChange = (code: CountryCode) => {
     // La empresa, la zona y el prefijo telefónico dependen del país
@@ -144,7 +139,7 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
 
     if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'El email no es válido.';
     if (!rawAddress.trim()) next.rawAddress = 'Ingresa la dirección.';
-    if (!communeId || !sortedCommunes.some((z) => z.id === communeId)) next.commune = `Selecciona ${zoneWithArticle([country.code])}.`;
+    if (!communeId || !countryZones.some((z) => z.territoryId === communeId)) next.commune = `Selecciona ${zoneWithArticle([country.code])}.`;
     if (!dataOrigin) next.origin = 'Indica de dónde salió este contacto.';
     if (!consentStatus) next.consent = 'Indica por qué podemos guardar sus datos.';
     return next;
@@ -422,25 +417,21 @@ export const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({
                 <FieldError id="err-rawAddress" message={errors.rawAddress} />
               </div>
               <div>
-                <label htmlFor="cap-commune" className={labelClass}>{zoneLabel} *</label>
-                <select
+                <ZonePicker
+                  key={country.code}
                   id="cap-commune"
+                  zones={countryZones}
+                  countryCode={country.code}
                   value={communeId}
-                  onChange={(e) => {
-                    setCommuneId(e.target.value);
+                  onChange={(zoneId) => {
+                    setCommuneId(zoneId);
                     clearError('commune');
                   }}
-                  aria-invalid={!!errors.commune}
-                  aria-describedby="err-commune"
-                  className={`${inputClass} ${errors.commune ? errorInput : ''}`}
-                >
-                  <option value="">Selecciona…</option>
-                  {sortedCommunes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  required
+                  invalid={!!errors.commune}
+                  describedBy="err-commune"
+                  errorClassName={errorInput}
+                />
                 <FieldError id="err-commune" message={errors.commune} />
               </div>
             </div>

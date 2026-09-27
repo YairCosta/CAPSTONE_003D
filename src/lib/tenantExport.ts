@@ -379,7 +379,9 @@ export function buildTenantExport(input: TenantExportInput): TenantExport {
       column('Código país', 'Código ISO 3166-1 alfa-2.', 12),
       column('Tipo de zona', 'Comuna, Distrito, Provincia…', 14),
       column('Nombre', 'Nombre de la zona.', 24),
-      column('Código', 'Código interno de la zona.', 12),
+      column('Código', 'Código oficial de la zona con prefijo de país: CL + código comunal (CUT), PE + ubigeo del INEI.', 14),
+      column('Región', 'Región (Chile) o departamento (Perú) de la zona.', 26),
+      column('Provincia', 'Provincia de la zona: distingue zonas con el mismo nombre.', 22),
     ],
     rows: territories.map((t) => [
       t.territoryId,
@@ -388,6 +390,8 @@ export function buildTenantExport(input: TenantExportInput): TenantExport {
       COUNTRIES[t.countryCode].zoneLabel.singular,
       t.territoryName,
       t.territoryCode,
+      t.regionName ?? '',
+      t.provinceName ?? '',
     ]),
   };
 
