@@ -24,7 +24,8 @@
     "evidencia": "node scripts/generar-evidencia.mjs",
     "test:e2e": "node scripts/e2e-tenant-isolation.mjs",
     "expediente": "node scripts/generar-expediente.mjs",
-    "zonas": "node scripts/importar-zonas.mjs"
+    "zonas": "node scripts/importar-zonas.mjs",
+    "bpmn": "node scripts/generar-bpmn.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

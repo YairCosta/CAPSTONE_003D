@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_alta-crm-e-invitaciones" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
+  <bpmn:collaboration id="Colaboracion_alta-crm-e-invitaciones">
+    <bpmn:documentation>Alta de un CRM e invitación de su equipo</bpmn:documentation>
+    <bpmn:participant id="Participante_alta-crm-e-invitaciones" name="Plataforma Revela" processRef="Proceso_alta-crm-e-invitaciones" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_alta-crm-e-invitaciones" name="Alta de un CRM e invitación de su equipo" isExecutable="false">
+    <bpmn:laneSet id="Carriles_alta-crm-e-invitaciones">
+      <bpmn:lane id="Carril_admin" name="Administrador de la plataforma">
+        <bpmn:flowNodeRef>Nodo_contrata</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_crear</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_invitarGerente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_rechazo</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_sistema" name="Revela (servidor y base de datos)">
+        <bpmn:flowNodeRef>Nodo_sembrar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_verificar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gPuede</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_enviar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_enviarEquipo</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_gerente" name="Gerente de la empresa cliente">
+        <bpmn:flowNodeRef>Nodo_contrasena</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_invitarEquipo</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_invitado" name="Persona invitada">
+        <bpmn:flowNodeRef>Nodo_entrar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_operando</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Nodo_contrata" name="Una empresa contrata Revela">
+      <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Nodo_crear" name="Crear el CRM: nombre, plan, país base y países">
+      <bpmn:incoming>Flujo_1</bpmn:incoming>
+      <bpmn:outgoing>Flujo_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_sembrar" name="Copiar las zonas oficiales de sus países y las etapas">
+      <bpmn:incoming>Flujo_2</bpmn:incoming>
+      <bpmn:outgoing>Flujo_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Nodo_invitarGerente" name="Invitar al gerente del cliente">
+      <bpmn:incoming>Flujo_3</bpmn:incoming>
+      <bpmn:outgoing>Flujo_4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_verificar" name="Verificar la sesión y el perfil de quien invita">
+      <bpmn:incoming>Flujo_4</bpmn:incoming>
+      <bpmn:outgoing>Flujo_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Nodo_gPuede" name="¿Puede invitar a ese CRM y perfil?">
+      <bpmn:incoming>Flujo_5</bpmn:incoming>
+      <bpmn:outgoing>Flujo_6</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Nodo_rechazo" name="Invitación rechazada">
+      <bpmn:incoming>Flujo_6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sendTask id="Nodo_enviar" name="Crear el perfil y enviar la invitación por correo">
+      <bpmn:incoming>Flujo_7</bpmn:incoming>
+      <bpmn:outgoing>Flujo_8</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:userTask id="Nodo_contrasena" name="Abrir el enlace y crear su propia contraseña">
+      <bpmn:incoming>Flujo_8</bpmn:incoming>
+      <bpmn:outgoing>Flujo_9</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Nodo_invitarEquipo" name="Invitar a su equipo (usuarios base o gerentes)">
+      <bpmn:incoming>Flujo_9</bpmn:incoming>
+      <bpmn:outgoing>Flujo_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sendTask id="Nodo_enviarEquipo" name="Verificar que invita a su propio CRM y enviar los correos">
+      <bpmn:incoming>Flujo_10</bpmn:incoming>
+      <bpmn:outgoing>Flujo_11</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:userTask id="Nodo_entrar" name="Crear su contraseña y entrar a su CRM">
+      <bpmn:incoming>Flujo_11</bpmn:incoming>
+      <bpmn:outgoing>Flujo_12</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Nodo_operando" name="Equipo trabajando en su CRM">
+      <bpmn:incoming>Flujo_12</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flujo_1" sourceRef="Nodo_contrata" targetRef="Nodo_crear" />
+    <bpmn:sequenceFlow id="Flujo_2" sourceRef="Nodo_crear" targetRef="Nodo_sembrar" />
+    <bpmn:sequenceFlow id="Flujo_3" sourceRef="Nodo_sembrar" targetRef="Nodo_invitarGerente" />
+    <bpmn:sequenceFlow id="Flujo_4" sourceRef="Nodo_invitarGerente" targetRef="Nodo_verificar" />
+    <bpmn:sequenceFlow id="Flujo_5" sourceRef="Nodo_verificar" targetRef="Nodo_gPuede" />
+    <bpmn:sequenceFlow id="Flujo_6" name="No" sourceRef="Nodo_gPuede" targetRef="Nodo_rechazo" />
+    <bpmn:sequenceFlow id="Flujo_7" name="Sí" sourceRef="Nodo_gPuede" targetRef="Nodo_enviar" />
+    <bpmn:sequenceFlow id="Flujo_8" sourceRef="Nodo_enviar" targetRef="Nodo_contrasena" />
+    <bpmn:sequenceFlow id="Flujo_9" sourceRef="Nodo_contrasena" targetRef="Nodo_invitarEquipo" />
+    <bpmn:sequenceFlow id="Flujo_10" sourceRef="Nodo_invitarEquipo" targetRef="Nodo_enviarEquipo" />
+    <bpmn:sequenceFlow id="Flujo_11" sourceRef="Nodo_enviarEquipo" targetRef="Nodo_entrar" />
+    <bpmn:sequenceFlow id="Flujo_12" sourceRef="Nodo_entrar" targetRef="Nodo_operando" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagrama_alta-crm-e-invitaciones">
+    <bpmndi:BPMNPlane id="Plano_alta-crm-e-invitaciones" bpmnElement="Colaboracion_alta-crm-e-invitaciones">
+      <bpmndi:BPMNShape id="Participante_alta-crm-e-invitaciones_di" bpmnElement="Participante_alta-crm-e-invitaciones" isHorizontal="true">
+        <dc:Bounds x="24" y="94" width="2216" height="680" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_admin_di" bpmnElement="Carril_admin" isHorizontal="true">
+        <dc:Bounds x="58" y="94" width="2182" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_sistema_di" bpmnElement="Carril_sistema" isHorizontal="true">
+        <dc:Bounds x="58" y="264" width="2182" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_gerente_di" bpmnElement="Carril_gerente" isHorizontal="true">
+        <dc:Bounds x="58" y="434" width="2182" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_invitado_di" bpmnElement="Carril_invitado" isHorizontal="true">
+        <dc:Bounds x="58" y="604" width="2182" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_contrata_di" bpmnElement="Nodo_contrata">
+        <dc:Bounds x="187" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="139" y="204" width="134" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_crear_di" bpmnElement="Nodo_crear">
+        <dc:Bounds x="313" y="136" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_sembrar_di" bpmnElement="Nodo_sembrar">
+        <dc:Bounds x="489" y="306" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_invitarGerente_di" bpmnElement="Nodo_invitarGerente">
+        <dc:Bounds x="665" y="136" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_verificar_di" bpmnElement="Nodo_verificar">
+        <dc:Bounds x="841" y="306" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gPuede_di" bpmnElement="Nodo_gPuede" isMarkerVisible="true">
+        <dc:Bounds x="1060" y="323" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="968" y="273" width="108" height="47" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_rechazo_di" bpmnElement="Nodo_rechazo">
+        <dc:Bounds x="1243" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1195" y="204" width="134" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_enviar_di" bpmnElement="Nodo_enviar">
+        <dc:Bounds x="1193" y="306" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_contrasena_di" bpmnElement="Nodo_contrasena">
+        <dc:Bounds x="1369" y="476" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_invitarEquipo_di" bpmnElement="Nodo_invitarEquipo">
+        <dc:Bounds x="1545" y="476" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_enviarEquipo_di" bpmnElement="Nodo_enviarEquipo">
+        <dc:Bounds x="1721" y="306" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_entrar_di" bpmnElement="Nodo_entrar">
+        <dc:Bounds x="1897" y="646" width="138" height="86" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_operando_di" bpmnElement="Nodo_operando">
+        <dc:Bounds x="2123" y="670" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2075" y="714" width="134" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flujo_1_di" bpmnElement="Flujo_1">
+        <di:waypoint x="225" y="179" />
+        <di:waypoint x="313" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_2_di" bpmnElement="Flujo_2">
+        <di:waypoint x="451" y="179" />
+        <di:waypoint x="470" y="179" />
+        <di:waypoint x="470" y="349" />
+        <di:waypoint x="489" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_3_di" bpmnElement="Flujo_3">
+        <di:waypoint x="627" y="349" />
+        <di:waypoint x="646" y="349" />
+        <di:waypoint x="646" y="179" />
+        <di:waypoint x="665" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_4_di" bpmnElement="Flujo_4">
+        <di:waypoint x="803" y="179" />
+        <di:waypoint x="822" y="179" />
+        <di:waypoint x="822" y="349" />
+        <di:waypoint x="841" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
+        <di:waypoint x="979" y="349" />
+        <di:waypoint x="1060" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_6_di" bpmnElement="Flujo_6">
+        <di:waypoint x="1086" y="323" />
+        <di:waypoint x="1086" y="179" />
+        <di:waypoint x="1243" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_7_di" bpmnElement="Flujo_7">
+        <di:waypoint x="1112" y="349" />
+        <di:waypoint x="1193" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_8_di" bpmnElement="Flujo_8">
+        <di:waypoint x="1331" y="349" />
+        <di:waypoint x="1350" y="349" />
+        <di:waypoint x="1350" y="519" />
+        <di:waypoint x="1369" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_9_di" bpmnElement="Flujo_9">
+        <di:waypoint x="1507" y="519" />
+        <di:waypoint x="1545" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_10_di" bpmnElement="Flujo_10">
+        <di:waypoint x="1683" y="519" />
+        <di:waypoint x="1702" y="519" />
+        <di:waypoint x="1702" y="349" />
+        <di:waypoint x="1721" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_11_di" bpmnElement="Flujo_11">
+        <di:waypoint x="1859" y="349" />
+        <di:waypoint x="1878" y="349" />
+        <di:waypoint x="1878" y="689" />
+        <di:waypoint x="1897" y="689" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_12_di" bpmnElement="Flujo_12">
+        <di:waypoint x="2035" y="689" />
+        <di:waypoint x="2123" y="689" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -40,7 +40,7 @@ No se pueden debilitar sin decirlo explícitamente:
 | `src/data/` | Registro de países (`countries.ts`), cuenta demo (`mockGeoData.ts`) y CRMs de prueba, solo en desarrollo (`testTenants.ts`) |
 | `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase). En desarrollo corre dentro de Vite; publicada, en una función de Vercel (`server/vercel.ts`). Las dos se arman igual desde `server/api.ts`. Ver `docs/DESPLIEGUE.md` |
 | `supabase/migrations/` | Esquema de la base de datos |
-| `docs/` | Base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
+| `docs/` | Procesos BPMN (`PROCESOS.md`, `bpmn/`), base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
 | `scripts/` | Pruebas de aislamiento, exportación y punta a punta |
 
 La lógica que se pueda probar sin navegador va en `src/lib/` como función pura, no dentro de un componente.
@@ -63,6 +63,7 @@ npx tsc -b && npm run lint && npm run build
 npm run diagramas   # regenera los diagramas de componentes y estados (docs/diagramas/)
 npm run expediente  # regenera el expediente de cumplimiento que muestra el portal fiscalizador
 npm run zonas       # procesa las zonas oficiales (comunas, distritos) para una migración (docs/MULTIPAIS.md)
+npm run bpmn        # regenera los diagramas de procesos BPMN 2.0 (docs/bpmn/, ver docs/PROCESOS.md)
 npm run evidencia   # capturas de código, salida de las pruebas y de la app (docs/evidencia/)
 ```
 

@@ -73,10 +73,12 @@ npm run test:vercel   # la app y la API tal como quedarían en Vercel (ver docs/
 ## Documentación
 
 En [`docs/`](docs/): base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación,
-auditoría, usuarios, asistente de IA, seguridad, cumplimiento de la Ley 21.719, pagos y los diagramas de arquitectura, componentes y
-estados.
+auditoría, usuarios, asistente de IA, seguridad, cumplimiento de la Ley 21.719, pagos, publicación, los
+diagramas de arquitectura, componentes y estados, y los procesos en BPMN 2.0 ([`docs/PROCESOS.md`](docs/PROCESOS.md)).
 
 ## Estado
 
-Interfaz y reglas de negocio completas y probadas. Falta conectar la base de datos (hoy los datos
-están en memoria) y desplegar.
+Publicada en Vercel (`https://revela-henna.vercel.app`) y conectada a Supabase (PostgreSQL con PostGIS),
+en piloto con una empresa real. Pasó una revisión de seguridad por casos de uso el 27-09-2026
+([`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) §5). La cuenta demo sigue disponible en desarrollo, con datos
+ficticios en memoria.
