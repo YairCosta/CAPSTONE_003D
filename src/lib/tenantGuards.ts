@@ -4,7 +4,7 @@
 // En producción, la misma garantía la aplica la base de datos con RLS y triggers (ver supabase/migrations).
 
 import type { AppUser, CatalogItem, ClientAccount, Company, ConsentStatus, Lead, LeadActivity, LeadContact, LeadDataOrigin, LeadItem, NewAppUser, StageConfig } from '../types/crm';
-import { isCountryCode, type CountryCode } from '../data/countries.ts';
+import { COUNTRIES, isCountryCode, type CountryCode } from '../data/countries.ts';
 import { applyLeadValue } from './catalog.ts';
 import { isAllowedLeadCurrency } from './currency.ts';
 import { MAX_LEAD_CONTACTS } from './contacts.ts';
@@ -29,7 +29,8 @@ export const isManager = (user: AppUser | null) => user?.role === 'manager';
 export const isSuperadmin = (user: AppUser | null) => user?.role === 'superadmin';
 
 // ------------------------------------------------------------------ países habilitados
-// Plan Nacional: solo el país base. Plan Internacional: país base + países activados por el administrador.
+// Plan Nacional: solo el país base. Plan Internacional: país base + los países que active la gerencia
+// del CRM (o el administrador al crearlo).
 export function enabledCountriesOf(company: Pick<Company, 'plan' | 'homeCountry' | 'enabledCountries'> | null): CountryCode[] {
   if (!company || !isCountryCode(company.homeCountry)) return [];
   if (company.plan !== 'international') return [company.homeCountry];
@@ -37,12 +38,42 @@ export function enabledCountriesOf(company: Pick<Company, 'plan' | 'homeCountry'
   return [company.homeCountry, ...extra.filter((c) => c !== company.homeCountry)];
 }
 
-// Normaliza plan y países al guardar un CRM: el país base siempre está incluido
+/**
+ * País base primero, sin repetidos ni códigos desconocidos. La lista se conserva aunque el plan sea
+ * Nacional (la base guarda las filas y las ignora mientras el plan esté apagado): al reactivar el plan
+ * vuelven los países que el CRM ya usaba. Qué países cuentan hoy lo dice enabledCountriesOf.
+ */
 export function normalizeCompanyCountries<T extends Pick<Company, 'plan' | 'homeCountry' | 'enabledCountries'>>(company: T): T {
   const homeCountry = isCountryCode(company.homeCountry) ? company.homeCountry : 'CL';
-  const enabled = enabledCountriesOf({ ...company, homeCountry });
-  const plan = company.plan === 'international' && enabled.length > 1 ? 'international' : 'national';
-  return { ...company, homeCountry, plan, enabledCountries: plan === 'international' ? enabled : [homeCountry] };
+  const plan = company.plan === 'international' ? 'international' : 'national';
+  const guardados = (company.enabledCountries ?? []).filter(isCountryCode).filter((c) => c !== homeCountry);
+  return { ...company, homeCountry, plan, enabledCountries: [homeCountry, ...new Set(guardados)] };
+}
+
+export type CountryChange = { ok: true; company: Company } | { ok: false; error: string };
+
+/**
+ * La gerencia activa o desactiva un país de su CRM. Solo con el plan Internacional (el plan lo define
+ * el administrador de la plataforma) y nunca el país base. Desactivar oculta los datos del país, no
+ * los borra: vuelven a verse si se activa de nuevo.
+ */
+export function setCountryByManager(company: Company | null, code: CountryCode, enabled: boolean, actor: AppUser | null): CountryChange {
+  if (!company || !isManager(actor) || actor?.companyId !== company.id) {
+    return { ok: false, error: 'Solo la gerencia del CRM elige sus países.' };
+  }
+  if (!isCountryCode(code)) return { ok: false, error: 'Ese país no está disponible en Revela.' };
+  if (company.plan !== 'international') {
+    return {
+      ok: false,
+      error: 'Tu CRM tiene el plan Nacional, que trabaja en un solo país. Para sumar países, pide el plan Internacional al administrador de Revela.',
+    };
+  }
+  if (code === company.homeCountry) {
+    return { ok: false, error: `${COUNTRIES[code].name} es el país base del CRM: siempre está activo.` };
+  }
+  const actuales = enabledCountriesOf(company);
+  const siguientes = enabled ? [...actuales, code] : actuales.filter((c) => c !== code);
+  return { ok: true, company: normalizeCompanyCountries({ ...company, enabledCountries: Array.from(new Set(siguientes)) }) };
 }
 
 // Actividades visibles: solo de leads del tenant y, si traen empresa, de esa misma empresa

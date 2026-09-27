@@ -25,7 +25,7 @@ Los nombres pueden confundir, así que se fijan aquí:
 De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e importar datos:
 
 ```
-1. countries                    (catálogo global: CL, PE…)
+1. countries ── zone_catalog     (catálogos globales: 19 países de América Latina y sus 14.489 zonas con contorno)
 2. companies                    (CRM / tenant)  ── company_countries
 3. profiles                     (usuarios del CRM)
 4. territories                  (zonas del CRM, por país)
@@ -190,6 +190,12 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0020 | Zonas oficiales: carga en `zone_catalog` las 345 comunas de Chile (BCN) y los 1.893 distritos de Perú (INEI) con su región, provincia y orden (columnas nuevas también en `territories` y en la vista `territories_geojson`). Convierte las 10 zonas de ejemplo de cada CRM en sus equivalentes oficiales **conservando los leads**, suelta la unicidad del nombre (la identidad es el código) y completa las zonas de todos los CRMs. 3,2 MB: se genera con `npm run zonas` |
 | 0021 | Contraer la minimización de la 0019: elimina `leads.latitude`, `longitude`, `location` y `address_hash`, la tabla `geocoding_cache`, el trigger que calculaba `location` y `rpc_update_lead_coordinates()`. Reescribe sin ellas la anonimización y el trigger de privacidad; `get_lead_distribution_by_territories()` cuenta por zona asignada. Estaban vacías en todos los CRMs |
 | 0022 | Revisión de seguridad (27-09-2026): las reglas del usuario base pasan a la base (solo avanza etapas; no cambia monto, moneda, zona, empresa cliente, país, origen ni autor; productos y personas solo de los leads que capturó), `created_by` lo firma la base, `recalculate_lead_value()` sale de la API, `lead_is_blocked()` solo responde por el propio CRM, gerencia ya no edita las zonas oficiales y nace `change_log` (quién cambió qué columnas, sin valores). Ver `docs/SEGURIDAD.md` §5 |
+| 0023 | América Latina: los 17 países que faltaban en `countries` (con su moneda). La gerencia activa y desactiva países de su CRM con el plan Internacional (políticas de `company_countries`: su CRM, su perfil, su plan y nunca el país base). **Catálogo común de contornos**: `territories.polygon` deja de ser obligatoria, al activar un país se copian sus zonas **sin contorno** y la vista `territories_geojson`, `get_lead_distribution_by_territories()` y la exportación leen el contorno de `zone_catalog`. Ver `docs/MULTIPAIS.md` |
+| 0024 | Contraer la copia de contornos: vacía `territories.polygon` de las zonas que están en el catálogo (la base bajó de 64 a 48 MB). La columna se elimina en una migración posterior |
+| 0025 | Zonas de Sudamérica desde geoBoundaries: Argentina, Bolivia, Colombia, Ecuador, Paraguay, Uruguay y Venezuela (2.687 zonas, 4,9 MB) |
+| 0026 | Zonas de Brasil: 5.570 municipios |
+| 0027 | Zonas de México, Centroamérica y el Caribe: México, Guatemala, El Salvador, Honduras, Nicaragua, Costa Rica, Panamá, Cuba y República Dominicana (4.004 zonas) |
+| 0028 | Nombres de zona corregidos: tildes (Costa Rica, Ecuador, Honduras, distritos de Perú), El Salvador y Paraguay desde la edición humanitaria (sin zonas "Null" ni nombres cortados), lagos fuera y traducciones de la fuente. Actualiza también el nombre en las copias de cada CRM; se detiene si un CRM usa una zona que sale del catálogo |
 
 ## 8. Revisión automática
 
@@ -204,9 +210,9 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 **Contra la base real** (requiere `npx supabase login` y `npx supabase link` del dueño del proyecto):
 
 ```bash
-npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
+npx supabase db lint --linked --level error --schema public   # funciones con columnas o tipos inexistentes (sin --schema también revisa las internas de PostGIS, que traen avisos propios)
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 121 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación y ataques desde dentro
+npm run test:db                               # 142 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación, ataques desde dentro y países elegidos por la gerencia
 npm run test:db -- --con supabase/migrations/<nueva>.sql   # ensaya una migración con todas las pruebas SIN aplicarla
 ```
 
@@ -216,7 +222,7 @@ así se aplica a la base real solo lo que ya pasó todas las pruebas.
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0022 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0028 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

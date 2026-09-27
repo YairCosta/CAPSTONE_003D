@@ -14,19 +14,57 @@ interface CurrencyConfig {
   locale: string;
   name: string;
   spaceAfterSymbol: boolean;
+  /** Decimales en que se redondea un monto (el peso chileno y el guaraní no usan) */
+  decimals: 0 | 2;
 }
 
+// Varios países usan "$": salvo el peso chileno, cada uno lleva su prefijo para no confundirse en
+// un CRM con leads de varios países (AR$ 1.000 no es lo mismo que MX$ 1.000).
 export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
-  CLP: { symbol: '$', locale: 'es-CL', name: 'Peso chileno', spaceAfterSymbol: false },
-  PEN: { symbol: 'S/', locale: 'es-PE', name: 'Sol peruano', spaceAfterSymbol: true },
-  USD: { symbol: 'US$', locale: 'en-US', name: 'Dólar estadounidense', spaceAfterSymbol: false },
+  CLP: { symbol: '$', locale: 'es-CL', name: 'Peso chileno', spaceAfterSymbol: false, decimals: 0 },
+  PEN: { symbol: 'S/', locale: 'es-PE', name: 'Sol peruano', spaceAfterSymbol: true, decimals: 2 },
+  USD: { symbol: 'US$', locale: 'en-US', name: 'Dólar estadounidense', spaceAfterSymbol: false, decimals: 2 },
+  ARS: { symbol: 'AR$', locale: 'es-AR', name: 'Peso argentino', spaceAfterSymbol: false, decimals: 2 },
+  BOB: { symbol: 'Bs', locale: 'es-BO', name: 'Boliviano', spaceAfterSymbol: true, decimals: 2 },
+  BRL: { symbol: 'R$', locale: 'pt-BR', name: 'Real brasileño', spaceAfterSymbol: true, decimals: 2 },
+  COP: { symbol: 'COL$', locale: 'es-CO', name: 'Peso colombiano', spaceAfterSymbol: false, decimals: 2 },
+  CRC: { symbol: '₡', locale: 'es-CR', name: 'Colón costarricense', spaceAfterSymbol: false, decimals: 2 },
+  CUP: { symbol: 'CUP', locale: 'es-CU', name: 'Peso cubano', spaceAfterSymbol: true, decimals: 2 },
+  DOP: { symbol: 'RD$', locale: 'es-DO', name: 'Peso dominicano', spaceAfterSymbol: false, decimals: 2 },
+  GTQ: { symbol: 'Q', locale: 'es-GT', name: 'Quetzal', spaceAfterSymbol: true, decimals: 2 },
+  HNL: { symbol: 'L', locale: 'es-HN', name: 'Lempira', spaceAfterSymbol: true, decimals: 2 },
+  MXN: { symbol: 'MX$', locale: 'es-MX', name: 'Peso mexicano', spaceAfterSymbol: false, decimals: 2 },
+  NIO: { symbol: 'C$', locale: 'es-NI', name: 'Córdoba', spaceAfterSymbol: true, decimals: 2 },
+  PYG: { symbol: '₲', locale: 'es-PY', name: 'Guaraní', spaceAfterSymbol: true, decimals: 0 },
+  UYU: { symbol: '$U', locale: 'es-UY', name: 'Peso uruguayo', spaceAfterSymbol: true, decimals: 2 },
+  VES: { symbol: 'Bs.D', locale: 'es-VE', name: 'Bolívar digital', spaceAfterSymbol: true, decimals: 2 },
 };
 
 // Unidades de cada moneda por 1 USD
 export type Rates = Record<CurrencyCode, number>;
 
-// Respaldo si /api/rates no responde. Revisado el 21-09-2026 (dólar observado 958,42; sol 3,38).
-export const FALLBACK_RATES: Rates = { USD: 1, CLP: 958, PEN: 3.38 };
+// Respaldo si /api/rates no responde. Revisado el 21-09-2026 (dólar observado 958,42; sol 3,38). Las
+// demás son aproximadas (27-09-2026): solo sirven para que la app no se detenga; la tasa del día llega
+// de /api/rates, que cubre todas las monedas.
+export const FALLBACK_RATES: Rates = {
+  USD: 1,
+  CLP: 958,
+  PEN: 3.38,
+  ARS: 1350,
+  BOB: 6.91,
+  BRL: 5.4,
+  COP: 4000,
+  CRC: 505,
+  CUP: 120,
+  DOP: 62,
+  GTQ: 7.7,
+  HNL: 26,
+  MXN: 18.5,
+  NIO: 36.8,
+  PYG: 7300,
+  UYU: 40,
+  VES: 150,
+};
 
 // Monedas en las que se puede VER el CRM. Agregar una aquí basta para ofrecerla en el selector.
 export const DISPLAY_CURRENCIES: CurrencyCode[] = ['CLP', 'USD'];
@@ -56,9 +94,9 @@ export function convert(amount: number, from: CurrencyCode, to: CurrencyCode, ra
   return (amount / rates[from]) * rates[to];
 }
 
-// Redondeo propio de cada moneda: el peso chileno no usa decimales, el dólar y el sol usan dos
+// Redondeo propio de cada moneda: el peso chileno y el guaraní no usan decimales; el resto, dos
 export const roundForCurrency = (amount: number, currency: CurrencyCode): number =>
-  currency === 'CLP' ? Math.round(amount) : Math.round(amount * 100) / 100;
+  CURRENCIES[currency].decimals === 0 ? Math.round(amount) : Math.round(amount * 100) / 100;
 
 export function formatMoney(amount: number, currency: CurrencyCode, options: { compact?: boolean } = {}): string {
   const config = CURRENCIES[currency];

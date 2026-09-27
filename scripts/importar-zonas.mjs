@@ -1,10 +1,17 @@
-// Importa las zonas oficiales (comunas, distritos…) de cada país al formato de Revela.
-// Ejecutar: npm run zonas   (ver docs/MULTIPAIS.md, "Zonas oficiales")
+// Importa las zonas oficiales (comunas, distritos, municipios…) de cada país al formato de Revela.
+// Ejecutar: npm run zonas                 (todos los países)
+//           npm run zonas -- MX BR        (solo algunos)
+// Ver docs/MULTIPAIS.md, "Zonas oficiales".
 //
-// Lee las fuentes descargadas en datos/zonas/fuentes/ (no se versionan), las pasa a WGS84, las
-// simplifica para la web y deja:
-//   · datos/zonas/zonas-<país>.geojson  (versionado): una zona por feature, con su región
-//   · datos/zonas/zone_catalog.sql      (no versionado): los INSERT del catálogo, para copiarlos a una migración nueva
+// Lee las fuentes descargadas en datos/zonas/fuentes/ (no se versionan; las de geoBoundaries con
+// scripts/descargar-zonas-geoboundaries.mjs), las pasa a WGS84, las simplifica para la web y deja:
+//   · datos/zonas/zonas-<país>.geojson       una zona por feature, con su región (se versionan las de
+//                                             Chile y Perú, que usan las pruebas)
+//   · datos/zonas/sql/zone_catalog_<país>.sql los INSERT del catálogo, para una migración nueva
+//
+// Chile y Perú vienen de sus fuentes oficiales (con provincia). El resto de América Latina, de
+// geoBoundaries: su nivel municipal (ADM2) y la región (ADM1) que más lo cubre, con los nombres y
+// códigos ISO revisados en scripts/regiones-latam.mjs.
 //
 // Simplificación variable: las zonas urbanas chicas conservan su forma (en una ciudad las comunas
 // son pequeñas y se reconocen por su contorno); las rurales grandes se recortan más.
@@ -13,6 +20,8 @@
 // y provincia, y el orden de sus regiones. Después, una migración nueva con el SQL generado.
 import mapshaper from 'mapshaper';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { normalizarRegion, regionesDe, regionesOficiales } from './regiones-latam.mjs';
+import { conTildes } from './tildes-zonas.mjs';
 
 const SALIDA = 'datos/zonas';
 const PALETA = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#0EA5E9', '#F97316', '#22C55E', '#A855F7', '#E11D48'];
@@ -71,7 +80,7 @@ const PAISES = [
       const orden = REGIONES_CL.findIndex(([codigo]) => codigo === p.codregion);
       return {
         code: `CL-${String(p.cod_comuna).padStart(5, '0')}`,
-        name: p.Comuna,
+        name: conTildes(p.Comuna),
         province_name: p.Provincia,
         region_code: `CL-${String(p.codregion).padStart(2, '0')}`,
         region_name: REGIONES_CL[orden]?.[1] ?? `Región ${p.codregion}`,
@@ -90,8 +99,8 @@ const PAISES = [
     incluir: () => true,
     zona: (p) => ({
       code: `PE-${p.ubigeo}`,
-      name: titulo(p.nombre),
-      province_name: titulo(p.nombre_provincia),
+      name: conTildes(titulo(p.nombre)),
+      province_name: conTildes(titulo(p.nombre_provincia)),
       region_code: `PE-${p.ubigeo_departamento}`,
       region_name: DEPARTAMENTOS_PE[p.ubigeo_departamento] ?? titulo(p.ubigeo_departamento),
       // Perú: departamentos en orden alfabético
@@ -102,17 +111,122 @@ const PAISES = [
   },
 ];
 
+// América Latina desde geoBoundaries: [código, ISO3, categoría de la zona]
+const GEOBOUNDARIES = [
+  ['AR', 'ARG', 'department'],
+  ['BO', 'BOL', 'province'],
+  ['BR', 'BRA', 'municipality'],
+  ['CO', 'COL', 'municipality'],
+  ['CR', 'CRI', 'canton'],
+  ['CU', 'CUB', 'municipality'],
+  ['DO', 'DOM', 'municipality'],
+  ['EC', 'ECU', 'canton'],
+  // El Salvador: desde 2024 sus 262 antiguos municipios son distritos de 44 municipios nuevos
+  ['SV', 'SLV', 'district'],
+  ['GT', 'GTM', 'municipality'],
+  ['HN', 'HND', 'municipality'],
+  ['MX', 'MEX', 'municipality'],
+  ['NI', 'NIC', 'municipality'],
+  ['PA', 'PAN', 'district'],
+  ['PY', 'PRY', 'district'],
+  ['UY', 'URY', 'municipality'],
+  ['VE', 'VEN', 'municipality'],
+];
+const DIR_GB = `${SALIDA}/fuentes/geoboundaries`;
+const leerFuentes = () => {
+  try {
+    return JSON.parse(readFileSync(`${DIR_GB}/fuentes.json`, 'utf8'));
+  } catch {
+    return {};
+  }
+};
+
+// Nombres que la fuente trae en inglés o con la letra cambiada (la ñ no se deduce: ver tildes-zonas.mjs)
+const CORRECCIONES = {
+  CR: { Canas: 'Cañas' },
+  CU: { 'Isle of Youth': 'Isla de la Juventud' },
+  HN: { Cabanas: 'Cabañas' },
+  SV: { 'Nueva San Salvador': 'Santa Tecla' },
+};
+// Lagos y embalses que la fuente dibuja como si fueran una zona más
+const AGUAS = {
+  GT: ['Lago de Amatitlan', 'Lago de Atitlan'],
+  HN: ['Lago de Yojoa'],
+  SV: ['Embalse Cerron Grande', 'Lago de Llopango', 'Lago de Guija', 'Lago de Coatepeque'],
+};
+const sinTildes = (texto) => String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const esAgua = (pais, nombre) => (AGUAS[pais] ?? []).some((agua) => sinTildes(agua) === sinTildes(nombre));
+
+/** "Municipio Nueva Guinea", "El Viejo (Municipio)", "BOGOTÁ, D.C.", "San Jose" → nombre limpio */
+const limpiarZona = (nombre, pais) => {
+  let limpio = String(nombre).trim().replace(/\s+/g, ' ');
+  // Uruguay: "Municipality A" es el Municipio A de Montevideo (la letra sola no dice nada)
+  if (/^municipality /i.test(limpio)) return `Municipio ${limpio.slice('municipality '.length)}`;
+  limpio = limpio.replace(/^municipio( de)? /i, '').replace(/ \((municipio|departamento|distrito)\)$/i, '');
+  if (limpio === limpio.toUpperCase()) limpio = titulo(limpio);
+  limpio = limpio
+    .replace(/ (De|Del) /g, (m) => m.toLowerCase())
+    // Siglas que el paso a minúsculas deja a medias: "D.c." → "D.C."
+    .replace(/\b([A-Z])\.([a-z])\./g, (_, a, b) => `${a}.${b.toUpperCase()}.`)
+    // Apellidos irlandeses de los próceres: "O´leary" → "O'Leary"
+    .replace(/\bO[´'’]([a-z])/g, (_, letra) => `O'${letra.toUpperCase()}`);
+  limpio = CORRECCIONES[pais]?.[limpio] ?? limpio;
+  return pais === 'BR' ? limpio : conTildes(limpio);
+};
+
+const slug = (texto) =>
+  String(texto)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+for (const [pais, iso3, categoria] of GEOBOUNDARIES) {
+  const fuentes = leerFuentes();
+  const f1 = fuentes[`${iso3}_ADM1`];
+  const f2 = fuentes[`${iso3}_ADM2`];
+  const regiones = regionesDe(pais);
+  const orden = regionesOficiales(pais)
+    .map((r) => r.name)
+    .sort((a, b) => a.localeCompare(b, 'es'));
+  const usados = new Set();
+  PAISES.push({
+    pais,
+    categoria,
+    fuente: `geoBoundaries (${f2?.edicion ?? 'gbOpen'}): ${f2?.fuente ?? 'ADM2'}; licencia ${f2?.licencia ?? 'ver fuentes.json'}. Regiones: ${f1?.fuente ?? 'ADM1'}`,
+    entrada: `${DIR_GB}/${iso3}_ADM2.geojson" "${DIR_GB}/${iso3}_ADM1.geojson`,
+    // La región de cada zona es la que más la cubre (su centro puede caer en el mar o en la vecina)
+    comandos: `combine-files -target ${iso3}_ADM2 -join source=${iso3}_ADM1 largest-overlap fields=shapeName prefix=r_`,
+    simplificar: 'this.area < 60e6 ? "70%" : this.area < 600e6 ? "25%" : "8%"',
+    campos: 'shapeName,shapeID,r_shapeName',
+    incluir: (p) => Boolean(p.shapeName) && !esAgua(pais, p.shapeName),
+    zona: (p) => {
+      const region = p.r_shapeName ? regiones.get(normalizarRegion(p.r_shapeName)) : undefined;
+      if (!region) throw new Error(`${pais}: región desconocida "${p.r_shapeName ?? '(sin cruce)'}" para ${p.shapeName}`);
+      const name = limpiarZona(p.shapeName, pais);
+      // Código legible y estable: región + nombre (ej. MX-JAL-GUADALAJARA); si se repite, con sufijo
+      const base = `${region.code}-${slug(name).slice(0, 40)}`;
+      let code = base;
+      for (let n = 2; usados.has(code); n++) code = `${base}-${n}`;
+      usados.add(code);
+      return { code, name, province_name: null, region_code: region.code, region_name: region.name, region_order: orden.indexOf(region.name) };
+    },
+  });
+}
+
 const anillo = (puntos) => `(${puntos.map(([lng, lat]) => `${lng} ${lat}`).join(', ')})`;
 const aWkt = (geometria) => {
   const poligonos = geometria.type === 'Polygon' ? [geometria.coordinates] : geometria.coordinates;
   return `SRID=4326;MULTIPOLYGON(${poligonos.map((p) => `(${p.map(anillo).join(', ')})`).join(', ')})`;
 };
-const sqlTexto = (valor) => `'${String(valor).replace(/'/g, "''")}'`;
+const sqlTexto = (valor) => (valor === null || valor === undefined ? 'NULL' : `'${String(valor).replace(/'/g, "''")}'`);
 
-mkdirSync(SALIDA, { recursive: true });
-const filasSql = [];
+mkdirSync(`${SALIDA}/sql`, { recursive: true });
+const pedidos = process.argv.slice(2).map((c) => c.toUpperCase());
 
-for (const config of PAISES) {
+for (const config of PAISES.filter((c) => pedidos.length === 0 || pedidos.includes(c.pais))) {
+  const filasSql = [];
   const temporal = `${SALIDA}/fuentes/_${config.pais}.geojson`;
   await mapshaper.runCommands(
     `-i "${config.entrada}" ${config.comandos} -simplify variable percentage='${config.simplificar}' keep-shapes ` +
@@ -149,10 +263,13 @@ for (const config of PAISES) {
     );
   }
   const regiones = new Set(features.map((f) => f.properties.region_code)).size;
-  console.log(`${config.pais}: ${features.length} zonas en ${regiones} regiones → ${SALIDA}/zonas-${config.pais.toLowerCase()}.geojson`);
+  const peso = (readFileSync(`${SALIDA}/zonas-${config.pais.toLowerCase()}.geojson`).length / 1048576).toFixed(1);
+  console.log(`${config.pais}: ${features.length} zonas en ${regiones} regiones · ${peso} MB → ${SALIDA}/zonas-${config.pais.toLowerCase()}.geojson`);
+  escribirSql(config.pais, filasSql);
 }
 
 // Un INSERT cada 100 zonas: sentencias de tamaño razonable para la base
+function escribirSql(pais, filasSql) {
 const bloques = [];
 for (let i = 0; i < filasSql.length; i += 100) {
   bloques.push(
@@ -166,5 +283,6 @@ for (let i = 0; i < filasSql.length; i += 100) {
       '    region_order = EXCLUDED.region_order, polygon = EXCLUDED.polygon;'
   );
 }
-writeFileSync(`${SALIDA}/zone_catalog.sql`, `-- Generado por scripts/importar-zonas.mjs (npm run zonas). No editar a mano.\n${bloques.join('\n\n')}\n`);
-console.log(`SQL del catálogo: ${SALIDA}/zone_catalog.sql (${filasSql.length} zonas)`);
+const archivo = `${SALIDA}/sql/zone_catalog_${pais.toLowerCase()}.sql`;
+writeFileSync(archivo, `-- ${pais}: generado por scripts/importar-zonas.mjs (npm run zonas). No editar a mano.\n${bloques.join('\n\n')}\n`);
+}

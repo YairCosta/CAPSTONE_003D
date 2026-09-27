@@ -11,8 +11,10 @@ Ejemplo con la empresa piloto (Chile + Perú): los leads pueden negociarse en **
 en CLP, un contrato de S/ 14.000 aparece como $3.969.783; en US$, como US$4.142. El dato guardado sigue
 siendo S/ 14.000.
 
-Un CRM de plan Nacional en Chile ofrece CLP y US$. Cada país que se agrega con el plan Internacional suma su
-moneda automáticamente (`leadCurrenciesFor` en `src/lib/currency.ts`).
+Un CRM de plan Nacional en Chile ofrece CLP y US$. Cada país que la gerencia activa con el plan Internacional
+suma su moneda automáticamente (`leadCurrenciesFor` en `src/lib/currency.ts`). Ecuador, El Salvador y Panamá usan
+el dólar. Cada moneda tiene su propio símbolo (AR$, MX$, R$, COL$, S/…), para que AR$ 1.000 no se confunda con
+MX$ 1.000, y sus decimales: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos.
 
 ## Por qué el monto nunca se guarda convertido
 
@@ -28,7 +30,7 @@ El tipo de cambio se mueve todos los días. Si se guardara convertido, un negoci
 `GET /api/rates` (en `server/exchangeRates.ts`, dentro del servidor de Vite):
 
 - **CLP**: dólar observado del **Banco Central de Chile**, publicado por mindicador.cl.
-- **Resto** (PEN y cualquier moneda futura): open.er-api.com, que cubre todas las monedas ISO 4217.
+- **Resto** (PEN, MXN, BRL… las 15 monedas de América Latina que no son CLP ni US$): open.er-api.com, que cubre todas las monedas ISO 4217.
 
 Ambas son gratuitas y sin API key. El servidor guarda la respuesta 12 horas. Si una fuente falla se usa la
 última tasa buena; si nunca hubo una, una **tasa de respaldo** fija (`FALLBACK_RATES`). En ese caso aparece

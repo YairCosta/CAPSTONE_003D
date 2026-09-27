@@ -32,8 +32,9 @@ export function companyFromRow(row: CompanyRow, countryRows: CompanyCountryRow[]
     .map((c) => c.country_code.trim())
     .filter(isCountryCode)
     .filter((c) => c !== home) as CountryCode[];
-  // El país base va siempre primero; el plan Nacional solo tiene ese
-  const enabledCountries: CountryCode[] = plan === 'international' ? [home, ...extra] : [home];
+  // El país base va siempre primero. Con el plan Nacional las otras filas se conservan (cuentan de nuevo
+  // si se reactiva el plan); qué países cuentan hoy lo dice enabledCountriesOf
+  const enabledCountries: CountryCode[] = [home, ...extra];
   const vista = COUNTRIES[home].mapView;
   return {
     id: row.id,

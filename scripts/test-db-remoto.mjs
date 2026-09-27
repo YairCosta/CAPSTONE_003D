@@ -12,6 +12,7 @@ const ARCHIVOS = [
   { archivo: 'scripts/sql/prueba-plataforma-remota.sql', titulo: 'Administración de la plataforma' },
   { archivo: 'scripts/sql/prueba-crm-remota.sql', titulo: 'Trabajo diario del CRM (etapa 3)' },
   { archivo: 'scripts/sql/prueba-ataques-remota.sql', titulo: 'Ataques desde dentro (CRM Revela Pruebas)' },
+  { archivo: 'scripts/sql/prueba-paises-remota.sql', titulo: 'Países de América Latina elegidos por la gerencia' },
 ];
 
 const fallar = (motivo, salida) => {
@@ -19,10 +20,16 @@ const fallar = (motivo, salida) => {
   process.exit(1);
 };
 
-// Ensayo de una migración sin aplicarla: npm run test:db -- --con supabase/migrations/<archivo>.sql
-// La migración y cada prueba corren en la misma transacción, que el error forzado deshace entera.
+// Ensayo de migraciones sin aplicarlas: npm run test:db -- --con <migración>.sql[,<otra>.sql]
+// Las migraciones y cada prueba corren en la misma transacción, que el error forzado deshace entera.
 const indiceCon = process.argv.indexOf('--con');
-const migracionPrevia = indiceCon > -1 ? readFileSync(process.argv[indiceCon + 1], 'utf8') : null;
+const migracionPrevia =
+  indiceCon > -1
+    ? process.argv[indiceCon + 1]
+        .split(',')
+        .map((archivo) => readFileSync(archivo.trim(), 'utf8'))
+        .join('\n\n')
+    : null;
 const temporal = mkdtempSync(join(tmpdir(), 'revela-db-'));
 
 const ejecutar = (original) => {

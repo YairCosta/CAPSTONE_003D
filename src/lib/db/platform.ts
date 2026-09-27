@@ -94,6 +94,18 @@ export async function updateCompany(db: SupabaseClient, company: Company): Promi
   return { ok: true, data: companyFromRow(fila as CompanyRow, (paises ?? deseadas) as CompanyCountryRow[]) };
 }
 
+/**
+ * La gerencia activa o desactiva un país de su CRM (plan Internacional). La base revisa que sea su CRM,
+ * su plan y su perfil (RLS), y al activarlo copia las zonas del país al CRM (trigger).
+ */
+export async function setCompanyCountry(db: SupabaseClient, companyId: string, countryCode: string, enabled: boolean): Promise<DbResult<null>> {
+  const { error } = enabled
+    ? await db.from('company_countries').upsert({ company_id: companyId, country_code: countryCode }, { ignoreDuplicates: true })
+    : await db.from('company_countries').delete().eq('company_id', companyId).eq('country_code', countryCode);
+  if (error) return { ok: false, error: dbErrorMessage(error, enabled ? 'No se pudo activar el país.' : 'No se pudo desactivar el país.') };
+  return { ok: true, data: null };
+}
+
 export async function updateProfile(db: SupabaseClient, user: AppUser): Promise<DbResult<AppUser>> {
   const { data: fila, error } = await db
     .from('profiles')

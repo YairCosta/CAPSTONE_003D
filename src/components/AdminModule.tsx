@@ -125,14 +125,11 @@ function TenantsSection({
 
   const quickUpdate = async (company: Company) => setRowError(await onUpdateCompany(company));
 
-  // Plan Internacional: activa todos los países disponibles; al desactivarlo queda solo el país base.
-  // Los datos de los otros países no se borran: vuelven a verse si se reactiva el plan.
+  // Plan Internacional: la gerencia activa los países que necesite desde Gerencia → Países. Al
+  // desactivarlo cuenta solo el país base, pero la lista se conserva: al reactivarlo vuelven los países
+  // que el CRM ya usaba, con sus datos (nada se borra).
   const setInternational = (company: Company, international: boolean) =>
-    quickUpdate({
-      ...company,
-      plan: international ? 'international' : 'national',
-      enabledCountries: international ? [...COUNTRY_CODES] : [company.homeCountry],
-    });
+    quickUpdate({ ...company, plan: international ? 'international' : 'national' });
 
   const foreignLeads = (company: Company) =>
     leads.filter((l) => l.companyId === company.id && l.countryCode !== company.homeCountry).length;
@@ -453,8 +450,9 @@ function CompanyModal({
   const [isActive, setIsActive] = useState(company?.isActive ?? true);
   const [homeCountry, setHomeCountry] = useState<CountryCode>(company?.homeCountry ?? 'CL');
   const [isInternational, setIsInternational] = useState(company?.plan === 'international');
+  // Los países guardados, aunque el plan esté apagado: al activarlo aquí vuelven los que ya usaba
   const [extraCountries, setExtraCountries] = useState<CountryCode[]>(
-    company ? enabledCountriesOf(company).filter((c) => c !== company.homeCountry) : []
+    company ? company.enabledCountries.filter((c) => c !== company.homeCountry) : []
   );
   const availableExtras = COUNTRY_CODES.filter((c) => c !== homeCountry);
   const selectedExtras = extraCountries.filter((c) => c !== homeCountry);
@@ -468,9 +466,7 @@ function CompanyModal({
       ? 'El identificador no puede quedar vacío.'
       : existingSlugs.includes(effectiveSlug)
         ? 'Ya existe un CRM con ese identificador.'
-        : isInternational && selectedExtras.length === 0
-          ? 'El plan Internacional necesita al menos un país adicional.'
-          : null;
+        : null;
 
   return (
     <Modal
@@ -503,7 +499,7 @@ function CompanyModal({
             isActive,
             plan: isInternational ? 'international' : 'national',
             homeCountry,
-            enabledCountries: isInternational ? [homeCountry, ...selectedExtras] : [homeCountry],
+            enabledCountries: [homeCountry, ...selectedExtras],
             defaultLat: company && company.homeCountry === homeCountry ? company.defaultLat : view.lat,
             defaultLng: company && company.homeCountry === homeCountry ? company.defaultLng : view.lng,
             defaultZoom: company && company.homeCountry === homeCountry ? company.defaultZoom : view.zoom,
@@ -553,10 +549,7 @@ function CompanyModal({
           <div className="flex items-center gap-3">
             <ActiveSwitch
               checked={isInternational}
-              onChange={(on) => {
-                setIsInternational(on);
-                if (on && selectedExtras.length === 0) setExtraCountries(availableExtras);
-              }}
+              onChange={setIsInternational}
               label="Plan Internacional"
             />
             <span className="flex items-center gap-2 text-[15px] font-semibold text-slate-200">
@@ -566,7 +559,9 @@ function CompanyModal({
           </div>
           {isInternational && (
             <fieldset className="mt-3">
-              <legend className="mb-2 text-sm text-slate-400">Países adicionales habilitados:</legend>
+              <legend className="mb-2 text-sm text-slate-400">
+                Países adicionales habilitados (la gerencia del CRM también los elige, en Gerencia → Países):
+              </legend>
               <div className="flex flex-wrap gap-2">
                 {availableExtras.map((code) => (
                   <label

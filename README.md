@@ -1,7 +1,8 @@
 # Revela
 
 CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en un mapa por zona
-(comuna, distrito…), mide qué se vende y dónde, y opera en varios países.
+(comuna, distrito, municipio, cantón…), mide qué se vende y dónde, y opera en los 19 países de
+América Latina.
 
 Proyecto de tesis de Ingeniería en Informática, Duoc UC (sección 003D).
 Se pilotea con **Empresa Piloto**, empresa de servicios que opera en Chile y Perú. La aplicación
@@ -9,9 +10,12 @@ trae una **cuenta de demostración** con datos ficticios, pensada para quien lle
 
 ## Qué hace
 
-- **KPI y mapa:** leads ubicados por comuna o distrito (las 345 comunas de Chile y los 1.893
-  distritos de Perú, agrupados por región), zonas coloreadas por dinero ganado o por cierres, y
-  ranking de zonas y de productos. El mapa muestra zonas, nunca la ubicación de un lead.
+- **KPI y mapa:** leads ubicados por su zona oficial (14.489 zonas de América Latina: las comunas de
+  Chile, los distritos de Perú, los municipios de México y Brasil…, agrupadas por región), zonas
+  coloreadas por dinero ganado o por cierres, y ranking de zonas y de productos. El mapa muestra zonas,
+  nunca la ubicación de un lead.
+- **Países:** con el plan Internacional, la gerencia activa los países donde trabaja su empresa; cada
+  uno suma sus zonas, su moneda y su forma de nombrarlas. Ver [`docs/MULTIPAIS.md`](docs/MULTIPAIS.md).
 - **Pipeline:** tablero por etapas, del lead nuevo hasta ganado o descartado.
 - **Registro de contacto y agenda:** bitácora de cada interacción y calendario de seguimientos.
 - **Gerencia:** empresas cliente, contactos, catálogo de productos y servicios, y usuarios del CRM.
@@ -27,7 +31,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 | Capa | Herramientas |
 |---|---|
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| Mapa | Leaflet, mapas base de Esri |
+| Mapa | Leaflet, mapas base de Esri; límites de BCN (Chile), INEI (Perú) y geoBoundaries (resto de América Latina) |
 | Base de datos | PostgreSQL 17 + PostGIS en Supabase (toda la app conectada con `VITE_DATA_SOURCE=supabase`; la demo sigue en memoria) |
 | Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
 

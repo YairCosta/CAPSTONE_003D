@@ -37,3 +37,9 @@ e2e-fallo-*.png
 # generado tampoco: queda dentro de la migración que lo carga.
 datos/zonas/fuentes/
 datos/zonas/zone_catalog.sql
+datos/zonas/sql/
+# De los países de geoBoundaries solo se versiona la migración (el dato); Chile y Perú, además su
+# GeoJSON, que usan las pruebas
+datos/zonas/zonas-*.geojson
+!datos/zonas/zonas-cl.geojson
+!datos/zonas/zonas-pe.geojson

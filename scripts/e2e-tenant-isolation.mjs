@@ -1287,6 +1287,77 @@ try {
   );
   const auditRowsAfter = await page.evaluate(() => document.querySelectorAll('main tbody tr').length);
   check('El historial nunca se borra: solo se agregan registros', auditRowsAfter > auditRows, `${auditRows} → ${auditRowsAfter}`);
+
+  // ================================================================ 10. Gerencia → Países: la gerencia elige sus países
+  const abrirPaises = async () => {
+    await tab('Gerencia');
+    await clickText('main button', 'Países');
+    await sleep(400);
+  };
+  const cuantosLeads = async () => Number((await leadChip()).match(/\d+/)?.[0] ?? -1);
+  await abrirPaises();
+  const interruptores = await page.$$eval('ul[aria-label="Países disponibles"] [role=switch]', (els) =>
+    els.map((e) => ({ label: e.getAttribute('aria-label'), on: e.getAttribute('aria-checked') === 'true', disabled: e.disabled }))
+  );
+  check('Gerencia → Países muestra los 19 países de América Latina', interruptores.length === 19, String(interruptores.length));
+  check(
+    'El país base (Chile) queda siempre activo',
+    interruptores.some((i) => i.label === 'Chile es el país base' && i.on && i.disabled),
+    JSON.stringify(interruptores.slice(0, 2))
+  );
+  const leadsAntes = await cuantosLeads();
+  await domClick('[role=switch][aria-label="Activar Argentina"]');
+  await sleep(800);
+  const filtroPaises = await page.$eval('section[aria-label="Filtro de países"]', (s) => s.innerText).catch(() => '');
+  check(
+    'La gerencia activa Argentina y aparece en el filtro de países',
+    (await page.$('[role=switch][aria-label="Desactivar Argentina"]')) !== null && filtroPaises.includes('Argentina'),
+    filtroPaises.replace(/\s+/g, ' ')
+  );
+
+  await clickText('header button', 'Capturar Lead');
+  await sleep(300);
+  await page.select('#cap-country', 'AR');
+  await sleep(300);
+  const zonasAr = await page.$eval('#cap-commune', (s) => [...s.options].map((o) => o.textContent.trim()).filter((t) => t !== 'Selecciona…'));
+  const etiquetaZonaAr = await page.$eval('label[for="cap-commune"]', (l) => l.textContent);
+  check(
+    'En Argentina la zona se llama "Partido o departamento" y ofrece solo zonas de Argentina',
+    etiquetaZonaAr.startsWith('Partido o departamento') && zonasAr.length === 1 && zonasAr[0] === 'Comuna 1',
+    `${etiquetaZonaAr}: ${zonasAr.join(', ')}`
+  );
+  await typeInto('#cap-fullName', 'Lead Porteño E2E');
+  await typeInto('#cap-rawAddress', 'Av. Corrientes 1200');
+  await page.select('#cap-commune', 't-ar-c-comuna-1');
+  await declararBaseDelDato();
+  await clickText('button', 'Guardar lead');
+  await sleep(1200);
+  check('El lead de Argentina se guarda', (await cuantosLeads()) === leadsAntes + 1, `${leadsAntes} → ${await leadChip()}`);
+
+  await abrirPaises();
+  await domClick('[role=switch][aria-label="Desactivar Argentina"]');
+  await sleep(300);
+  const aviso = await page.$eval('[role=dialog]', (d) => d.innerText).catch(() => '');
+  check('Desactivar un país con leads pide confirmación y explica que no se borran', aviso.includes('Su lead') && aviso.includes('No se borran'), aviso.replace(/\s+/g, ' '));
+  await clickText('[role=dialog] button', 'Desactivar');
+  await sleep(800);
+  check(
+    'Al desactivar Argentina su lead deja de verse',
+    (await cuantosLeads()) === leadsAntes && !(await bodyText()).includes('Lead Porteño E2E'),
+    await leadChip()
+  );
+  await domClick('[role=switch][aria-label="Activar Argentina"]');
+  await sleep(800);
+  check('Al reactivar Argentina su lead vuelve (desactivar no borra)', (await cuantosLeads()) === leadsAntes + 1, await leadChip());
+
+  await tab('Auditoría');
+  await sleep(400);
+  const auditoriaPaises = await mainText();
+  check(
+    'Activar y desactivar países queda en la auditoría',
+    auditoriaPaises.includes('Activó Argentina') && auditoriaPaises.includes('Desactivó Argentina'),
+    auditoriaPaises.slice(0, 200).replace(/\s+/g, ' ')
+  );
 } catch (error) {
   const shot = `e2e-fallo-${Date.now()}.png`;
   await page.screenshot({ path: shot }).catch(() => {});

@@ -14,7 +14,7 @@ import { SetPasswordScreen } from './components/SetPasswordScreen';
 import { usingSupabase } from './lib/dataSource';
 import { supabase, initialAuthLinkError, initialAuthLinkType } from './lib/supabaseClient';
 import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswordFromLink, signIn, signOut } from './lib/db/auth';
-import { insertCompany, inviteUser, loadPlatform, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
+import { insertCompany, inviteUser, loadPlatform, setCompanyCountry, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
 import { loadAuditLog, saveAuditEntry } from './lib/db/audit';
 import { isAuditEntityConnected } from './lib/db/mappers';
 import {
@@ -58,6 +58,7 @@ import {
   isSuperadmin,
   sanitizeAccountUpdate,
   sanitizeCompanyUpdate,
+  setCountryByManager,
   sanitizeLeadUpdate,
   sanitizeTeamUserUpdate,
   sanitizeUserUpdate,
@@ -1332,6 +1333,31 @@ export function App() {
     return null;
   };
 
+  // Gerencia → Países: la gerencia activa o desactiva países de su CRM (plan Internacional). Con
+  // Supabase, al activar uno la base copia sus zonas al CRM; se recarga el CRM para traerlas (y, al
+  // desactivarlo, para dejar de mostrar sus datos).
+  const handleSetCountry = async (code: CountryCode, enabled: boolean): Promise<string | null> => {
+    const before = currentCompany;
+    const cambio = setCountryByManager(before, code, enabled, currentUser);
+    if (!cambio.ok || !before) return cambio.ok ? 'No hay un CRM en la sesión.' : cambio.error;
+    if (db) {
+      const guardado = await setCompanyCountry(db, before.id, code, enabled);
+      if (!guardado.ok) return guardado.error;
+    }
+    const after = cambio.company;
+    setCompanies((prev) => prev.map((c) => (c.id === after.id ? after : c)));
+    record({
+      companyId: after.id,
+      action: 'update',
+      entity: 'company',
+      entityId: after.id,
+      entityLabel: after.name,
+      summary: `${enabled ? 'Activó' : 'Desactivó'} ${COUNTRIES[code].name}`,
+      changes: diffFields(before, after, companyFields),
+    });
+    return db ? loadTenant(after.id) : null;
+  };
+
   // Con Supabase el usuario no se crea con una contraseña: se le envía una invitación y la elige él
   const handleCreateUser = async (data: NewAppUser): Promise<string | null> => {
     if (!canAdminister) return 'Solo el administrador de la plataforma puede crear usuarios.';
@@ -1927,6 +1953,10 @@ export function App() {
             onRequestPrivacy={handleRequestPrivacy}
             onResolvePrivacy={handleResolvePrivacy}
             onDownloadSubjectReport={handleDownloadSubjectReport}
+            plan={currentCompany?.plan ?? 'national'}
+            homeCountry={currentCompany?.homeCountry ?? 'CL'}
+            leadCountsByCountry={leadCountsByCountry}
+            onSetCountry={handleSetCountry}
           />
         )}
 

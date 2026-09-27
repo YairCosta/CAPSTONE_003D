@@ -1,5 +1,6 @@
 import type { AppUser, CatalogItem, ClientAccount, Company, Lead, LeadItem, TerritoryMetric, StageConfig, LeadActivity } from '../types/crm';
 import type { CountryCode } from './countries';
+import { DEMO_LATAM_ZONES } from './demoLatamZones.ts';
 import { FALLBACK_RATES, convert, currencyOfCountry, leadCurrency, roundForCurrency } from '../lib/currency.ts';
 
 // Cuenta de demostración pública (datos ficticios de una empresa de servicios y mobiliario para oficinas en Chile y Perú).
@@ -398,7 +399,9 @@ export const mockTerritories: TerritoryMetric[] = [
         [-76.9440, -12.0640]
       ]]]
     }
-  }
+  },
+  // Una zona por cada otro país de América Latina, para probar Gerencia → Países en la demo
+  ...DEMO_LATAM_ZONES,
 ];
 
 const baseLeads: Lead[] = [

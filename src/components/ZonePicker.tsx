@@ -18,7 +18,11 @@ interface ZonePickerProps<T extends ZoneInfo> {
 }
 
 // Región primero y después la zona. La región es un filtro: sin elegirla, la lista de zonas trae
-// todas, agrupadas por región, así el campo de zona sirve siempre por sí solo.
+// todas, agrupadas por región, así el campo de zona sirve siempre por sí solo. En los países con
+// muchas zonas (Brasil 5.570 municipios, México 2.457, Perú 1.893) esa lista no se puede recorrer:
+// ahí se elige primero la región.
+const ZONAS_PARA_EXIGIR_REGION = 1000;
+
 export function ZonePicker<T extends ZoneInfo>({
   id,
   zones,
@@ -36,7 +40,11 @@ export function ZonePicker<T extends ZoneInfo>({
   const [regionElegida, setRegionElegida] = useState(regionDeLaZona);
   // Si la zona cambia desde fuera (otro país, otra zona), manda su región
   const region = regionDeLaZona || (regiones.some((r) => r.code === regionElegida) ? regionElegida : '');
-  const grupos = useMemo(() => groupZonesForSelect(zones, region || undefined), [zones, region]);
+  const exigeRegion = zones.length > ZONAS_PARA_EXIGIR_REGION && regiones.length > 1;
+  const grupos = useMemo(
+    () => (exigeRegion && !region ? [] : groupZonesForSelect(zones, region || undefined)),
+    [zones, region, exigeRegion]
+  );
   const unSoloGrupo = grupos.length === 1;
 
   return (
@@ -56,7 +64,11 @@ export function ZonePicker<T extends ZoneInfo>({
             }}
             className={inputClass}
           >
-            <option value="">Todas ({regiones.length} {country.regionLabel.plural.toLowerCase()})</option>
+            <option value="">
+              {exigeRegion
+                ? `Elige ${country.regionLabel.singular.toLowerCase()} (${regiones.length})`
+                : `Todas (${regiones.length} ${country.regionLabel.plural.toLowerCase()})`}
+            </option>
             {regiones.map((r) => (
               <option key={r.code || 'otras'} value={r.code}>
                 {r.name}
@@ -76,9 +88,12 @@ export function ZonePicker<T extends ZoneInfo>({
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={invalid}
           aria-describedby={describedBy}
+          disabled={exigeRegion && !region}
           className={`${inputClass} ${invalid ? errorClassName : ''}`}
         >
-          <option value="">Selecciona…</option>
+          <option value="">
+            {exigeRegion && !region ? `Primero elige ${country.regionLabel.singular.toLowerCase()}` : 'Selecciona…'}
+          </option>
           {unSoloGrupo
             ? grupos[0].zones.map((z) => (
                 <option key={z.territoryId} value={z.territoryId}>

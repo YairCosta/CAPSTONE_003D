@@ -6,6 +6,7 @@ import {
   canRegisterActivity,
   enabledCountriesOf,
   normalizeCompanyCountries,
+  setCountryByManager,
   sanitizeAccountUpdate,
   sanitizeCatalogItemUpdate,
   sanitizeLeadItems,
@@ -57,7 +58,7 @@ import {
 } from '../src/lib/currency.ts';
 import { buildMoneyApi } from '../src/lib/money.ts';
 import { getRates } from '../server/exchangeRates.ts';
-import { FALLBACK_RATES } from '../src/lib/currency.ts';
+import { CURRENCIES, FALLBACK_RATES } from '../src/lib/currency.ts';
 import { COUNTRIES, COUNTRY_CODES, zoneWithArticle } from '../src/data/countries.ts';
 import { applyLeadValue, computeItemSales, isManualValue, leadsWithItems } from '../src/lib/catalog.ts';
 import { accountFields, buildAuditEntry, diffFields, isRevertible, leadFields, leadSummary, scopeAuditLog } from '../src/lib/audit.ts';
@@ -201,10 +202,72 @@ test('enabledCountriesOf: plan Nacional solo ve su país base aunque tenga otros
   assert.deepEqual(enabledCountriesOf(null), []);
 });
 
-test('normalizeCompanyCountries: Internacional sin países extra vuelve a Nacional', () => {
-  assert.equal(normalizeCompanyCountries(company('international', ['CL'])).plan, 'national');
-  assert.deepEqual(normalizeCompanyCountries(company('national', ['CL', 'PE'])).enabledCountries, ['CL']);
-  assert.deepEqual(normalizeCompanyCountries(company('international', ['PE', 'CL'])).enabledCountries, ['CL', 'PE']);
+test('normalizeCompanyCountries: un plan Internacional puede partir solo con su país base', () => {
+  // La gerencia suma los demás países desde Gerencia → Países
+  assert.equal(normalizeCompanyCountries(company('international', ['CL'])).plan, 'international');
+  assert.deepEqual(normalizeCompanyCountries(company('international', ['CL'])).enabledCountries, ['CL']);
+  assert.deepEqual(normalizeCompanyCountries(company('international', ['PE', 'CL', 'PE', 'XX' as never])).enabledCountries, ['CL', 'PE']);
+});
+
+test('Plan Nacional: cuenta solo el país base, pero la lista se guarda y vuelve al reactivar el plan', () => {
+  const nacional = normalizeCompanyCountries(company('national', ['CL', 'PE', 'MX']));
+  assert.deepEqual(enabledCountriesOf(nacional), ['CL']);
+  assert.deepEqual(nacional.enabledCountries, ['CL', 'PE', 'MX']);
+  assert.deepEqual(enabledCountriesOf({ ...nacional, plan: 'international' }), ['CL', 'PE', 'MX']);
+});
+
+test('setCountryByManager: la gerencia activa y desactiva países de su CRM con el plan Internacional', () => {
+  const gerente = user('m1', 'manager', A);
+  const activado = setCountryByManager(company('international', ['CL', 'PE']), 'MX', true, gerente);
+  assert.ok(activado.ok);
+  assert.deepEqual(activado.ok && activado.company.enabledCountries, ['CL', 'PE', 'MX']);
+  const desactivado = setCountryByManager(company('international', ['CL', 'PE', 'MX']), 'PE', false, gerente);
+  assert.deepEqual(desactivado.ok && desactivado.company.enabledCountries, ['CL', 'MX']);
+});
+
+test('setCountryByManager: nunca el país base, nunca en plan Nacional, nunca otro perfil ni otro CRM', () => {
+  const internacional = company('international', ['CL', 'PE']);
+  const falla = (r: ReturnType<typeof setCountryByManager>) => (r.ok ? 'se permitió' : r.error);
+  assert.match(falla(setCountryByManager(internacional, 'CL', false, user('m1', 'manager', A))), /país base/);
+  assert.match(falla(setCountryByManager(company('national', ['CL']), 'MX', true, user('m1', 'manager', A))), /plan Nacional/);
+  assert.match(falla(setCountryByManager(internacional, 'MX', true, user('u1', 'agent', A))), /gerencia/);
+  assert.match(falla(setCountryByManager(internacional, 'MX', true, user('m2', 'manager', B))), /gerencia/);
+  assert.match(falla(setCountryByManager(internacional, 'XX' as never, true, user('m1', 'manager', A))), /no está disponible/);
+});
+
+test('Países: los 19 de América Latina están completos (moneda, tasa, zona, región, teléfono y mapa)', () => {
+  assert.equal(COUNTRY_CODES.length, 19);
+  for (const code of COUNTRY_CODES) {
+    const c = COUNTRIES[code];
+    assert.equal(c.code, code);
+    assert.ok(CURRENCIES[c.currency], `${code}: moneda sin configurar`);
+    assert.ok(FALLBACK_RATES[c.currency] > 0, `${code}: sin tasa de respaldo`);
+    assert.ok(c.zoneLabel.singular && c.zoneLabel.plural && c.regionLabel.singular && c.regionLabel.plural, `${code}: sin nombres de zona o región`);
+    assert.match(c.phonePrefix, /^\+\d/, `${code}: prefijo telefónico`);
+    assert.ok(c.taxIdLabel && c.taxIdExample, `${code}: sin identificador tributario`);
+    assert.ok(c.mapView.lat > -56 && c.mapView.lat < 33 && c.mapView.lng > -118 && c.mapView.lng < -34, `${code}: el mapa no mira a América Latina`);
+  }
+  // Cada moneda con su propio símbolo: AR$ 1.000 no se confunde con MX$ 1.000
+  const simbolos = Object.values(CURRENCIES).map((m) => m.symbol);
+  assert.equal(new Set(simbolos).size, simbolos.length);
+});
+
+test('Países: cada uno nombra su zona a su manera (no en todos lados hay comunas)', () => {
+  assert.equal(zoneWithArticle(['MX']), 'el municipio');
+  assert.equal(zoneWithArticle(['EC']), 'el cantón');
+  assert.equal(zoneWithArticle(['BO']), 'la provincia');
+  assert.equal(zoneWithArticle(['AR']), 'el partido o departamento');
+  assert.equal(zoneWithArticle(['SV']), 'el distrito', 'El Salvador: los antiguos municipios son distritos desde 2024');
+  assert.equal(zoneWithArticle(['CL', 'MX']), 'la zona');
+  assert.equal(COUNTRIES.BR.regionLabel.singular, 'Estado');
+  assert.equal(COUNTRIES.CO.regionLabel.singular, 'Departamento');
+});
+
+test('Monedas: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos', () => {
+  assert.equal(roundForCurrency(1234.56, 'CLP'), 1235);
+  assert.equal(roundForCurrency(1234.56, 'PYG'), 1235);
+  assert.equal(roundForCurrency(1234.567, 'BRL'), 1234.57);
+  assert.equal(roundForCurrency(1234.567, 'MXN'), 1234.57);
 });
 
 test('sanitizeLeadUpdate: no permite mover un lead a un país no habilitado', () => {

@@ -46,7 +46,10 @@ const TILE_URLS = {
   light: { base: `${ESRI}/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, labels: `${ESRI}/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}` },
   dark: { base: `${ESRI}/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`, labels: `${ESRI}/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}` },
 };
-const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
+// Los límites de las zonas piden citar su fuente (CC BY, ODbL): la de cada país está en docs/MULTIPAIS.md
+const TILE_ATTRIBUTION =
+  'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors &middot; Zonas: BCN, INEI y ' +
+  '<a href="https://www.geoboundaries.org" target="_blank" rel="noopener noreferrer">geoBoundaries</a>';
 
 const STAGE_COLORS = { won: '#059669', lost: '#E11D48', active: '#4F46E5' };
 const stageColor = (status: CommercialStatus) =>
@@ -551,7 +554,26 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
           </button>
         </div>
 
-        {isMultiCountry && (
+        {/* Con muchos países los botones no caben: un selector */}
+        {isMultiCountry && countries.length > 3 && (
+          <label className="flex items-center gap-2 text-sm font-semibold text-slate-400">
+            <Globe2 className="h-4 w-4" />
+            <span className="sr-only">Vista por país</span>
+            <select
+              value={countryFocus}
+              onChange={(e) => handleFocusCountry(e.target.value as CountryFocus)}
+              className="rounded-xl border border-slate-600 bg-slate-950/60 px-3 py-2 text-[15px] font-semibold text-slate-100 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="all">Todos los países</option>
+              {countries.map((code) => (
+                <option key={code} value={code}>
+                  {COUNTRIES[code].name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {isMultiCountry && countries.length <= 3 && (
           <div className="flex gap-1 rounded-xl border border-slate-600 bg-slate-950/60 p-1" role="group" aria-label="Vista por país">
             <button type="button" onClick={() => handleFocusCountry('all')} className={segmentButton(countryFocus === 'all')}>
               <Globe2 className="h-4 w-4" />

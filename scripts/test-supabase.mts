@@ -32,6 +32,9 @@ import {
 } from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
 import { loadZonePolygons } from '../src/lib/db/crm.ts';
+import { setCompanyCountry } from '../src/lib/db/platform.ts';
+import { enabledCountriesOf } from '../src/lib/tenantGuards.ts';
+import { conTildes } from './tildes-zonas.mjs';
 import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
 import { findZonesByName, groupZonesForSelect, regionsOf } from '../src/lib/zones.ts';
 import { readFileSync } from 'node:fs';
@@ -74,12 +77,15 @@ test('CRM: el país base va primero y los países de otro CRM no se cuelan', () 
   assert.equal(crm.homeCountry, 'PE');
 });
 
-test('CRM: en plan Nacional solo cuenta el país base aunque queden filas guardadas', () => {
+test('CRM: en plan Nacional solo cuenta el país base; las filas guardadas vuelven al reactivar el plan', () => {
   const crm = companyFromRow(filaCrm({ plan: 'national' }), [
     { company_id: CRM_A, country_code: 'CL' },
     { company_id: CRM_A, country_code: 'PE' },
   ]);
-  assert.deepEqual(crm.enabledCountries, ['PE']);
+  assert.deepEqual(enabledCountriesOf(crm), ['PE']);
+  assert.deepEqual(enabledCountriesOf({ ...crm, plan: 'international' }), ['PE', 'CL']);
+  // Al guardar con el plan Nacional solo se asegura el país base: las otras filas no se tocan
+  assert.deepEqual(companyCountryRows(CRM_A, crm).map((r) => r.country_code), ['PE']);
 });
 
 test('CRM: sin coordenadas propias, el mapa parte en las del país base', () => {
@@ -97,6 +103,52 @@ test('CRM: al guardar, los países incluyen siempre el base y el plan Nacional n
   const fila = companyToRow({ ...companyFromRow(filaCrm(), []), taxId: '  ', name: ' Piloto ' });
   assert.equal(fila.tax_id, null);
   assert.equal(fila.name, 'Piloto');
+});
+
+test('CRM: con el plan Internacional puede partir solo con el país base (la gerencia suma los demás)', () => {
+  const crm = companyFromRow(filaCrm({ home_country: 'CL' }), [{ company_id: CRM_A, country_code: 'CL' }]);
+  assert.equal(crm.plan, 'international');
+  assert.deepEqual(crm.enabledCountries, ['CL']);
+});
+
+test('Países: activar inserta sin duplicar; desactivar borra solo ese país de ese CRM', async () => {
+  const llamadas: unknown[] = [];
+  const fake = {
+    from: (tabla: string) => {
+      assert.equal(tabla, 'company_countries');
+      return {
+        upsert: async (fila: unknown, opciones: unknown) => {
+          llamadas.push(['upsert', fila, opciones]);
+          return { error: null };
+        },
+        delete: () => {
+          const filtros: [string, string][] = [];
+          const cadena = {
+            eq: (campo: string, valor: string) => {
+              filtros.push([campo, valor]);
+              if (filtros.length === 2) {
+                llamadas.push(['delete', filtros]);
+                return Promise.resolve({ error: null });
+              }
+              return cadena;
+            },
+          };
+          return cadena;
+        },
+      };
+    },
+  } as unknown as SupabaseClient;
+  assert.deepEqual(await setCompanyCountry(fake, CRM_A, 'MX', true), { ok: true, data: null });
+  assert.deepEqual(await setCompanyCountry(fake, CRM_A, 'PE', false), { ok: true, data: null });
+  assert.deepEqual(llamadas, [
+    ['upsert', { company_id: CRM_A, country_code: 'MX' }, { ignoreDuplicates: true }],
+    ['delete', [['company_id', CRM_A], ['country_code', 'PE']]],
+  ]);
+
+  const rechazo = { from: () => ({ upsert: async () => ({ error: { message: 'new row violates row-level security policy', code: '42501' } }) }) } as unknown as SupabaseClient;
+  const r = await setCompanyCountry(rechazo, CRM_A, 'MX', true);
+  assert.equal(r.ok, false);
+  assert.doesNotMatch(!r.ok ? r.error : '', /row-level/, 'el texto técnico de la base no llega a la pantalla');
 });
 
 test('Usuarios: la contraseña nunca viene de la base y un rol desconocido no da más permisos', () => {
@@ -428,6 +480,17 @@ test('Zonas: sin región, la lista va agrupada por región; con región, por pro
   const lima = groupZonesForSelect(distritos, 'PE-15');
   const miraflores = lima.filter((g) => g.zones.some((z) => z.territoryName === 'Miraflores')).map((g) => g.label);
   assert.deepEqual(miraflores.sort(), ['Provincia de Lima', 'Provincia de Yauyos']);
+});
+
+test('Zonas: las tildes que faltan en la fuente se corrigen solo donde no hay duda', () => {
+  assert.equal(conTildes('San Jose de la Concepcion'), 'San José de la Concepción');
+  assert.equal(conTildes('Jesus Maria'), 'Jesús María');
+  assert.equal(conTildes('Valle de Angeles'), 'Valle de Ángeles');
+  // Se respetan: la ñ no se adivina (Canas, Cusco / Cañas, Costa Rica), Cesar es un departamento de
+  // Colombia y lo que ya trae tilde o ñ queda como viene
+  for (const igual of ['Canas', 'San Juan del Cesar', 'Mariaña', 'Peña', 'Ñuñoa', 'Huancayo']) assert.equal(conTildes(igual), igual);
+  assert.equal(distritos.find((z) => z.territoryId === 'PE-150113')?.territoryName, 'Jesús María');
+  assert.equal(comunas.find((z) => z.territoryId === 'CL-08301')?.territoryName, 'Los Ángeles');
 });
 
 test('Zonas: el asistente encuentra la zona por nombre y pide la región si hay varias', () => {

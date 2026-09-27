@@ -159,7 +159,12 @@ export const companyFields: FieldDef<Company>[] = [
   { key: 'taxId', label: 'ID tributario', value: (c) => c.taxId },
   { key: 'isActive', label: 'CRM activo', value: (c) => yesNo(c.isActive) },
   { key: 'plan', label: 'Plan', value: (c) => (c.plan === 'international' ? 'Internacional' : 'Nacional') },
-  { key: 'enabledCountries', label: 'Países', value: (c) => c.enabledCountries.map((x) => COUNTRIES[x]?.name ?? x).join(', ') },
+  // Los países que cuentan: con el plan Nacional, solo el base (la lista guardada no se muestra)
+  {
+    key: 'enabledCountries',
+    label: 'Países',
+    value: (c) => (c.plan === 'international' ? c.enabledCountries : [c.homeCountry]).map((x) => COUNTRIES[x]?.name ?? x).join(', '),
+  },
 ];
 
 export const userFields: FieldDef<AppUser>[] = [

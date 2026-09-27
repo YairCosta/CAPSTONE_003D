@@ -10,22 +10,8 @@ import { blockedReason, isAnonymized, isBlocked, isPendingProspect, prospectDays
 import { PrivacyDecisionModal, PrivacyRequestModal } from './PrivacyRequestModal';
 import { convert, leadCurrenciesFor, leadCurrency, roundForCurrency } from '../lib/currency';
 import { useMoney } from '../lib/money';
-import {
-  Building2,
-  Users,
-  MapPinOff,
-  Search,
-  Pencil,
-  MapPin,
-  CheckCircle2,
-  AlertTriangle,
-  Plus,
-  Trash2,
-  Boxes,
-  Users2,
-  FileDown,
-  ShieldAlert,
-} from 'lucide-react';
+import { Building2, Users, MapPinOff, Search, Pencil, MapPin, CheckCircle2, AlertTriangle, Plus, Trash2, Boxes, Users2, FileDown, ShieldAlert, Globe2 } from 'lucide-react';
+import { CountrySettings } from './CountrySettings';
 import { locateInCommune } from '../lib/geocoding';
 import { ZonePicker } from './ZonePicker';
 import { COUNTRIES, zoneLabelFor, zoneWithArticle, type CountryCode, type CurrencyCode } from '../data/countries';
@@ -45,7 +31,7 @@ import { ActiveSwitch, EmptyState, Modal, Pill, SectionTabs } from './ui';
 
 export type NewClientAccount = Omit<ClientAccount, 'id' | 'companyId' | 'createdAt'>;
 
-type Section = 'accounts' | 'contacts' | 'catalog' | 'team' | 'queue';
+type Section = 'accounts' | 'contacts' | 'catalog' | 'team' | 'queue' | 'countries';
 
 const errorInput = 'border-rose-500! ring-2! ring-rose-500/30!';
 
@@ -80,6 +66,11 @@ interface ManagerModuleProps {
   onRequestPrivacy: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
   onResolvePrivacy: (leadId: string, approve: boolean, note: string) => void;
   onDownloadSubjectReport: (leadId: string) => void;
+  // Países del CRM: con el plan Internacional los elige la gerencia
+  plan: 'national' | 'international';
+  homeCountry: CountryCode;
+  leadCountsByCountry: Partial<Record<CountryCode, number>>;
+  onSetCountry: (code: CountryCode, enabled: boolean) => Promise<string | null> | string | null;
 }
 
 export const ManagerModule: React.FC<ManagerModuleProps> = ({
@@ -106,6 +97,10 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
   onRequestPrivacy,
   onResolvePrivacy,
   onDownloadSubjectReport,
+  plan,
+  homeCountry,
+  leadCountsByCountry,
+  onSetCountry,
 }) => {
   const [section, setSection] = useState<Section>('accounts');
   const queueCount = leads.filter((l) => !hasCommune(l)).length;
@@ -124,8 +119,19 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
           { id: 'catalog', label: 'Catálogo', icon: Boxes, count: catalog.length },
           { id: 'team', label: 'Usuarios', icon: Users2, count: teamUsers.length },
           { id: 'queue', label: `Leads sin ${zoneLabel}`, icon: MapPinOff, count: queueCount, highlight: queueCount > 0 },
+          { id: 'countries', label: 'Países', icon: Globe2, count: enabledCountries.length },
         ]}
       />
+
+      {section === 'countries' && (
+        <CountrySettings
+          plan={plan}
+          homeCountry={homeCountry}
+          enabledCountries={enabledCountries}
+          leadCounts={leadCountsByCountry}
+          onSetCountry={onSetCountry}
+        />
+      )}
 
       {section === 'accounts' && (
         <AccountsSection
