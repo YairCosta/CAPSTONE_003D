@@ -39,7 +39,6 @@ De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e import
     lead_privacy_requests       (→ leads; solicitudes del titular)
 12. data_exports                (auditoría de exportaciones)
 13. audit_log                   (historial de cambios del CRM)
-    geocoding_cache             (global, sin tenant)
 ```
 
 Relaciones principales:
@@ -160,7 +159,7 @@ La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`
 
 Con la etapa 5, **toda la app usa la base** cuando `VITE_DATA_SOURCE=supabase`: la demo en memoria queda solo para la cuenta de demostración y las pruebas automáticas.
 
-Límites de hoy: los cambios de otra persona se ven al recargar la página (no hay tiempo real) y la carga pide los datos en páginas de 1.000 filas.
+Límites de hoy: los cambios de otra persona se ven al recargar la página (no hay tiempo real) y la carga pide los datos en páginas de 1.000 filas. De las zonas se baja la lista completa (nombre, código, región: unos 650 KB) y el contorno solo de las que están en uso; el de una zona nueva llega cuando recibe su primer lead (`loadZonePolygons`).
 
 La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas ↔ tipos de la app, funciones puras), `sync.ts` (qué cambió, función pura), `crm.ts` (carga y escritura del CRM), `errors.ts` (mensajes sin el texto crudo de la base), `auth.ts` (sesión y contraseñas), `platform.ts` (CRMs y usuarios) y `audit.ts` (historial). Qué entradas del historial van ya a la base lo dice `CONNECTED_AUDIT_ENTITIES` (`mappers.ts`): crece con cada etapa. Invitar usuarios pasa por el servidor (`server/adminUsers.ts`), porque crear una cuenta en Auth exige la clave secreta; ver `docs/USUARIOS.md`. Pruebas: `npm run test:supabase`.
 
@@ -188,6 +187,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0018 | Corrige la 0017: los triggers que copian las zonas pasan a `SECURITY DEFINER` (crear un CRM fallaba) |
 | 0019 | Minimización: los leads se ubican por zona, nunca por coordenada. Borra las coordenadas y la caché de geocodificación, agrega `leads_sin_coordenadas` y retira `rpc_update_lead_coordinates()` de la API. Paso "la base lo rechaza": las columnas `latitude`, `longitude` y `location` se eliminan en una migración posterior (contraer) |
 | 0020 | Zonas oficiales: carga en `zone_catalog` las 345 comunas de Chile (BCN) y los 1.893 distritos de Perú (INEI) con su región, provincia y orden (columnas nuevas también en `territories` y en la vista `territories_geojson`). Convierte las 10 zonas de ejemplo de cada CRM en sus equivalentes oficiales **conservando los leads**, suelta la unicidad del nombre (la identidad es el código) y completa las zonas de todos los CRMs. 3,2 MB: se genera con `npm run zonas` |
+| 0021 | Contraer la minimización de la 0019: elimina `leads.latitude`, `longitude`, `location` y `address_hash`, la tabla `geocoding_cache`, el trigger que calculaba `location` y `rpc_update_lead_coordinates()`. Reescribe sin ellas la anonimización y el trigger de privacidad; `get_lead_distribution_by_territories()` cuenta por zona asignada. Estaban vacías en todos los CRMs |
 
 ## 8. Revisión automática
 
@@ -210,7 +210,7 @@ npm run test:db                               # 84 pruebas funcionales: privacid
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 y 0021 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

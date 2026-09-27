@@ -116,13 +116,15 @@ BEGIN
             'CLP', 'Av. Prueba 123', 'success', zona_cl,
             acc_a, 'CL', 'items', 'form', 'inquiry', NOW());
 
-    -- Minimización (0019): el lead se ubica por zona; la base rechaza coordenadas
-    BEGIN
-        UPDATE public.leads SET latitude = -33.43, longitude = -70.61 WHERE id = lead_1;
-        res := res || jsonb_build_object('prueba', 'La base no guarda coordenadas de un lead, solo su zona (0019)', 'ok', FALSE, 'detalle', 'se guardaron');
-    EXCEPTION WHEN OTHERS THEN
-        res := res || jsonb_build_object('prueba', 'La base no guarda coordenadas de un lead, solo su zona (0019)', 'ok', SQLSTATE = '23514', 'detalle', SQLSTATE);
-    END;
+    -- Minimización (0019 y 0021): el lead se ubica por zona; la base ni siquiera tiene dónde guardar coordenadas
+    SELECT count(*) INTO v_count FROM pg_catalog.pg_attribute
+    WHERE attrelid = 'public.leads'::regclass AND NOT attisdropped
+      AND attname IN ('latitude', 'longitude', 'location', 'address_hash');
+    res := res || jsonb_build_object('prueba', 'Un lead no tiene columnas de coordenadas ni caché de geocodificación: solo su zona (0021)',
+        'ok', v_count = 0 AND to_regclass('public.geocoding_cache') IS NULL, 'detalle', v_count);
+
+    SELECT lead_count INTO v_count FROM public.get_lead_distribution_by_territories(co_a) WHERE territory_id = zona_cl;
+    res := res || jsonb_build_object('prueba', 'La distribución por zona cuenta los leads por su zona asignada (0021)', 'ok', v_count = 1, 'detalle', v_count);
 
     SELECT full_name INTO v_text FROM public.lead_contacts WHERE lead_id = lead_1 AND is_primary;
     res := res || jsonb_build_object('prueba', 'El contacto principal se copia solo a lead_contacts (0017)', 'ok', v_text = 'Ana Contacto', 'detalle', v_text);
@@ -212,10 +214,10 @@ BEGIN
     END;
 
     PERFORM public.resolve_lead_privacy_request(req_1, TRUE, 'Aprobada en la prueba');
-    SELECT full_name || '|' || COALESCE(email, '') || '|' || (location IS NULL)::text || '|' || estimated_deal_value::text
+    SELECT full_name || '|' || COALESCE(email, '') || '|' || raw_address || '|' || (assigned_territory_id = zona_cl)::text || '|' || estimated_deal_value::text
     INTO v_text FROM public.leads WHERE id = lead_1;
-    res := res || jsonb_build_object('prueba', 'Aprobar borra los datos personales y conserva el negocio (valor 150.000)',
-        'ok', v_text = 'Titular eliminado||true|150000.00', 'detalle', v_text);
+    res := res || jsonb_build_object('prueba', 'Aprobar borra los datos personales y conserva el negocio (zona y valor 150.000)',
+        'ok', v_text = 'Titular eliminado||Dirección eliminada|true|150000.00', 'detalle', v_text);
 
     SELECT string_agg(full_name, ',' ORDER BY is_primary DESC) INTO v_text FROM public.lead_contacts WHERE lead_id = lead_1;
     res := res || jsonb_build_object('prueba', 'Anonimizar deja solo el contacto principal, sin nombre', 'ok', v_text = 'Titular eliminado', 'detalle', v_text);

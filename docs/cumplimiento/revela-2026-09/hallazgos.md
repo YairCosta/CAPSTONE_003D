@@ -242,3 +242,21 @@ Se agrega; lo anterior no se modifica.
   dibuja la ubicación de cada lead, solo sus zonas").
 
 Estado: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 27-09-2026 · H-12: las coordenadas ya no existen en la base
+
+Se agrega; lo anterior no se modifica.
+
+- **Contraer (migración 0021)**: se eliminaron las columnas `latitude`, `longitude`, `location` y
+  `address_hash` de los leads, la tabla `geocoding_cache` y la función que fijaba coordenadas. Estaban
+  vacías desde la 0019. La base ya no tiene dónde guardar la ubicación de una persona: la del lead es
+  su zona.
+- **Mapa**: solo se dibujan las zonas con leads, y la app baja el contorno únicamente de esas zonas.
+- **App publicada**: los CRMs de prueba (GeoDemo, Norte, Sur), con sus usuarios y contraseñas de
+  prueba, se movieron a `src/data/testTenants.ts` y ya no quedan en la app compilada.
+  `npm run test:bundle` lo revisa, junto con que ninguna clave de `.env.local` llegue a lo publicado.
+- **Evidencia**: `evidence/prueba-coordenadas-eliminadas-2026-09-27.txt` (84 pruebas contra la base,
+  entre ellas "Un lead no tiene columnas de coordenadas ni caché de geocodificación: solo su zona
+  (0021)", y las 6 revisiones de la app publicada).
+
+Estado: `CODIGO_NO_DESPLEGADO` (sin release en producción).

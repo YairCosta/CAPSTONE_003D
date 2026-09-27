@@ -7,12 +7,20 @@ import type { CountryCode } from '../data/countries.ts';
 // El porcentaje se calcula dentro del país de cada zona: los países no se mezclan en el denominador.
 export const computeTerritoryMetrics = (source: Lead[], territories: TerritoryMetric[]): TerritoryMetric[] => {
   const totalsByCountry = new Map<CountryCode, number>();
-  for (const lead of source) totalsByCountry.set(lead.countryCode, (totalsByCountry.get(lead.countryCode) ?? 0) + 1);
+  // Conteo en una sola pasada: con miles de zonas, filtrar los leads zona por zona se vuelve lento
+  const byZone = new Map<string, number>();
+  for (const lead of source) {
+    totalsByCountry.set(lead.countryCode, (totalsByCountry.get(lead.countryCode) ?? 0) + 1);
+    if (lead.assignedTerritoryId) {
+      const key = `${lead.countryCode}|${lead.assignedTerritoryId}`;
+      byZone.set(key, (byZone.get(key) ?? 0) + 1);
+    }
+  }
 
   return territories
     .map((t) => {
       const totalLeads = totalsByCountry.get(t.countryCode) ?? 0;
-      const count = source.filter((l) => l.assignedTerritoryId === t.territoryId && l.countryCode === t.countryCode).length;
+      const count = byZone.get(`${t.countryCode}|${t.territoryId}`) ?? 0;
       const percentage = totalLeads > 0 ? Number(((count / totalLeads) * 100).toFixed(2)) : 0;
       return { ...t, leadCount: count, totalCompanyLeads: totalLeads, percentage };
     })

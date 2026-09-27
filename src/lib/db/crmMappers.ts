@@ -365,7 +365,8 @@ export interface TerritoryRow {
   name: string;
   code: string | null;
   color_hex: string | null;
-  polygon: { type: 'MultiPolygon' | 'Polygon'; coordinates: unknown[] } | null;
+  /** Se carga aparte y solo para las zonas en uso (loadZonePolygons): sin cargar, vacío */
+  polygon?: { type: 'MultiPolygon' | 'Polygon'; coordinates: unknown[] } | null;
   region_code?: string | null;
   region_name?: string | null;
   province_name?: string | null;

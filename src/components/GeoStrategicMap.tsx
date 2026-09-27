@@ -68,7 +68,7 @@ function node(tag: string, className: string, text?: string): HTMLElement {
 
 // Etiqueta de la zona, en su centro. Compacta (una línea: nombre y burbuja) para que zonas vecinas
 // no se tapen; el resultado de la zona lo dice su color, y aparece completo al pasar el mouse y en
-// el panel. Las zonas sin leads no llevan etiqueta fija: su nombre aparece al pasar el mouse.
+// el panel.
 function buildBubble(className: string, groups: BubbleGroup[], ariaLabel: string): HTMLElement {
   const total = groups.reduce((acc, g) => acc + g.count, 0);
   const bubble = node('span', className);
@@ -397,14 +397,20 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
   };
 
   // Zonas pintadas según su rendimiento. Al pasar el mouse, su nombre, provincia y resultado.
+  // Solo se dibujan las zonas con leads (o la elegida): con cientos de comunas y distritos, dibujarlas
+  // todas convertía el país en un mosaico. Una zona aparece en cuanto recibe su primer lead.
   useEffect(() => {
     const layer = zonesLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
 
-    const max = Math.max(0, ...focusTerritories.map((t) => zoneStats.get(t.territoryId)?.comparable ?? 0));
+    // Con Supabase el contorno llega aparte (App lo pide al usarse la zona): mientras, no se dibuja
+    const visibles = focusTerritories.filter(
+      (t) => (zoneGroups.has(t.territoryId) || t.territoryId === selectedTerritoryId) && t.geojsonPolygon.coordinates.length > 0
+    );
+    const max = Math.max(0, ...visibles.map((t) => zoneStats.get(t.territoryId)?.comparable ?? 0));
 
-    focusTerritories.forEach((territory) => {
+    visibles.forEach((territory) => {
       const isSelected = territory.territoryId === selectedTerritoryId;
       const stats = zoneStats.get(territory.territoryId);
       const color = zoneColor(stats?.comparable ?? 0, max);
@@ -415,11 +421,10 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
         {
           style: {
             color,
-            // Las zonas sin leads (la mayoría) van tenues para que el país no se vea como un mosaico
-            weight: isSelected ? 4 : withLeads ? 2 : 0.6,
-            opacity: withLeads || isSelected ? 0.9 : 0.5,
+            weight: isSelected ? 4 : 2,
+            opacity: 0.9,
             fillColor: color,
-            fillOpacity: isSelected ? 0.6 : empty ? (withLeads ? 0.2 : 0.06) : 0.4,
+            fillOpacity: isSelected ? 0.6 : empty ? 0.2 : 0.4,
           },
         }
       );
@@ -429,7 +434,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
       const lugar = [territory.provinceName && territory.provinceName !== territory.territoryName ? territory.provinceName : '', territory.regionName]
         .filter(Boolean)
         .join(', ');
-      hover.appendChild(node('span', 'zone-detail', `${lugar ? `${lugar} · ` : ''}${withLeads ? zoneDetail(territory) : 'sin leads'}`));
+      hover.appendChild(node('span', 'zone-detail', `${lugar ? `${lugar} · ` : ''}${withLeads ? zoneDetail(territory) : 'sin leads con estos filtros'}`));
       zone.bindTooltip(hover, { sticky: true, direction: 'top', className: 'zone-label zone-label-hover' });
       layer.addLayer(zone);
     });
@@ -449,7 +454,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
         const total = region.groups.reduce((acc, g) => acc + g.count, 0);
         const bubble = buildBubble('region-bubble', region.groups, `Acercar a ${region.name}: ${total} leads`);
         const acercar = () =>
-          map.flyToBounds(boundsOf(region.zones), { padding: [60, 60], duration: 0.6, maxZoom: Math.max(REGION_ZOOM + 2, 11) });
+          map.flyToBounds(boundsOf(region.zones), { padding: [60, 60], duration: 0.6, maxZoom: 14 });
         labelMarker(region.latitude, region.longitude, buildLabel(region.name, `${region.name}: ${total} leads`, bubble, acercar, 'region-label'), 'region-marker').addTo(layer);
       }
       return;
@@ -476,13 +481,15 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
 
   // Encuadre: la zona elegida; si no, las zonas con leads; si no hay, la vista inicial de cada país.
   // Nunca el país entero: en Chile incluiría Isla de Pascua y el mapa quedaría en el Pacífico.
-  const zonasConLeadsKey = [...zoneGroups.keys()].sort().join(',');
+  // Zonas con leads que ya tienen contorno: si llega el de una zona nueva, se vuelve a encuadrar
+  const zonasConLeadsKey = [...zoneCenters.keys()].sort().join(',');
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const elegida = selectedTerritoryId ? territories.filter((t) => t.territoryId === selectedTerritoryId) : [];
     const conLeads = focusTerritories.filter((t) => zoneGroups.has(t.territoryId));
-    const target = elegida.length > 0 ? elegida : conLeads;
+    const conContorno = (zonas: TerritoryMetric[]) => zonas.filter((t) => t.geojsonPolygon.coordinates.length > 0);
+    const target = conContorno(elegida.length > 0 ? elegida : conLeads);
     // Se deja libre el alto de la leyenda (abajo a la izquierda) y, con una zona elegida, el panel de sus leads
     const legendHeight = legendRef.current?.offsetHeight ?? 0;
     const padding = {
@@ -658,7 +665,7 @@ export const GeoStrategicMap: React.FC<GeoStrategicMapProps> = ({
             </div>
             <div className="flex items-center gap-1.5 border-t border-slate-700 pt-1.5 text-[13px] text-slate-400">
               <Users className="h-3.5 w-3.5 shrink-0" />
-              La burbuja cuenta los leads de cada zona (de lejos, de cada región). Haz clic para verlos.
+              Solo aparecen las zonas con leads; la burbuja los cuenta (de lejos, por región). Haz clic para verlos.
             </div>
           </div>
         </div>

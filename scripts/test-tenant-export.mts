@@ -5,18 +5,18 @@ import assert from 'node:assert/strict';
 import { unzipSync, strFromU8 } from 'fflate';
 import writeXlsxFile from 'write-excel-file/node';
 import { buildTenantExport, toWorkbookSheets } from '../src/lib/tenantExport.ts';
-import {
-  mockActivities,
-  mockCatalogItems,
-  mockClientAccounts,
-  mockCompanies,
-  mockLeads,
-  mockTerritories,
-  mockUsers,
-  defaultStageConfigs,
-  TENANT_GEODEMO_ID,
-  TENANT_NORTE_ID,
-} from '../src/data/mockGeoData.ts';
+import { mockTerritories, defaultStageConfigs } from '../src/data/mockGeoData.ts';
+import { allMockData, TENANT_GEODEMO_ID, TENANT_NORTE_ID } from '../src/data/testTenants.ts';
+
+// Los 4 CRMs de ejemplo: la cuenta demo y los de prueba
+const {
+  companies: mockCompanies,
+  users: mockUsers,
+  accounts: mockClientAccounts,
+  leads: mockLeads,
+  activities: mockActivities,
+  catalog: mockCatalogItems,
+} = allMockData();
 
 const results: { name: string; ok: boolean; error?: string }[] = [];
 const test = async (name: string, fn: () => void | Promise<void>) => {

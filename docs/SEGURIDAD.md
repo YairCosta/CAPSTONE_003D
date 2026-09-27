@@ -86,7 +86,8 @@ ese punto avisa y pide hacer los cambios a mano. No reemplaza a la auditoría: l
 
 **Severidad: alta en producción, baja hoy.** `revela-session` guarda el id del usuario. Cualquiera con las
 herramientas de desarrollo puede escribir ahí el id del administrador y entrar como él. Lo mismo vale para
-las contraseñas de demostración en `src/data/mockGeoData.ts`, que están en texto plano.
+las contraseñas de demostración en `src/data/mockGeoData.ts`, que están en texto plano (las de los CRMs de
+prueba, en `src/data/testTenants.ts`, no llegan a la app publicada: lo revisa `npm run test:bundle`).
 
 Hoy no hay datos reales ni servidor, así que el impacto es de demostración. **Esto deja de ser aceptable el
 día que se conecten datos de clientes**: la autenticación pasa a Supabase Auth y la garantía real la dan

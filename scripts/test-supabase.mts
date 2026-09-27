@@ -31,6 +31,7 @@ import {
   territoryFromRow,
 } from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
+import { loadZonePolygons } from '../src/lib/db/crm.ts';
 import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
 import { findZonesByName, groupZonesForSelect, regionsOf } from '../src/lib/zones.ts';
 import { readFileSync } from 'node:fs';
@@ -344,6 +345,42 @@ test('Exportación: el JSON de la base arma los mismos datos que la carga normal
   assert.deepEqual(datos.catalog[0].prices, { CL: 50000, PE: 180 });
   assert.equal(datos.stages[0].label, 'Cerrado');
   assert.equal(datos.territories[0].geojsonPolygon.type, 'MultiPolygon');
+});
+
+// ------------------------------------------------------------------ contornos solo de las zonas en uso
+test('Contornos: se piden solo las zonas indicadas, de a 100 por consulta, y una zona sin contorno no se inventa', async () => {
+  const consultas: string[][] = [];
+  const fake = {
+    from: (tabla: string) => ({
+      select: (columnas: string) => ({
+        in: async (campo: string, ids: string[]) => {
+          assert.equal(tabla, 'territories_geojson');
+          assert.equal(columnas, 'id, polygon');
+          assert.equal(campo, 'id');
+          consultas.push(ids);
+          return { data: ids.map((id) => ({ id, polygon: id === 'z-7' ? null : { type: 'MultiPolygon', coordinates: [[[[0, 0], [1, 0], [1, 1], [0, 0]]]] } })), error: null };
+        },
+      }),
+    }),
+  } as unknown as SupabaseClient;
+  const ids = Array.from({ length: 230 }, (_, i) => `z-${i}`);
+  const resultado = await loadZonePolygons(fake, ids);
+  assert.ok(resultado.ok);
+  assert.deepEqual(consultas.map((c) => c.length), [100, 100, 30]);
+  assert.equal(resultado.data.size, 229);
+  assert.equal(resultado.data.has('z-7'), false);
+  assert.deepEqual(await loadZonePolygons(fake, []), { ok: true, data: new Map() });
+  assert.equal(consultas.length, 3);
+
+  const caida = { from: () => ({ select: () => ({ in: async () => ({ data: null, error: { message: 'x', code: '500' } }) }) }) } as unknown as SupabaseClient;
+  const error = await loadZonePolygons(caida, ['z-1']);
+  assert.equal(error.ok, false);
+});
+
+test('Contornos: una zona sin contorno cargado no tiene centro ni se ubica en el mapa', () => {
+  const sinContorno = territoryFromRow({ id: 'z1', company_id: 'c', country_code: 'CL', name: 'Providencia', code: 'CL-13123', color_hex: null });
+  assert.deepEqual(sinContorno.geojsonPolygon, { type: 'MultiPolygon', coordinates: [] });
+  assert.equal(zoneCenter(sinContorno), null);
 });
 
 // ------------------------------------------------------------------ zonas oficiales por región

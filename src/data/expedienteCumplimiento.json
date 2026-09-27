@@ -1323,6 +1323,11 @@
       "sha256": "f3592ecfd06581202d67f0dd40a50eab061ecd8da6d0c23e5e06047011291f96"
     },
     {
+      "archivo": "evidence/prueba-coordenadas-eliminadas-2026-09-27.txt",
+      "bytes": 5772,
+      "sha256": "4032f070a5d139bfd7becf6905f56359ff087796ca7c8cd2f1bdda2e9fd78818"
+    },
+    {
       "archivo": "evidence/prueba-crm-supabase-2026-09-26.txt",
       "bytes": 4578,
       "sha256": "bfdb45cdd051aa1f887f61a680854af72c9a3341743002f9e39c3d0381b73a34"
@@ -1349,8 +1354,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 14791,
-      "sha256": "56949787f9666385e9a9e794e637e5936f77c7e9fcfd1cfca54f0437280d2bbf"
+      "bytes": 15782,
+      "sha256": "190184efa42f303a233c68755a408a767b623270df1312ec9e5e2bc2890026bc"
     },
     {
       "archivo": "legal-status.md",
@@ -1418,5 +1423,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-27T00:57:55.999Z"
+  "generadoUtc": "2026-09-27T05:05:51.794Z"
 }

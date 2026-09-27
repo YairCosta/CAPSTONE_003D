@@ -2,29 +2,12 @@ import type { AppUser, CatalogItem, ClientAccount, Company, Lead, LeadItem, Terr
 import type { CountryCode } from './countries';
 import { FALLBACK_RATES, convert, currencyOfCountry, leadCurrency, roundForCurrency } from '../lib/currency.ts';
 
-export const TENANT_GEODEMO_ID = 'c1111111-2222-3333-4444-555555555555';
-export const TENANT_NORTE_ID = 'c2222222-3333-4444-5555-666666666666';
-export const TENANT_SUR_ID = 'c3333333-4444-5555-6666-777777777777';
 // Cuenta de demostración pública (datos ficticios de una empresa de servicios y mobiliario para oficinas en Chile y Perú).
 // Es la que se abre desde la landing page; el CRM real de cada cliente se crea en producción.
 export const TENANT_DEMO_ID = 'c4444444-5555-6666-7777-888888888888';
 
 // Empresas dueñas de un CRM (tenants)
 export const mockCompanies: Company[] = [
-  {
-    id: TENANT_GEODEMO_ID,
-    name: 'Inmobiliaria & Retail GeoDemo',
-    slug: 'retail-geodemo',
-    taxId: '76.123.456-7',
-    isActive: true,
-    plan: 'international',
-    homeCountry: 'CL',
-    enabledCountries: ['CL', 'PE'],
-    createdAt: '2026-01-10T12:00:00Z',
-    defaultLat: -33.4250,
-    defaultLng: -70.6050,
-    defaultZoom: 13,
-  },
   {
     id: TENANT_DEMO_ID,
     name: 'Revela Demo',
@@ -38,50 +21,14 @@ export const mockCompanies: Company[] = [
     defaultLat: -33.4250,
     defaultLng: -70.6050,
     defaultZoom: 13,
-  },
-  {
-    id: TENANT_NORTE_ID,
-    name: 'Constructora Norte Demo',
-    slug: 'constructora-norte',
-    taxId: '77.987.654-3',
-    isActive: true,
-    plan: 'national',
-    homeCountry: 'CL',
-    enabledCountries: ['CL'],
-    createdAt: '2026-03-02T12:00:00Z',
-    defaultLat: -33.4250,
-    defaultLng: -70.6050,
-    defaultZoom: 13,
-  },
-  {
-    id: TENANT_SUR_ID,
-    name: 'Logística Sur SpA',
-    slug: 'logistica-sur',
-    taxId: '76.555.444-1',
-    isActive: false,
-    plan: 'national',
-    homeCountry: 'CL',
-    enabledCountries: ['CL'],
-    createdAt: '2026-05-20T12:00:00Z',
-    defaultLat: -33.4250,
-    defaultLng: -70.6050,
-    defaultZoom: 13,
-  },
+  }
 ];
-
-export const mockCompany: Company = mockCompanies[0];
 
 // Credenciales solo para la demo local. En producción la autenticación la resuelve Supabase Auth.
 export const mockUsers: AppUser[] = [
-  { id: 'user-gerente-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Andrea Torres', email: 'gerente@geodemo.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-01-10T12:30:00Z' },
-  { id: 'user-base-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Carlos Mendoza', email: 'vendedor@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-01-11T09:00:00Z' },
-  { id: 'user-base2-geodemo', companyId: TENANT_GEODEMO_ID, fullName: 'Luis Pérez', email: 'luis.perez@geodemo.cl', password: 'dev-base-local', role: 'agent', isActive: false, createdAt: '2026-02-01T09:00:00Z' },
   { id: 'user-gerente-demo', companyId: TENANT_DEMO_ID, fullName: 'Andrés Vega', email: 'gerente@demo.revelacrm.com', password: 'demo1234', role: 'manager', isActive: true, createdAt: '2026-02-05T12:30:00Z' },
   { id: 'user-base-demo-cl', companyId: TENANT_DEMO_ID, fullName: 'Marcela Ortiz', email: 'vendedor@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-06T09:00:00Z' },
   { id: 'user-base-demo-pe', companyId: TENANT_DEMO_ID, fullName: 'Diego Fuentes', email: 'vendedor2@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-20T09:00:00Z' },
-  { id: 'user-gerente-norte', companyId: TENANT_NORTE_ID, fullName: 'Paula Rojas', email: 'gerente@nortedemo.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-03-02T13:00:00Z' },
-  { id: 'user-base-norte', companyId: TENANT_NORTE_ID, fullName: 'Diego Fuentes', email: 'vendedor@nortedemo.cl', password: 'dev-base-local', role: 'agent', isActive: true, createdAt: '2026-03-03T09:00:00Z' },
-  { id: 'user-gerente-sur', companyId: TENANT_SUR_ID, fullName: 'Sofía Díaz', email: 'gerente@logisticasur.cl', password: 'dev-gerente-local', role: 'manager', isActive: true, createdAt: '2026-05-20T13:00:00Z' },
 ];
 
 // Accesos rápidos de la pantalla de login (solo demo)
@@ -111,7 +58,7 @@ export const platformAdminAccount = {
   password: 'dev-admin-solo-local',
 };
 
-const account = (
+export const account = (
   id: string,
   companyId: string,
   name: string,
@@ -126,23 +73,6 @@ const account = (
 
 // Empresas cliente (contenedores de leads) de cada tenant
 export const mockClientAccounts: ClientAccount[] = [
-  account('acc-1', TENANT_GEODEMO_ID, 'Consultora Andes', 'Consultoría', 'Antonia Morales Valdés', 'antonia.m@consultoria.cl', '+56 9 9988 7766'),
-  account('acc-2', TENANT_GEODEMO_ID, 'Agencia Pulso Digital', 'Marketing', 'Daniela Cáceres', 'dcaceres@agencia.cl', '+56 9 4411 2299'),
-  account('acc-3', TENANT_GEODEMO_ID, 'TechNova SpA', 'Tecnología', 'Cristóbal Ríos', 'crios@tech.cl', '+56 9 7711 2233'),
-  account('acc-4', TENANT_GEODEMO_ID, 'Logística Central Ltda.', 'Logística', 'Gonzalo Pardo', 'gpardo@logistica.cl', '+56 9 2233 4455'),
-  account('acc-5', TENANT_GEODEMO_ID, 'Grupo Soto Retail', 'Retail', 'Camila Soto Valenzuela', 'camila.soto@empresa.cl', '+56 9 8765 4321'),
-  account('acc-6', TENANT_GEODEMO_ID, 'Montes Inversiones', 'Inversiones', 'Javiera Montes', 'jmontes@inversiones.cl', '+56 9 5566 7788'),
-  account('acc-7', TENANT_GEODEMO_ID, 'Silva & Asociados', 'Servicios legales', 'Fernanda Silva', 'fsilva@gmail.com', '+56 9 4433 2211'),
-  account('acc-8', TENANT_GEODEMO_ID, 'Castro Constructora', 'Construcción', 'Benjamín Castro', 'bcastro@logistics.cl', '+56 9 3322 1100'),
-  account('acc-9', TENANT_GEODEMO_ID, 'Vitacura Holdings', 'Holding', 'Rodrigo Echeverría', 'recheverria@holding.cl', '+56 9 6677 8899'),
-  account('acc-10', TENANT_GEODEMO_ID, 'Reyes Comercial', 'Distribución', 'Marcela Reyes', 'mreyes@distribuidora.cl', '+56 9 6655 4433'),
-  account('acc-11', TENANT_GEODEMO_ID, 'Apoquindo Capital', 'Finanzas', 'Alejandro Valenzuela', 'avalenzuela@corp.cl', '+56 9 7788 9900'),
-  account('acc-12', TENANT_GEODEMO_ID, 'Larraín Ingeniería', 'Ingeniería', 'Matías Larraín', 'matias.l@retail.cl', '+56 9 1122 3344', false),
-  // Perú (plan Internacional de GeoDemo)
-  account('acc-p1', TENANT_GEODEMO_ID, 'Inversiones Miraflores SAC', 'Inversiones', 'Lucía Fernández', 'lfernandez@invmiraflores.pe', '+51 987 654 321', true, 'PE', '20512345671'),
-  account('acc-p2', TENANT_GEODEMO_ID, 'Constructora Pacífico SAC', 'Construcción', 'Jorge Quispe', 'jquispe@pacifico.pe', '+51 912 345 678', true, 'PE', '20598765432'),
-  account('acc-p3', TENANT_GEODEMO_ID, 'Andina Logística SAC', 'Logística', 'María Huamán', 'mhuaman@andinalog.pe', '+51 955 222 111', true, 'PE', '20455566677'),
-  account('acc-p4', TENANT_GEODEMO_ID, 'Grupo Molina Retail SAC', 'Retail', 'Ana Torres Vega', 'atorres@molinaretail.pe', '+51 966 101 202', true, 'PE', '20600011122'),
   // Empresas cliente de la cuenta demo: a quienes presta servicios de administración, mantención y proyectos de oficinas
   account('acc-g1', TENANT_DEMO_ID, 'Clínica Vitacura Salud', 'Salud', 'Paulina Ibáñez', 'pibanez@clinicavitacura.cl', '+56 9 8821 4455', true, 'CL', '96.842.110-4'),
   account('acc-g2', TENANT_DEMO_ID, 'Centro Comercial Plaza Oriente', 'Comercio', 'Ignacio Bravo', 'ibravo@plazaoriente.cl', '+56 9 7712 8899', true, 'CL', '76.331.220-9'),
@@ -152,8 +82,6 @@ export const mockClientAccounts: ClientAccount[] = [
   account('acc-g6', TENANT_DEMO_ID, 'Corporación Salud Lima SAC', 'Salud', 'Diego Ramírez', 'dramirez@saludlima.pe', '+51 987 112 334', true, 'PE', '20512889904'),
   account('acc-g7', TENANT_DEMO_ID, 'Centro Comercial Surco Plaza SAC', 'Comercio', 'Patricia Chávez', 'pchavez@surcoplaza.pe', '+51 944 556 778', true, 'PE', '20603344551'),
   account('acc-g8', TENANT_DEMO_ID, 'Naviera Costa Verde SAC', 'Naviera', 'Álvaro Mendoza', 'amendoza@navieracostaverde.pe', '+51 933 220 118', true, 'PE', '20478822003'),
-  account('acc-n1', TENANT_NORTE_ID, 'Minera Atacama Norte', 'Minería', 'Rocío Aguilera', 'raguilera@mineraatacama.cl', '+56 9 5511 2233'),
-  account('acc-n2', TENANT_NORTE_ID, 'Hotel Costanera', 'Hotelería', 'Tomás Vidal', 'tvidal@hotelcostanera.cl', '+56 9 4422 1188'),
 ];
 
 export const defaultStageConfigs: StageConfig[] = [
@@ -474,410 +402,6 @@ export const mockTerritories: TerritoryMetric[] = [
 ];
 
 const baseLeads: Lead[] = [
-  // 1. NUEVOS
-  {
-    id: 'lead-1',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Antonia Morales Valdés',
-    companyName: 'Consultora Andes',
-    clientAccountId: 'acc-1',
-    email: 'antonia.m@consultoria.cl',
-    phone: '+56 9 9988 7766',
-    commercialStatus: 'new',
-    estimatedDealValue: 52000,
-    rawAddress: 'Av. Los Leones 1500, Providencia',
-    normalizedAddress: 'Av. Los Leones 1500, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-14T08:20:00Z',
-    notes: 'Descargó dossier comercial desde landing page.',
-  },
-  {
-    id: 'lead-2',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Daniela Cáceres',
-    companyName: 'Agencia Pulso Digital',
-    clientAccountId: 'acc-2',
-    email: 'dcaceres@agencia.cl',
-    phone: '+56 9 4411 2299',
-    commercialStatus: 'new',
-    estimatedDealValue: 28000,
-    rawAddress: 'Av. Irarrázaval 2800, Ñuñoa',
-    normalizedAddress: 'Av. Irarrázaval 2800, Ñuñoa, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-nunoa',
-    createdAt: '2026-09-14T10:05:00Z',
-    notes: 'Interesada en plan de expansión para sucursal.',
-  },
-
-  // 2. TOMA DE CONTACTO
-  {
-    id: 'lead-3',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Cristóbal Ríos',
-    companyName: 'TechNova SpA',
-    clientAccountId: 'acc-3',
-    email: 'crios@tech.cl',
-    phone: '+56 9 7711 2233',
-    commercialStatus: 'lost',
-    estimatedDealValue: 35000,
-    rawAddress: 'Av. Suecia 240, Providencia',
-    normalizedAddress: 'Av. Suecia 240, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-13T11:45:00Z',
-    lastContactedAt: '2026-09-14T15:00:00Z',
-    notes: 'Eligió a la competencia por precio de la pantalla LED.',
-  },
-  {
-    id: 'lead-4',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Gonzalo Pardo',
-    companyName: 'Logística Central Ltda.',
-    clientAccountId: 'acc-4',
-    email: 'gpardo@logistica.cl',
-    phone: '+56 9 2233 4455',
-    commercialStatus: 'contacted',
-    estimatedDealValue: 42000,
-    rawAddress: 'Paseo Ahumada 250, Santiago Centro',
-    normalizedAddress: 'Paseo Ahumada 250, Santiago, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-santiago-centro',
-    createdAt: '2026-09-10T12:00:00Z',
-    lastContactedAt: '2026-09-14T11:30:00Z',
-    notes: 'Contactado por WhatsApp. Pidió catálogo en PDF.',
-  },
-
-  // 3. CALIFICADOS
-  {
-    id: 'lead-5',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Camila Soto Valenzuela',
-    companyName: 'Grupo Soto Retail',
-    clientAccountId: 'acc-5',
-    email: 'camila.soto@empresa.cl',
-    phone: '+56 9 8765 4321',
-    commercialStatus: 'qualified',
-    estimatedDealValue: 75000,
-    rawAddress: 'Av. Providencia 1234, Providencia',
-    normalizedAddress: 'Av. Providencia 1234, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-12T10:30:00Z',
-    lastContactedAt: '2026-09-13T16:00:00Z',
-    notes: 'Presupuesto aprobado para Q4. Requiere validación de tiempos de entrega.',
-  },
-  {
-    id: 'lead-6',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Javiera Montes',
-    companyName: 'Montes Inversiones',
-    clientAccountId: 'acc-6',
-    email: 'jmontes@inversiones.cl',
-    phone: '+56 9 5566 7788',
-    commercialStatus: 'qualified',
-    estimatedDealValue: 95000,
-    rawAddress: 'Av. Manquehue Norte 160, Las Condes',
-    normalizedAddress: 'Av. Manquehue Norte 160, Las Condes, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-las-condes',
-    createdAt: '2026-09-13T15:30:00Z',
-    lastContactedAt: '2026-09-14T09:30:00Z',
-    notes: 'Interés en paquete corporate. Reunión con gerencia agendada.',
-  },
-
-  // 4. PROPUESTA
-  {
-    id: 'lead-7',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Fernanda Silva',
-    companyName: 'Silva & Asociados',
-    clientAccountId: 'acc-7',
-    email: 'fsilva@gmail.com',
-    phone: '+56 9 4433 2211',
-    commercialStatus: 'proposal',
-    estimatedDealValue: 62000,
-    rawAddress: 'Av. Andrés Bello 2777, Providencia',
-    normalizedAddress: 'Av. Andrés Bello 2777, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-13T09:00:00Z',
-    lastContactedAt: '2026-09-14T14:10:00Z',
-    notes: 'Propuesta formal #PR-2026-89 enviada por correo. Revisión este viernes.',
-  },
-  {
-    id: 'lead-8',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Benjamín Castro',
-    companyName: 'Castro Constructora',
-    clientAccountId: 'acc-8',
-    email: 'bcastro@logistics.cl',
-    phone: '+56 9 3322 1100',
-    commercialStatus: 'proposal',
-    estimatedDealValue: 110000,
-    rawAddress: 'Isidora Goyenechea 3000, Las Condes',
-    normalizedAddress: 'Isidora Goyenechea 3000, Las Condes, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-las-condes',
-    createdAt: '2026-09-14T09:15:00Z',
-    lastContactedAt: '2026-09-14T16:45:00Z',
-    notes: 'Negociando descuento por volumen de licencias.',
-  },
-
-  // 5. PENDIENTES DE PAGO
-  {
-    id: 'lead-9',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Rodrigo Echeverría',
-    companyName: 'Vitacura Holdings',
-    clientAccountId: 'acc-9',
-    email: 'recheverria@holding.cl',
-    phone: '+56 9 6677 8899',
-    commercialStatus: 'pending_payment',
-    estimatedDealValue: 180000,
-    rawAddress: 'Av. Vitacura 3565, Vitacura',
-    normalizedAddress: 'Av. Vitacura 3565, Vitacura, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-vitacura',
-    createdAt: '2026-09-11T11:00:00Z',
-    lastContactedAt: '2026-09-14T17:00:00Z',
-    notes: 'Orden de compra recibida. Factura #F-4421 emitida. Esperando transferencia bancaria.',
-  },
-  {
-    id: 'lead-10',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Marcela Reyes',
-    companyName: 'Reyes Comercial',
-    clientAccountId: 'acc-10',
-    email: 'mreyes@distribuidora.cl',
-    phone: '+56 9 6655 4433',
-    commercialStatus: 'pending_payment',
-    estimatedDealValue: 48000,
-    rawAddress: 'Calle Moneda 1100, Santiago Centro',
-    normalizedAddress: 'Calle Moneda 1100, Santiago, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-santiago-centro',
-    createdAt: '2026-09-13T17:20:00Z',
-    lastContactedAt: '2026-09-14T16:20:00Z',
-    notes: 'Validando comprobante de pago enviado por correo contable.',
-  },
-
-  // 6. LEAD CERRADO (GANADO)
-  {
-    id: 'lead-11',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Alejandro Valenzuela',
-    companyName: 'Apoquindo Capital',
-    clientAccountId: 'acc-11',
-    email: 'avalenzuela@corp.cl',
-    phone: '+56 9 7788 9900',
-    commercialStatus: 'won',
-    estimatedDealValue: 125000,
-    rawAddress: 'Av. Apoquindo 4500, Las Condes',
-    normalizedAddress: 'Av. Apoquindo 4500, Las Condes, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-las-condes',
-    createdAt: '2026-09-11T16:00:00Z',
-    lastContactedAt: '2026-09-14T11:00:00Z',
-    notes: 'Pago recibido conforme. Lead ganado y derivado al equipo de onboarding.',
-  },
-  {
-    id: 'lead-12',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Matías Larraín',
-    companyName: 'Larraín Ingeniería',
-    clientAccountId: 'acc-12',
-    email: 'matias.l@retail.cl',
-    phone: '+56 9 1122 3344',
-    commercialStatus: 'won',
-    estimatedDealValue: 89000,
-    rawAddress: 'Av. Pedro de Valdivia 900, Providencia',
-    normalizedAddress: 'Av. Pedro de Valdivia 900, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-12T14:15:00Z',
-    lastContactedAt: '2026-09-13T18:00:00Z',
-    notes: 'Firma electrónica completada y anticipo pagado.',
-  },
-
-  // 7. EN COLA DE GEOCODIFICACIÓN (resolución por gerencia)
-  {
-    id: 'lead-13',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Ignacio Muñoz',
-    companyName: 'Grupo Soto Retail',
-    clientAccountId: 'acc-5',
-    email: 'imunoz@sotoretail.cl',
-    phone: '+56 9 3141 5926',
-    commercialStatus: 'new',
-    estimatedDealValue: 38000,
-    rawAddress: 'Av. Presidente Kennedy 5413',
-    geocodingStatus: 'pending',
-    createdAt: '2026-09-14T12:40:00Z',
-    notes: 'Ingresado desde formulario web sin comuna.',
-  },
-  {
-    id: 'lead-14',
-    companyId: mockCompany.id,
-    countryCode: 'CL',
-    fullName: 'Valentina Gómez',
-    companyName: 'TechNova SpA',
-    clientAccountId: 'acc-3',
-    email: 'vgomez@technova.cl',
-    phone: '+56 9 2718 2818',
-    commercialStatus: 'contacted',
-    estimatedDealValue: 54000,
-    rawAddress: 'Camino El Alba 9500',
-    geocodingStatus: 'manual_review',
-    createdAt: '2026-09-13T13:10:00Z',
-    notes: 'Importado desde planilla sin comuna asignada.',
-  },
-
-  // 8. PERÚ · LIMA (plan Internacional de GeoDemo, valores en soles)
-  {
-    id: 'lead-p1',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Lucía Fernández',
-    companyName: 'Inversiones Miraflores SAC',
-    clientAccountId: 'acc-p1',
-    email: 'lfernandez@invmiraflores.pe',
-    phone: '+51 987 654 321',
-    commercialStatus: 'new',
-    estimatedDealValue: 190,
-    rawAddress: 'Av. José Larco 1150, Miraflores',
-    normalizedAddress: 'Av. José Larco 1150, Miraflores, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-miraflores',
-    createdAt: '2026-09-14T14:20:00Z',
-    notes: 'Solicitó información desde la landing para Lima.',
-  },
-  {
-    id: 'lead-p2',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Jorge Quispe',
-    companyName: 'Constructora Pacífico SAC',
-    clientAccountId: 'acc-p2',
-    email: 'jquispe@pacifico.pe',
-    phone: '+51 912 345 678',
-    commercialStatus: 'qualified',
-    estimatedDealValue: 650,
-    rawAddress: 'Av. Camino Real 390, San Isidro',
-    normalizedAddress: 'Av. Camino Real 390, San Isidro, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-san-isidro',
-    createdAt: '2026-09-11T15:00:00Z',
-    lastContactedAt: '2026-09-13T16:30:00Z',
-    notes: 'Presupuesto aprobado para oficinas corporativas.',
-  },
-  {
-    id: 'lead-p3',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'María Huamán',
-    companyName: 'Andina Logística SAC',
-    clientAccountId: 'acc-p3',
-    email: 'mhuaman@andinalog.pe',
-    phone: '+51 955 222 111',
-    commercialStatus: 'lost',
-    estimatedDealValue: 320,
-    rawAddress: 'Av. Primavera 1050, Santiago de Surco',
-    normalizedAddress: 'Av. Primavera 1050, Santiago de Surco, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-surco',
-    createdAt: '2026-09-12T13:10:00Z',
-    lastContactedAt: '2026-09-14T10:00:00Z',
-    notes: 'Postergó la compra de kioskos hasta el próximo año.',
-  },
-  {
-    id: 'lead-p4',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Carlos Rojas Paredes',
-    companyName: 'Constructora Pacífico SAC',
-    clientAccountId: 'acc-p2',
-    email: 'crojas@pacifico.pe',
-    phone: '+51 944 777 333',
-    commercialStatus: 'proposal',
-    estimatedDealValue: 1200,
-    rawAddress: 'Calle Las Begonias 441, San Isidro',
-    normalizedAddress: 'Calle Las Begonias 441, San Isidro, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-san-isidro',
-    createdAt: '2026-09-10T11:30:00Z',
-    lastContactedAt: '2026-09-14T12:15:00Z',
-    notes: 'Propuesta formal enviada en soles; revisión con directorio.',
-  },
-  {
-    id: 'lead-p5',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Ana Torres Vega',
-    companyName: 'Grupo Molina Retail SAC',
-    clientAccountId: 'acc-p4',
-    email: 'atorres@molinaretail.pe',
-    phone: '+51 966 101 202',
-    commercialStatus: 'won',
-    estimatedDealValue: 540,
-    rawAddress: 'Av. La Molina 1100, La Molina',
-    normalizedAddress: 'Av. La Molina 1100, La Molina, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-la-molina',
-    createdAt: '2026-09-09T09:00:00Z',
-    lastContactedAt: '2026-09-13T17:40:00Z',
-    notes: 'Contrato firmado y anticipo recibido.',
-  },
-  {
-    id: 'lead-p6',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Diego Salazar',
-    companyName: 'Andina Logística SAC',
-    clientAccountId: 'acc-p3',
-    email: 'dsalazar@andinalog.pe',
-    phone: '+51 933 808 404',
-    commercialStatus: 'new',
-    estimatedDealValue: 260,
-    rawAddress: 'Av. Argentina 2450, Callao',
-    geocodingStatus: 'manual_review',
-    createdAt: '2026-09-14T09:45:00Z',
-    notes: 'Dirección en el Callao: pendiente de asignar distrito.',
-  },
-  {
-    id: 'lead-p7',
-    companyId: mockCompany.id,
-    countryCode: 'PE',
-    fullName: 'Rosa Chávez',
-    companyName: 'Inversiones Miraflores SAC',
-    clientAccountId: 'acc-p1',
-    email: 'rchavez@invmiraflores.pe',
-    phone: '+51 977 606 505',
-    commercialStatus: 'pending_payment',
-    estimatedDealValue: 470,
-    rawAddress: 'Av. San Borja Norte 520, San Borja',
-    normalizedAddress: 'Av. San Borja Norte 520, San Borja, Lima, Perú',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 'pe-san-borja',
-    createdAt: '2026-09-12T16:20:00Z',
-    lastContactedAt: '2026-09-14T15:30:00Z',
-    notes: 'Factura emitida; esperando transferencia.',
-  },
-
-  // CONSTRUCTORA NORTE DEMO (otro tenant: sus datos no son visibles para GeoDemo)
   // ---------------- Cuenta demo (servicios para oficinas, Chile y Perú) ----------------
   {
     id: 'lead-g1',
@@ -1096,62 +620,11 @@ const baseLeads: Lead[] = [
     assignedTerritoryId: 'pe-san-borja',
     createdAt: '2026-09-18T11:25:00Z',
     notes: 'Consulta por cajas de papel para la nueva sede; no es quien decide.',
-  },
-  {
-    id: 'lead-n1',
-    companyId: TENANT_NORTE_ID,
-    countryCode: 'CL',
-    fullName: 'Rocío Aguilera',
-    companyName: 'Minera Atacama Norte',
-    clientAccountId: 'acc-n1',
-    email: 'raguilera@mineraatacama.cl',
-    phone: '+56 9 5511 2233',
-    commercialStatus: 'qualified',
-    estimatedDealValue: 240000,
-    rawAddress: "Av. Libertador Bernardo O'Higgins 1449, Santiago Centro",
-    normalizedAddress: "Av. Libertador Bernardo O'Higgins 1449, Santiago, Región Metropolitana",
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-santiago-centro',
-    createdAt: '2026-09-12T10:00:00Z',
-  },
-  {
-    id: 'lead-n2',
-    companyId: TENANT_NORTE_ID,
-    countryCode: 'CL',
-    fullName: 'Tomás Vidal',
-    companyName: 'Hotel Costanera',
-    clientAccountId: 'acc-n2',
-    email: 'tvidal@hotelcostanera.cl',
-    phone: '+56 9 4422 1188',
-    commercialStatus: 'proposal',
-    estimatedDealValue: 132000,
-    rawAddress: 'Av. Irarrázaval 3400, Ñuñoa',
-    normalizedAddress: 'Av. Irarrázaval 3400, Ñuñoa, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-nunoa',
-    createdAt: '2026-09-13T15:00:00Z',
-  },
-  {
-    id: 'lead-n3',
-    companyId: TENANT_NORTE_ID,
-    countryCode: 'CL',
-    fullName: 'Elena Paredes',
-    companyName: 'Hotel Costanera',
-    clientAccountId: 'acc-n2',
-    email: 'eparedes@hotelcostanera.cl',
-    phone: '+56 9 3377 6612',
-    commercialStatus: 'new',
-    estimatedDealValue: 45000,
-    rawAddress: 'Av. Providencia 2124, Providencia',
-    normalizedAddress: 'Av. Providencia 2124, Providencia, Región Metropolitana',
-    geocodingStatus: 'success',
-    assignedTerritoryId: 't-providencia',
-    createdAt: '2026-09-14T09:30:00Z',
   }
 ];
 
 // Catálogo de productos y servicios de cada CRM (precios sugeridos por país, en su moneda)
-const catalogItem = (
+export const catalogItem = (
   id: string,
   companyId: string,
   type: CatalogItem['type'],
@@ -1163,14 +636,6 @@ const catalogItem = (
 ): CatalogItem => ({ id, companyId, type, name, sku, category, prices, isActive: true, createdAt: '2026-08-01T12:00:00Z', ...extra });
 
 export const mockCatalogItems: CatalogItem[] = [
-  // GeoDemo (Chile + Perú)
-  catalogItem('cat-pos', TENANT_GEODEMO_ID, 'product', 'Terminal POS Retail', 'POS-01', 'Equipamiento', { CL: 12000, PE: 45 }),
-  catalogItem('cat-kiosk', TENANT_GEODEMO_ID, 'product', 'Kiosko de autoatención', 'KSK-02', 'Equipamiento', { CL: 40000, PE: 160 }),
-  catalogItem('cat-led', TENANT_GEODEMO_ID, 'product', 'Pantalla LED publicitaria', 'LED-03', 'Señalética', { CL: 25000, PE: 100 }),
-  catalogItem('cat-install', TENANT_GEODEMO_ID, 'service', 'Instalación y puesta en marcha', 'SRV-INS', 'Implementación', { CL: 8000, PE: 30 }, { billing: 'one_time' }),
-  catalogItem('cat-support', TENANT_GEODEMO_ID, 'service', 'Soporte técnico mensual', 'SRV-SOP', 'Soporte', { CL: 5000, PE: 20 }, { billing: 'monthly' }),
-  catalogItem('cat-layout', TENANT_GEODEMO_ID, 'service', 'Asesoría de layout comercial', 'SRV-LAY', 'Consultoría', { CL: 30000, PE: 120 }, { billing: 'one_time' }),
-  catalogItem('cat-cash', TENANT_GEODEMO_ID, 'service', 'Mantención de cajas registradoras', 'SRV-CAJ', 'Soporte', { CL: 6000 }, { billing: 'monthly', isActive: false }),
   // Catálogo de la cuenta demo (Chile + Perú): administración, mantención, proyectos, diseño, seguridad, mobiliario e insumos.
   catalogItem('cat-d-admin', TENANT_DEMO_ID, 'service', 'Administración integral de oficinas', 'DEMO-ADM', 'Administración', { CL: 4200000, PE: 15500 }, { billing: 'monthly' }),
   catalogItem('cat-d-mant', TENANT_DEMO_ID, 'service', 'Mantención preventiva de instalaciones', 'DEMO-MPI', 'Mantención', { CL: 1450000, PE: 5300 }, { billing: 'monthly' }),
@@ -1185,33 +650,11 @@ export const mockCatalogItems: CatalogItem[] = [
   catalogItem('cat-d-estacion', TENANT_DEMO_ID, 'product', 'Estación de trabajo completa', 'DEMO-EST', 'Mobiliario', { CL: 890000, PE: 3300 }),
   catalogItem('cat-d-sala', TENANT_DEMO_ID, 'product', 'Sala de reuniones equipada', 'DEMO-SAL', 'Mobiliario', { CL: 1250000, PE: 4600 }),
   catalogItem('cat-d-papel', TENANT_DEMO_ID, 'product', 'Caja de papel carta (10 resmas)', 'DEMO-PAP', 'Insumos', { CL: 13500, PE: 50 }),
-  // Constructora Norte (Chile)
-  catalogItem('cat-n-concrete', TENANT_NORTE_ID, 'product', 'Hormigón premezclado (m³)', 'HOR-M3', 'Materiales', { CL: 60000 }),
-  catalogItem('cat-n-scaffold', TENANT_NORTE_ID, 'product', 'Andamio modular', 'AND-01', 'Equipos', { CL: 12000 }),
-  catalogItem('cat-n-soil', TENANT_NORTE_ID, 'service', 'Estudio de suelos', 'EST-SUE', 'Ingeniería', { CL: 45000 }, { billing: 'one_time' }),
 ];
 
 // Productos y servicios de cada lead. [ítem, cantidad]; el precio unitario es el del catálogo para el país del lead.
 // Los leads marcados como manuales tienen un valor negociado distinto a la suma de sus ítems.
 const LEAD_ITEMS: Record<string, { lines: [string, number][]; manual?: boolean }> = {
-  'lead-1': { lines: [['cat-kiosk', 1], ['cat-pos', 1]] },
-  'lead-2': { lines: [['cat-layout', 1]], manual: true },
-  'lead-3': { lines: [['cat-led', 1], ['cat-support', 2]] },
-  'lead-4': { lines: [['cat-pos', 2], ['cat-install', 1], ['cat-support', 2]] },
-  'lead-5': { lines: [['cat-kiosk', 1], ['cat-layout', 1], ['cat-support', 1]] },
-  'lead-6': { lines: [['cat-led', 3], ['cat-install', 1], ['cat-pos', 1]] },
-  'lead-7': { lines: [['cat-led', 2], ['cat-pos', 1]] },
-  'lead-8': { lines: [['cat-kiosk', 2], ['cat-layout', 1]] },
-  'lead-9': { lines: [['cat-kiosk', 4], ['cat-install', 1], ['cat-pos', 1]] },
-  'lead-10': { lines: [['cat-pos', 4]] },
-  'lead-11': { lines: [['cat-kiosk', 2], ['cat-led', 1], ['cat-install', 1], ['cat-pos', 1]] },
-  'lead-12': { lines: [['cat-layout', 2], ['cat-led', 1]], manual: true },
-  'lead-p1': { lines: [['cat-kiosk', 1], ['cat-install', 1]] },
-  'lead-p2': { lines: [['cat-led', 4], ['cat-kiosk', 1], ['cat-install', 3]] },
-  'lead-p3': { lines: [['cat-kiosk', 2]] },
-  'lead-p4': { lines: [['cat-kiosk', 6], ['cat-layout', 2]] },
-  'lead-p5': { lines: [['cat-kiosk', 3], ['cat-install', 2]] },
-  'lead-p7': { lines: [['cat-pos', 2], ['cat-kiosk', 2], ['cat-install', 2]] },
   'lead-g1': { lines: [['cat-d-mant', 1], ['cat-d-limpieza', 1]] },
   'lead-g2': { lines: [['cat-d-admin', 1], ['cat-d-estacion', 4]] },
   'lead-g3': { lines: [['cat-d-remodel', 1], ['cat-d-traslado', 1]] },
@@ -1221,28 +664,29 @@ const LEAD_ITEMS: Record<string, { lines: [string, number][]; manual?: boolean }
   'lead-g7': { lines: [['cat-d-mant', 1], ['cat-d-sala', 2]] },
   'lead-g8': { lines: [['cat-d-traslado', 1], ['cat-d-seguridad', 1]] },
   'lead-g9': { lines: [['cat-d-papel', 25]] },
-  'lead-n1': { lines: [['cat-n-concrete', 4]] },
-  'lead-n2': { lines: [['cat-n-concrete', 2], ['cat-n-scaffold', 1]] },
-  'lead-n3': { lines: [['cat-n-soil', 1]] },
 };
 
-const withItems = (lead: Lead): Lead => {
-  const config = LEAD_ITEMS[lead.id];
-  if (!config) return { ...lead, items: [], valueSource: 'manual' };
-  const items: LeadItem[] = config.lines.map(([itemId, quantity]) => {
-    const item = mockCatalogItems.find((i) => i.id === itemId && i.companyId === lead.companyId);
-    if (!item) throw new Error(`Ítem ${itemId} no pertenece al CRM del lead ${lead.id}`);
-    // El catálogo tiene precio por país; si el lead se negoció en otra moneda, se convierte
-    const listPrice = item.prices[lead.countryCode] ?? 0;
-    const currency = leadCurrency(lead);
-    const unitPrice = roundForCurrency(convert(listPrice, currencyOfCountry(lead.countryCode), currency, FALLBACK_RATES), currency);
-    return { itemId, quantity, unitPrice };
-  });
-  if (config.manual) return { ...lead, items, valueSource: 'manual' };
-  return { ...lead, items, valueSource: 'items', estimatedDealValue: items.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0) };
-};
+// Arma los ítems de cada lead con los precios del catálogo de su CRM. La usan también los CRMs de
+// prueba (testTenants.ts), con su propio catálogo.
+export const leadWithItems =
+  (catalog: CatalogItem[], leadItems: Record<string, { lines: [string, number][]; manual?: boolean }>) =>
+  (lead: Lead): Lead => {
+    const config = leadItems[lead.id];
+    if (!config) return { ...lead, items: [], valueSource: 'manual' };
+    const items: LeadItem[] = config.lines.map(([itemId, quantity]) => {
+      const item = catalog.find((i) => i.id === itemId && i.companyId === lead.companyId);
+      if (!item) throw new Error(`Ítem ${itemId} no pertenece al CRM del lead ${lead.id}`);
+      // El catálogo tiene precio por país; si el lead se negoció en otra moneda, se convierte
+      const listPrice = item.prices[lead.countryCode] ?? 0;
+      const currency = leadCurrency(lead);
+      const unitPrice = roundForCurrency(convert(listPrice, currencyOfCountry(lead.countryCode), currency, FALLBACK_RATES), currency);
+      return { itemId, quantity, unitPrice };
+    });
+    if (config.manual) return { ...lead, items, valueSource: 'manual' };
+    return { ...lead, items, valueSource: 'items', estimatedDealValue: items.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0) };
+  };
 
-export const mockLeads: Lead[] = baseLeads.map(withItems);
+export const mockLeads: Lead[] = baseLeads.map(leadWithItems(mockCatalogItems, LEAD_ITEMS));
 
 export const mockActivities: LeadActivity[] = [
   // Cuenta demo: compromisos de seguimiento repartidos en el tiempo para ver la agenda
@@ -1293,73 +737,11 @@ export const mockActivities: LeadActivity[] = [
     nextFollowUpDate: '2026-10-01T16:00:00Z',
     agentName: 'Diego Fuentes',
     createdAt: '2026-09-17T14:00:00Z',
-  },
-  {
-    id: 'act-1',
-    leadId: 'lead-9',
-    channel: 'call',
-    outcome: 'paid',
-    summary: 'Llamada con tesorería de Holding Vitacura. Confirmaron que la transferencia fue programada para hoy a las 18:00.',
-    nextFollowUpDate: '2026-09-15T10:00:00Z',
-    agentName: 'Carlos Mendoza',
-    createdAt: '2026-09-14T17:00:00Z',
-  },
-  {
-    id: 'act-2',
-    leadId: 'lead-8',
-    channel: 'meeting',
-    outcome: 'interested',
-    summary: 'Reunión presencial en oficinas de Isidora Goyenechea. Revisión de alcances y SLA de soporte.',
-    nextFollowUpDate: '2026-09-16T15:00:00Z',
-    agentName: 'Andrea Torres',
-    createdAt: '2026-09-14T16:45:00Z',
-  },
-  {
-    id: 'act-3',
-    leadId: 'lead-3',
-    channel: 'whatsapp',
-    outcome: 'rescheduled',
-    summary: 'Conversación vía WhatsApp comercial. Se le compartió el brochure corporativo.',
-    nextFollowUpDate: '2026-09-15T11:00:00Z',
-    agentName: 'Carlos Mendoza',
-    createdAt: '2026-09-14T15:00:00Z',
-  },
-  {
-    id: 'act-4',
-    leadId: 'lead-7',
-    channel: 'email',
-    outcome: 'requested_quote',
-    summary: 'Envío de propuesta económica formal con desglose de servicios y condiciones comerciales.',
-    nextFollowUpDate: '2026-09-18T10:00:00Z',
-    agentName: 'Andrea Torres',
-    createdAt: '2026-09-14T14:10:00Z',
-  },
-  {
-    id: 'act-5',
-    leadId: 'lead-4',
-    channel: 'call',
-    outcome: 'no_answer',
-    summary: 'Primer intento telefónico sin respuesta. Se envió mensaje de seguimiento por WhatsApp.',
-    nextFollowUpDate: '2026-09-15T09:30:00Z',
-    agentName: 'Carlos Mendoza',
-    createdAt: '2026-09-14T11:30:00Z',
-  },
-  {
-    id: 'act-p1',
-    leadId: 'lead-p4',
-    channel: 'video_call',
-    outcome: 'requested_quote',
-    summary: 'Videollamada con el directorio de Constructora Pacífico en Lima. Pidieron ajustar la propuesta en soles.',
-    nextFollowUpDate: '2026-09-17T15:00:00Z',
-    agentName: 'Andrea Torres',
-    createdAt: '2026-09-14T12:15:00Z',
   }
 ];
 
-// La app muestra solo la cuenta demo. GeoDemo, Constructora Norte y Logística Sur son datos de
-// prueba: las pruebas de aislamiento necesitan otros CRMs para comprobar que nada se cruza.
-export const APP_TENANT_IDS: string[] = [TENANT_DEMO_ID];
-
+// La app publicada trae solo esta cuenta demo. Los CRMs de prueba (GeoDemo, Constructora Norte y
+// Logística Sur) viven en testTenants.ts y solo se cargan en desarrollo, con ?pruebas.
 export interface DemoData {
   companies: Company[];
   users: AppUser[];
@@ -1370,24 +752,20 @@ export interface DemoData {
 }
 
 export interface DemoDataOptions {
-  /** CRMs de prueba para el aislamiento (solo en desarrollo, con ?pruebas) */
-  testTenants?: boolean;
+  /** Datos que reemplazan a la demo: los 4 CRMs de ejemplo (solo en desarrollo, con ?pruebas) */
+  replaceWith?: DemoData;
   /** Usuarios que solo existen en desarrollo, como el administrador de plataforma */
   extraUsers?: AppUser[];
 }
 
-export const demoDataFor = ({ testTenants = false, extraUsers = [] }: DemoDataOptions = {}): DemoData => {
-  const keep = (companyId: string | null | undefined) =>
-    testTenants || companyId == null || APP_TENANT_IDS.includes(companyId);
-  const leads = mockLeads.filter((l) => keep(l.companyId));
-  const leadIds = new Set(leads.map((l) => l.id));
-  return {
-    companies: mockCompanies.filter((c) => keep(c.id)),
-    users: [...extraUsers, ...mockUsers.filter((u) => keep(u.companyId))],
-    accounts: mockClientAccounts.filter((a) => keep(a.companyId)),
-    leads,
-    // Algunas actividades antiguas no traen companyId: se decide por su lead
-    activities: mockActivities.filter((a) => leadIds.has(a.leadId)),
-    catalog: mockCatalogItems.filter((i) => keep(i.companyId)),
+export const demoDataFor = ({ replaceWith, extraUsers = [] }: DemoDataOptions = {}): DemoData => {
+  const base = replaceWith ?? {
+    companies: mockCompanies,
+    users: mockUsers,
+    accounts: mockClientAccounts,
+    leads: mockLeads,
+    activities: mockActivities,
+    catalog: mockCatalogItems,
   };
+  return { ...base, users: [...extraUsers, ...base.users] };
 };

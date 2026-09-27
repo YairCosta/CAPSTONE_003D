@@ -280,7 +280,7 @@ function diagramaComponentes() {
   libs2.forEach(([titulo, sub], i) => p.push(box({ x: col(i), y: 500, w: 206, h: 62, title: titulo, subtitle: sub, titleSize: 13.5, fill: COLORS.slateSoft })));
   p.push(arrow(840, 378, 840, 420, { color: COLORS.primary }));
 
-  p.push(box({ x: 60, y: 596, w: 884, h: 62, title: 'src/data/mockGeoData.ts', subtitle: 'datos de ejemplo en memoria (4 CRMs, entre ellos Empresa Piloto) · se pierden al recargar', titleSize: 13.5, fill: COLORS.slateSoft }));
+  p.push(box({ x: 60, y: 596, w: 884, h: 62, title: 'src/data/mockGeoData.ts', subtitle: 'cuenta demo en memoria · CRMs de prueba en testTenants.ts, solo en desarrollo', titleSize: 13.5, fill: COLORS.slateSoft }));
   p.push(arrow(500, 564, 500, 594, { color: COLORS.primary }));
 
   // Banda 2: base de datos (bajo los datos en memoria que va a reemplazar)

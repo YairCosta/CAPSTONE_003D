@@ -42,16 +42,16 @@ BEGIN
 
     INSERT INTO public.client_accounts (id, company_id, name) VALUES (acc_a, co_a, 'Minera Prueba');
 
-    INSERT INTO public.leads (id, company_id, full_name, email, phone, notes, raw_address, address_hash,
-                              latitude, longitude, currency_code, consent_status, consent_at, client_account_id)
+    INSERT INTO public.leads (id, company_id, full_name, email, phone, notes, raw_address,
+                              currency_code, consent_status, consent_at, client_account_id)
     VALUES
         (lead_1, co_a, 'Ana Titular', 'ana@prueba.invalid', '+56 9 1111 1111', 'Prefiere la tarde',
-         'Los Aromos 123', 'hash-prueba-1', NULL, NULL, 'CLP', 'inquiry', NOW(), acc_a),
-        (lead_2, co_a, 'Pedro Prospecto', 'pedro@prueba.invalid', NULL, NULL, 'Calle 2', NULL, NULL, NULL,
+         'Los Aromos 123', 'CLP', 'inquiry', NOW(), acc_a),
+        (lead_2, co_a, 'Pedro Prospecto', 'pedro@prueba.invalid', NULL, NULL, 'Calle 2',
          'CLP', 'not_requested', NOW() - INTERVAL '40 days', acc_a),
-        (lead_3, co_a, 'Rosa Reciente', NULL, NULL, NULL, 'Calle 3', NULL, NULL, NULL,
+        (lead_3, co_a, 'Rosa Reciente', NULL, NULL, NULL, 'Calle 3',
          'CLP', 'not_requested', NOW() - INTERVAL '5 days', NULL),
-        (lead_b, co_b, 'Luis Otro CRM', NULL, NULL, NULL, 'Calle B', NULL, NULL, NULL, 'CLP', 'inquiry', NOW(), NULL);
+        (lead_b, co_b, 'Luis Otro CRM', NULL, NULL, NULL, 'Calle B', 'CLP', 'inquiry', NOW(), NULL);
 
     -- El contacto principal (Ana) lo copia la base desde el lead (0017); se agrega un colega
     INSERT INTO public.lead_contacts (company_id, lead_id, full_name, email, is_primary) VALUES
@@ -59,10 +59,6 @@ BEGIN
 
     INSERT INTO public.lead_activities (lead_id, company_id, channel, outcome, summary, agent_name, contact_name)
     VALUES (lead_1, co_a, 'call', 'interested', 'Habló de su casa en Los Aromos', 'Vendedor A', 'Ana Titular');
-
-    INSERT INTO public.geocoding_cache (address_hash, raw_query, formatted_address, latitude, longitude, location)
-    VALUES ('hash-prueba-1', 'Los Aromos 123', 'Los Aromos 123', -33.4, -70.6,
-            extensions.ST_SetSRID(extensions.ST_MakePoint(-70.6, -33.4), 4326)::extensions.geography);
 
     -- ------------------------------------------------------------ como USUARIO BASE del CRM A
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_agent_a, 'role', 'authenticated')::text, TRUE);
@@ -136,9 +132,9 @@ BEGIN
     PERFORM public.resolve_lead_privacy_request(req_1, TRUE, 'Identidad verificada');
 
     SELECT * INTO v_lead FROM public.leads WHERE id = lead_1;
-    res := res || jsonb_build_object('prueba', 'Aprobar anonimiza: sin nombre, correo, teléfono, notas ni coordenadas',
+    res := res || jsonb_build_object('prueba', 'Aprobar anonimiza: sin nombre, correo, teléfono, notas ni dirección',
         'ok', v_lead.full_name = 'Titular eliminado' AND v_lead.email IS NULL AND v_lead.phone IS NULL AND v_lead.notes IS NULL
-              AND v_lead.latitude IS NULL AND v_lead.raw_address = 'Dirección eliminada' AND v_lead.anonymized_reason = 'request'
+              AND v_lead.raw_address = 'Dirección eliminada' AND v_lead.anonymized_reason = 'request'
               AND v_lead.no_contact,
         'detalle', jsonb_build_object('nombre', v_lead.full_name, 'correo', v_lead.email, 'motivo', v_lead.anonymized_reason));
     res := res || jsonb_build_object('prueba', 'Aprobar conserva la operación: empresa cliente del lead',
@@ -149,11 +145,6 @@ BEGIN
 
     SELECT summary INTO v_text FROM public.lead_activities WHERE lead_id = lead_1 LIMIT 1;
     res := res || jsonb_build_object('prueba', 'Aprobar borra lo conversado en la bitácora', 'ok', v_text NOT ILIKE '%Aromos%', 'detalle', v_text);
-
-    EXECUTE 'RESET ROLE';
-    SELECT count(*) INTO v_count FROM public.geocoding_cache WHERE address_hash = 'hash-prueba-1';
-    res := res || jsonb_build_object('prueba', 'Aprobar borra la dirección de la caché de geocodificación', 'ok', v_count = 0, 'detalle', v_count);
-    EXECUTE 'SET LOCAL ROLE authenticated';
 
     BEGIN
         UPDATE public.leads SET email = 'volvio@prueba.invalid' WHERE id = lead_1;

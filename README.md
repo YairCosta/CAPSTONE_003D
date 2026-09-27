@@ -66,6 +66,7 @@ npm run test:sql      # migraciones de la base de datos
 npm run test:db       # reglas de la base real de Supabase (lo deshace todo al terminar)
 npm run test:supabase # conexión con Supabase e invitaciones, con Supabase simulado
 npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
+npm run test:bundle   # lo que se publica no trae datos de prueba ni claves
 ```
 
 ## Documentación

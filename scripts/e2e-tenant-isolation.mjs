@@ -63,7 +63,7 @@ const clickText = (selector, text, root = 'body') =>
     root
   );
 
-// Contraseñas de los usuarios de demostración (src/data/mockGeoData.ts)
+// Contraseñas de los usuarios de demostración (src/data/mockGeoData.ts) y de prueba (src/data/testTenants.ts)
 const PASSWORDS = {
   [ADMIN]: 'dev-admin-solo-local',
   [GEO.manager]: 'dev-gerente-local',

@@ -72,10 +72,12 @@ export async function loadTenantData(db: SupabaseClient, companyId: string): Pro
           db.from('catalog_item_prices').select('catalog_item_id, country_code, price').order('catalog_item_id').order('country_code').range(from, to)
       ),
       fetchAll<StageRow>(de('pipeline_stage_configs', STAGE_COLUMNS, 'order_index')),
-      fetchAll<TerritoryRow>(
-        de('territories_geojson', 'id, company_id, country_code, name, code, color_hex, polygon, region_code, region_name, province_name, region_order', 'code')
-      ),
+      // Las zonas sin su contorno: son miles y el mapa solo dibuja las que tienen leads
+      fetchAll<TerritoryRow>(de('territories', TERRITORY_COLUMNS, 'code')),
     ]);
+    const poligonos = await loadZonePolygons(db, [...new Set(leads.map((l) => l.assigned_territory_id).filter((id): id is string => !!id))]);
+    if (!poligonos.ok) return poligonos;
+    zonas.forEach((zona) => (zona.polygon = poligonos.data.get(zona.id) ?? null));
     return {
       ok: true,
       data: assembleTenantData({
@@ -93,6 +95,34 @@ export async function loadTenantData(db: SupabaseClient, companyId: string): Pro
     };
   } catch (error) {
     return { ok: false, error: dbErrorMessage(error as DbErrorLike, 'No se pudieron cargar los datos del CRM.') };
+  }
+}
+
+// ------------------------------------------------------------------ contornos de las zonas
+const TERRITORY_COLUMNS = 'id, company_id, country_code, name, code, color_hex, region_code, region_name, province_name, region_order';
+// Ids por consulta: van en la URL, y 100 UUID caben con holgura
+const POLYGON_BATCH = 100;
+
+/**
+ * Contornos (GeoJSON) de las zonas pedidas. Se piden solo los de las zonas en uso: con todas las
+ * comunas y distritos de Chile y Perú eran unos 3 MB en cada inicio de sesión.
+ */
+export async function loadZonePolygons(
+  db: SupabaseClient,
+  zoneIds: string[]
+): Promise<DbResult<Map<string, NonNullable<TerritoryRow['polygon']>>>> {
+  const poligonos = new Map<string, NonNullable<TerritoryRow['polygon']>>();
+  try {
+    for (let i = 0; i < zoneIds.length; i += POLYGON_BATCH) {
+      const { data, error } = await db.from('territories_geojson').select('id, polygon').in('id', zoneIds.slice(i, i + POLYGON_BATCH));
+      if (error) throw error;
+      for (const fila of (data ?? []) as Pick<TerritoryRow, 'id' | 'polygon'>[]) {
+        if (fila.polygon) poligonos.set(fila.id, fila.polygon);
+      }
+    }
+    return { ok: true, data: poligonos };
+  } catch (error) {
+    return { ok: false, error: dbErrorMessage(error as DbErrorLike, 'No se pudo cargar el mapa de las zonas.') };
   }
 }
 

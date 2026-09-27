@@ -22,6 +22,7 @@ import {
   insertPrivacyRequest,
   loadCompanyExportData,
   loadTenantData,
+  loadZonePolygons,
   markAuditReverted,
   recordDataExport,
   resolvePrivacyRequest,
@@ -103,6 +104,7 @@ import {
   demoDataFor,
   type DemoData,
 } from './data/mockGeoData';
+import { allMockData } from './data/testTenants';
 import type {
   AppUser,
   AuditEntry,
@@ -146,15 +148,15 @@ import { SectionTabs } from './components/ui';
 const SESSION_KEY = 'revela-session';
 const THEME_KEY = 'revela-theme';
 // Los CRMs de prueba (GeoDemo, Norte, Sur) solo se cargan para npm run test:e2e, que abre la app con
-// ?pruebas en el servidor de desarrollo; nunca en la app compilada ni en el login.
-// El administrador de plataforma solo existe en desarrollo: al construir, esta rama se elimina y
-// su cuenta no queda en los archivos publicados. En producción vive en Supabase Auth.
+// ?pruebas en el servidor de desarrollo. Igual que el administrador de plataforma, solo existen en
+// desarrollo: al construir, estas ramas se eliminan y sus datos y cuentas no quedan en los archivos
+// publicados (lo revisa npm run test:bundle). En producción todo vive en Supabase.
 // Con Supabase (VITE_DATA_SOURCE=supabase) no se carga nada de ejemplo: los datos llegan de la base
 // después de iniciar sesión, filtrados por RLS.
 const initialData: DemoData = usingSupabase
   ? { companies: [], users: [], accounts: [], leads: [], activities: [], catalog: [] }
   : demoDataFor({
-      testTenants: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas'),
+      replaceWith: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas') ? allMockData() : undefined,
       extraUsers: import.meta.env.DEV ? [platformAdminUser] : [],
     });
 const db = usingSupabase ? supabase : null;
@@ -356,6 +358,35 @@ export function App() {
     applyTenantData(companyId, datos.data);
     return null;
   };
+
+  // Con Supabase, el contorno de una zona se descarga recién cuando se usa: al entrar, el de las zonas
+  // con leads; después, el de la que recibe su primer lead (captura, edición o asistente) o se elige.
+  const zonasSinContorno = useMemo(() => {
+    if (!db) return '';
+    const enUso = new Set(allLeads.filter((l) => l.companyId === tenantId).map((l) => l.assignedTerritoryId));
+    if (selectedTerritoryId) enUso.add(selectedTerritoryId);
+    return territories
+      .filter((t) => enUso.has(t.territoryId) && t.geojsonPolygon.coordinates.length === 0)
+      .map((t) => t.territoryId)
+      .sort()
+      .join(',');
+  }, [allLeads, tenantId, selectedTerritoryId, territories]);
+  useEffect(() => {
+    if (!db || !zonasSinContorno) return;
+    let vigente = true;
+    loadZonePolygons(db, zonasSinContorno.split(',')).then((resultado) => {
+      if (!vigente || !resultado.ok) return;
+      setTerritories((prev) =>
+        prev.map((t) => {
+          const poligono = resultado.data.get(t.territoryId);
+          return poligono ? { ...t, geojsonPolygon: poligono as TerritoryMetric['geojsonPolygon'] } : t;
+        })
+      );
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [zonasSinContorno]);
 
   const enqueueCall = (call: (client: NonNullable<typeof db>) => Promise<string | null>) => {
     pendingCalls.current.push(call);

@@ -12,7 +12,7 @@ Un CRM puede trabajar en **un país** (plan Nacional) o en **varios** (plan Inte
 | Moneda | Cada país habilitado suma su moneda a las que se pueden usar en los leads (más US$, siempre). Todo el CRM se ve en una sola moneda (CLP o US$) con tasas del día. Ver `docs/MONEDAS.md`. |
 | Porcentajes por zona | Se calculan **dentro de cada país** (el % de Miraflores es sobre los leads de Perú). |
 | Filtro de países | Barra "Plan Internacional" bajo el menú: filtra KPI, mapa, pipeline, registro de contacto, gerencia y estados. Solo aparece si el CRM tiene más de un país. |
-| Mapa | Botones **Todos / Chile / Perú** para encuadrar cada país; en barras, las zonas se agrupan por país. De lejos, una burbuja por región; al acercarse (zoom 9 o más), una por zona con leads. |
+| Mapa | Botones **Todos / Chile / Perú** para encuadrar cada país; en barras, las zonas se agrupan por país. Solo se dibujan las zonas con leads (una zona aparece con su primer lead) y el ranking solo lista esas. De lejos, una burbuja por región; al acercarse (zoom 9 o más), una por zona. |
 | Elegir la zona | Primero la región (o departamento) y después la zona, agrupada por provincia. Sin elegir región, la lista trae todas las zonas agrupadas por región. |
 
 ### División territorial usada
@@ -31,8 +31,8 @@ Cada CRM recibe **todas** las zonas oficiales de sus países habilitados (migrac
 | Perú | Límites distritales del INEI, en [Rodasluis/Peru-maps](https://github.com/Rodasluis/Peru-maps) (`salida/distrito_simplificado.geojson`) | `PE-` + ubigeo, ej. `PE-150122` Miraflores | `PE-15` |
 
 - **La identidad de una zona es su código, no su nombre**: Perú tiene 4 distritos Miraflores y 10 Santa Rosa. Por eso la base ya no exige nombres únicos y los selectores agrupan por provincia.
-- **Cómo se llega a la base:** `zone_catalog` (catálogo de referencia) → un trigger copia a `territories` las zonas de cada país que se habilita en un CRM → la vista `territories_geojson` las entrega al mapa. La app las carga por páginas de 1.000.
-- **Simplificación:** `npm run zonas` las pasa a WGS84 y las simplifica con mapshaper según su tamaño: las comunas urbanas chicas conservan su forma y las zonas rurales grandes se recortan más. Quedan unos 3,4 MB de GeoJSON por CRM con ambos países (comprimidos al viajar).
+- **Cómo se llega a la base:** `zone_catalog` (catálogo de referencia) → un trigger copia a `territories` las zonas de cada país que se habilita en un CRM → la vista `territories_geojson` entrega su contorno. La app baja la lista de zonas sin contorno (para elegirlas al capturar) y el contorno solo de las zonas con leads: el mapa no dibuja las demás.
+- **Simplificación:** `npm run zonas` las pasa a WGS84 y las simplifica con mapshaper según su tamaño: las comunas urbanas chicas conservan su forma y las zonas rurales grandes se recortan más. Con ambos países, todos los contornos pesan unos 3,4 MB; como solo se bajan los de las zonas en uso, al entrar se descargan unos 650 KB de lista más ~1 KB por zona con leads.
 - **Límites conocidos:** la capa de la BCN no trae la comuna Antártica (sin población ni clientes); los distritos de Perú usan los nombres del INEI sin tildes (los departamentos sí las llevan); los islotes de menos de 1 km² de la costa sur de Chile se omiten.
 - **Demo:** la cuenta demo conserva sus 10 zonas de ejemplo con polígonos esquemáticos, pero con los códigos y regiones oficiales.
 
