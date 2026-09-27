@@ -110,6 +110,14 @@ BEGIN
     SELECT count(*) INTO v_count FROM public.audit_log WHERE id = aud_admin;
     res := res || jsonb_build_object('prueba', 'El historial de un CRM es de su gerencia: el administrador no lo lee', 'ok', v_count = 0, 'detalle', v_count);
 
+    -- Exportación (etapa 5): el administrador lee el CRM completo y deja constancia en data_exports
+    SELECT public.export_tenant_snapshot(co_a) ->> 'format_version' INTO v_text;
+    INSERT INTO public.data_exports (company_id, exported_by, format, format_version, row_counts)
+    VALUES (co_a, u_admin, 'xlsx', 'v2', '{"Leads": 0}'::jsonb);
+    SELECT count(*) INTO v_count FROM public.data_exports WHERE company_id = co_a;
+    res := res || jsonb_build_object('prueba', 'El administrador exporta un CRM y la exportación queda registrada (etapa 5)',
+        'ok', v_text = 'v2' AND v_count = 1, 'detalle', jsonb_build_object('formato', v_text, 'registros', v_count));
+
     -- ------------------------------------------------------------ como USUARIO BASE del CRM A
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_agent_a, 'role', 'authenticated')::text, TRUE);
     SELECT full_name INTO v_text FROM public.profiles WHERE id = u_agent_a;
@@ -205,6 +213,17 @@ BEGIN
     UPDATE public.profiles SET is_active = FALSE WHERE id IN (u_agent_b, u_admin);
     GET DIAGNOSTICS v_count = ROW_COUNT;
     res := res || jsonb_build_object('prueba', 'El gerente no edita usuarios de otro CRM ni al administrador', 'ok', v_count = 0, 'detalle', v_count);
+
+    -- Exportaciones: solo el administrador las hace y las ve
+    SELECT count(*) INTO v_count FROM public.data_exports WHERE company_id = co_a;
+    BEGIN
+        PERFORM public.export_tenant_snapshot(co_a);
+        v_bool := TRUE;
+    EXCEPTION WHEN OTHERS THEN
+        v_bool := FALSE;
+    END;
+    res := res || jsonb_build_object('prueba', 'El gerente no exporta su CRM completo ni ve el registro de exportaciones',
+        'ok', v_count = 0 AND NOT v_bool, 'detalle', jsonb_build_object('registros_visibles', v_count, 'exporto', v_bool));
 
     -- Auditoría vista por la gerencia del CRM
     SELECT actor_role INTO v_text FROM public.audit_log WHERE id = aud_admin;

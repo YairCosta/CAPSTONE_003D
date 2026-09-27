@@ -19,6 +19,7 @@ import type {
   LeadValueSource,
   PrivacyRequest,
   PrivacyRequestReason,
+  StageConfig,
   TerritoryMetric,
 } from '../../types/crm.ts';
 import { COUNTRIES, isCountryCode, type CountryCode, type CurrencyCode } from '../../data/countries.ts';
@@ -419,5 +420,123 @@ export function privacyRequestFor(leadId: string, rows: PrivacyRequestRow[]): Pr
     decidedBy: optional(elegida.decided_by_name),
     decidedAt: optional(elegida.decided_at),
     decisionNote: optional(elegida.decision_note),
+  };
+}
+
+// ------------------------------------------------------------------ etapas del pipeline
+export const STAGE_COLUMNS = 'stage, label, short_code, color_hex, description, win_probability, sla_days, order_index';
+
+export interface StageRow {
+  stage: string;
+  label: string;
+  short_code: string;
+  color_hex: string;
+  description: string | null;
+  win_probability: number;
+  sla_days: number;
+  order_index: number;
+}
+
+export const stageFromRow = (row: StageRow): StageConfig => ({
+  id: row.stage as CommercialStatus,
+  label: row.label,
+  shortCode: row.short_code,
+  color: row.color_hex,
+  description: row.description ?? '',
+  winProbability: row.win_probability,
+  slaDays: row.sla_days,
+  orderIndex: row.order_index,
+});
+
+export const stageToRow = (companyId: string, stage: StageConfig) => ({
+  company_id: companyId,
+  stage: stage.id,
+  label: stage.label.trim() || stage.id,
+  short_code: stage.shortCode.trim() || stage.id.toUpperCase(),
+  color_hex: stage.color,
+  description: blank(stage.description),
+  // La base exige 0 a 100 y días no negativos, en números enteros
+  win_probability: Math.min(100, Math.max(0, Math.round(Number(stage.winProbability) || 0))),
+  sla_days: Math.max(0, Math.round(Number(stage.slaDays) || 0)),
+  order_index: stage.orderIndex,
+});
+
+/**
+ * Etapas del CRM: las que el gerente guardó en la base reemplazan a las por defecto. Un CRM que
+ * nunca las editó no tiene filas y usa las por defecto.
+ */
+export const mergeStageConfigs = (defaults: StageConfig[], saved: StageConfig[]): StageConfig[] =>
+  defaults.map((d) => saved.find((s) => s.id === d.id) ?? d);
+
+// ------------------------------------------------------------------ todo el CRM de una vez
+export interface TenantRows {
+  client_accounts: AccountRow[];
+  leads: LeadRow[];
+  lead_contacts: (ContactRow & { is_primary?: boolean })[];
+  lead_items: LeadItemRow[];
+  lead_privacy_requests: PrivacyRequestRow[];
+  lead_activities: ActivityRow[];
+  catalog_items: CatalogRow[];
+  catalog_item_prices: PriceRow[];
+  pipeline_stage_configs: StageRow[];
+  territories: TerritoryRow[];
+}
+
+/** Arma los datos del CRM desde sus filas: lo usan la carga al entrar y la exportación. */
+export function assembleTenantData(rows: TenantRows) {
+  const accounts = rows.client_accounts.map(accountFromRow);
+  const nombreDe = new Map(accounts.map((a) => [a.id, a.name]));
+  // El contacto principal vive en la fila del lead; lead_contacts solo aporta los adicionales
+  const adicionales = rows.lead_contacts.filter((c) => c.is_primary !== true);
+  return {
+    accounts,
+    leads: rows.leads.map((row) =>
+      leadFromRow(row, {
+        accountName: row.client_account_id ? nombreDe.get(row.client_account_id) : undefined,
+        contacts: adicionales.filter((c) => c.lead_id === row.id).map(contactFromRow),
+        items: rows.lead_items.filter((i) => i.lead_id === row.id).map(leadItemFromRow),
+        privacyRequest: privacyRequestFor(row.id, rows.lead_privacy_requests),
+      })
+    ),
+    activities: rows.lead_activities.map(activityFromRow).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    catalog: rows.catalog_items.map((row) => catalogFromRow(row, rows.catalog_item_prices)),
+    stages: rows.pipeline_stage_configs.map(stageFromRow),
+    territories: rows.territories.map(territoryFromRow),
+  };
+}
+
+/**
+ * La exportación de la base (export_tenant_snapshot, formato v2) trae las filas con los nombres de
+ * sus columnas; solo cambian los precios del catálogo (un objeto por país) y el polígono de las
+ * zonas (en "geojson").
+ */
+export interface TenantSnapshotV2 {
+  format_version?: string;
+  client_accounts?: AccountRow[];
+  leads?: LeadRow[];
+  lead_contacts?: (ContactRow & { is_primary?: boolean })[];
+  lead_items?: LeadItemRow[];
+  lead_privacy_requests?: PrivacyRequestRow[];
+  lead_activities?: ActivityRow[];
+  catalog_items?: (CatalogRow & { prices?: Record<string, number | string> })[];
+  pipeline_stage_configs?: StageRow[];
+  territories?: (Omit<TerritoryRow, 'polygon'> & { geojson?: TerritoryRow['polygon'] })[];
+}
+
+export function tenantRowsFromSnapshot(snapshot: TenantSnapshotV2): TenantRows {
+  const catalogo = snapshot.catalog_items ?? [];
+  return {
+    client_accounts: snapshot.client_accounts ?? [],
+    leads: snapshot.leads ?? [],
+    lead_contacts: snapshot.lead_contacts ?? [],
+    lead_items: snapshot.lead_items ?? [],
+    lead_privacy_requests: snapshot.lead_privacy_requests ?? [],
+    lead_activities: snapshot.lead_activities ?? [],
+    catalog_items: catalogo,
+    catalog_item_prices: catalogo.flatMap((item) =>
+      Object.entries(item.prices ?? {}).map(([country_code, price]) => ({ catalog_item_id: item.id, country_code, price }))
+    ),
+    pipeline_stage_configs: snapshot.pipeline_stage_configs ?? [],
+    territories: (snapshot.territories ?? []).map(({ geojson, ...zona }) => ({ ...zona, polygon: geojson ?? null })),
   };
 }

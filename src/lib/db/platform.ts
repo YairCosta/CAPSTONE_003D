@@ -24,19 +24,29 @@ const PROFILE_COLUMNS = 'id, company_id, full_name, email, role, is_active, crea
 
 /** Todos los CRMs y usuarios que la sesión puede ver (RLS decide cuáles). */
 export async function loadPlatform(db: SupabaseClient): Promise<DbResult<{ companies: Company[]; users: AppUser[] }>> {
-  const [empresas, paises, perfiles] = await Promise.all([
+  const [empresas, paises, perfiles, exportaciones] = await Promise.all([
     db.from('companies').select(COMPANY_COLUMNS).order('created_at'),
     db.from('company_countries').select('company_id, country_code'),
     db.from('profiles').select(PROFILE_COLUMNS).order('created_at'),
+    // Solo el administrador ve las exportaciones (RLS); para el resto llega vacío
+    db.from('data_exports').select('company_id, exported_by, exported_at').order('exported_at', { ascending: false }).limit(500),
   ]);
   const error = empresas.error ?? paises.error ?? perfiles.error;
   if (error) return { ok: false, error: dbErrorMessage(error, 'No se pudieron cargar los CRMs y usuarios.') };
   const filasPaises = (paises.data ?? []) as CompanyCountryRow[];
+  const users = ((perfiles.data ?? []) as ProfileRow[]).map(userFromRow);
+  const ultimas = (exportaciones.data ?? []) as { company_id: string; exported_by: string | null; exported_at: string }[];
   return {
     ok: true,
     data: {
-      companies: ((empresas.data ?? []) as CompanyRow[]).map((row) => companyFromRow(row, filasPaises)),
-      users: ((perfiles.data ?? []) as ProfileRow[]).map(userFromRow),
+      companies: ((empresas.data ?? []) as CompanyRow[]).map((row) => {
+        const company = companyFromRow(row, filasPaises);
+        const ultima = ultimas.find((e) => e.company_id === row.id);
+        if (!ultima) return company;
+        const quien = users.find((u) => u.id === ultima.exported_by)?.fullName;
+        return { ...company, lastExportedAt: ultima.exported_at, lastExportedBy: quien };
+      }),
+      users,
     },
   };
 }

@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { CatalogItem, CommercialStatus, Lead, TerritoryMetric } from '../types/crm';
 import { isManualValue } from '../lib/catalog';
+import { STATUS_LABEL } from '../lib/stages';
 import { computeZoneResults, zoneResultValue, type ZoneMetric } from '../lib/metrics';
 import { contactLine, leadSubtitle, leadTitle } from '../lib/contacts';
 import { formatDate } from '../lib/styles';
@@ -46,15 +47,6 @@ const TILE_URLS = {
 };
 const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
 
-const STATUS_LABEL: Record<CommercialStatus, string> = {
-  new: 'Nuevo',
-  contacted: 'Contactado',
-  qualified: 'Calificado',
-  proposal: 'Propuesta',
-  pending_payment: 'Pago pendiente',
-  won: 'Ganado',
-  lost: 'Perdido',
-};
 
 const POINT_COLORS = { won: '#059669', lost: '#E11D48', active: '#4F46E5' };
 

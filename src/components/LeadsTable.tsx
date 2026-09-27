@@ -4,6 +4,7 @@ import { MapPin, CheckCircle2, Clock, AlertTriangle, ChevronDown, ChevronUp } fr
 import { COUNTRIES } from '../data/countries';
 import { formatLeadMoney } from '../lib/currency';
 import { useMoney } from '../lib/money';
+import { STATUS_LABEL } from '../lib/stages';
 import { CountryFlag } from './CountryFlag';
 import { ManualValueTag } from './ui';
 import { isManualValue } from '../lib/catalog';
@@ -128,7 +129,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads, showCountry = fal
                   </td>
                   <td className="px-6 py-3">
                     <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${getStatusBadge(lead.commercialStatus)}`}>
-                      {lead.commercialStatus}
+                      {STATUS_LABEL[lead.commercialStatus]}
                     </span>
                   </td>
                   <td className="px-6 py-3">

@@ -111,11 +111,20 @@ export function profileUpdateRow(user: Pick<AppUser, 'fullName' | 'role' | 'isAc
 
 // ------------------------------------------------------------------ auditoría (audit_log)
 /**
- * Qué parte del historial ya vive en la base. Crece con cada etapa de la conexión: lo que no está
- * aquí sigue solo en memoria, porque su dato tampoco está en la base todavía (hoy: la
- * configuración de etapas del pipeline y la exportación de un CRM).
+ * Qué parte del historial vive en la base. Se fue sumando con cada etapa de la conexión; desde la
+ * etapa 5 son todas. Si aparece un dato nuevo que aún no está en la base, su entrada queda en
+ * memoria hasta que se agregue aquí.
  */
-export const CONNECTED_AUDIT_ENTITIES: readonly AuditEntity[] = ['company', 'user', 'lead', 'account', 'catalog', 'activity'];
+export const CONNECTED_AUDIT_ENTITIES: readonly AuditEntity[] = [
+  'company',
+  'user',
+  'lead',
+  'account',
+  'catalog',
+  'activity',
+  'stage',
+  'export',
+];
 
 export const isAuditEntityConnected = (entity: AuditEntity) => CONNECTED_AUDIT_ENTITIES.includes(entity);
 

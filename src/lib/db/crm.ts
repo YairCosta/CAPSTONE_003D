@@ -4,7 +4,7 @@
 // agrega. Si la base rechaza algo, se devuelve el motivo y la app recarga lo que de verdad quedó.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { CatalogItem, ClientAccount, Lead, LeadActivity, PrivacyRequestReason, TerritoryMetric } from '../../types/crm.ts';
+import type { PrivacyRequestReason } from '../../types/crm.ts';
 import {
   ACCOUNT_COLUMNS,
   ACTIVITY_COLUMNS,
@@ -12,14 +12,9 @@ import {
   CONTACT_COLUMNS,
   LEAD_COLUMNS,
   PRIVACY_COLUMNS,
-  accountFromRow,
-  activityFromRow,
-  catalogFromRow,
-  contactFromRow,
-  leadFromRow,
-  leadItemFromRow,
-  privacyRequestFor,
-  territoryFromRow,
+  STAGE_COLUMNS,
+  assembleTenantData,
+  tenantRowsFromSnapshot,
   type AccountRow,
   type ActivityRow,
   type CatalogRow,
@@ -28,19 +23,16 @@ import {
   type LeadRow,
   type PriceRow,
   type PrivacyRequestRow,
+  type StageRow,
+  type TenantSnapshotV2,
   type TerritoryRow,
 } from './crmMappers.ts';
 import { dbErrorMessage, type DbErrorLike } from './errors.ts';
 import type { DbResult } from './platform.ts';
 import type { SyncOp } from './sync.ts';
 
-export interface TenantData {
-  accounts: ClientAccount[];
-  leads: Lead[];
-  activities: LeadActivity[];
-  catalog: CatalogItem[];
-  territories: TerritoryMetric[];
-}
+/** Leads, empresas, bitácora, catálogo, etapas guardadas y zonas de un CRM. */
+export type TenantData = ReturnType<typeof assembleTenantData>;
 
 // Supabase entrega como máximo 1.000 filas por consulta: se pide por páginas
 const PAGE = 1000;
@@ -60,20 +52,17 @@ async function fetchAll<T>(page: (from: number, to: number) => Page): Promise<T[
 
 /** Todo lo del CRM que la sesión puede ver (RLS decide qué). */
 export async function loadTenantData(db: SupabaseClient, companyId: string): Promise<DbResult<TenantData>> {
-  const de = (tabla: string, columnas: string) => (from: number, to: number) =>
-    db.from(tabla).select(columnas).eq('company_id', companyId).order('id').range(from, to);
+  const de = (tabla: string, columnas: string, orden = 'id') => (from: number, to: number) =>
+    db.from(tabla).select(columnas).eq('company_id', companyId).order(orden).range(from, to);
   try {
-    const [cuentas, leads, contactos, items, actividades, solicitudes, catalogo, precios, zonas] = await Promise.all([
+    const [cuentas, leads, contactos, items, actividades, solicitudes, catalogo, precios, etapas, zonas] = await Promise.all([
       fetchAll<AccountRow>(de('client_accounts', ACCOUNT_COLUMNS)),
       fetchAll<LeadRow>(de('leads', LEAD_COLUMNS)),
       fetchAll<ContactRow>(
         (from: number, to: number) =>
           db.from('lead_contacts').select(CONTACT_COLUMNS).eq('company_id', companyId).eq('is_primary', false).order('id').range(from, to)
       ),
-      fetchAll<LeadItemRow>(
-        (from: number, to: number) =>
-          db.from('lead_items').select('id, lead_id, catalog_item_id, quantity, unit_price').eq('company_id', companyId).order('id').range(from, to)
-      ),
+      fetchAll<LeadItemRow>(de('lead_items', 'id, lead_id, catalog_item_id, quantity, unit_price')),
       fetchAll<ActivityRow>(de('lead_activities', ACTIVITY_COLUMNS)),
       fetchAll<PrivacyRequestRow>(de('lead_privacy_requests', PRIVACY_COLUMNS)),
       fetchAll<CatalogRow>(de('catalog_items', CATALOG_COLUMNS)),
@@ -82,37 +71,57 @@ export async function loadTenantData(db: SupabaseClient, companyId: string): Pro
         (from: number, to: number) =>
           db.from('catalog_item_prices').select('catalog_item_id, country_code, price').order('catalog_item_id').order('country_code').range(from, to)
       ),
-      fetchAll<TerritoryRow>(
-        (from: number, to: number) =>
-          db.from('territories_geojson').select('id, company_id, country_code, name, code, color_hex, polygon').eq('company_id', companyId).order('name').range(from, to)
-      ),
+      fetchAll<StageRow>(de('pipeline_stage_configs', STAGE_COLUMNS, 'order_index')),
+      fetchAll<TerritoryRow>(de('territories_geojson', 'id, company_id, country_code, name, code, color_hex, polygon', 'name')),
     ]);
-
-    const accounts = cuentas.map(accountFromRow);
-    const nombreDe = new Map(accounts.map((a) => [a.id, a.name]));
     return {
       ok: true,
-      data: {
-        accounts,
-        leads: leads.map((row) =>
-          leadFromRow(row, {
-            accountName: row.client_account_id ? nombreDe.get(row.client_account_id) : undefined,
-            contacts: contactos.filter((c) => c.lead_id === row.id).map(contactFromRow),
-            items: items.filter((i) => i.lead_id === row.id).map(leadItemFromRow),
-            privacyRequest: privacyRequestFor(row.id, solicitudes),
-          })
-        ),
-        activities: actividades.map(activityFromRow).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-        catalog: catalogo.map((row) => catalogFromRow(row, precios)),
-        territories: zonas.map(territoryFromRow),
-      },
+      data: assembleTenantData({
+        client_accounts: cuentas,
+        leads,
+        lead_contacts: contactos,
+        lead_items: items,
+        lead_privacy_requests: solicitudes,
+        lead_activities: actividades,
+        catalog_items: catalogo,
+        catalog_item_prices: precios,
+        pipeline_stage_configs: etapas,
+        territories: zonas,
+      }),
     };
   } catch (error) {
     return { ok: false, error: dbErrorMessage(error as DbErrorLike, 'No se pudieron cargar los datos del CRM.') };
   }
 }
 
+// ------------------------------------------------------------------ exportación (administrador de plataforma)
+/**
+ * Datos de un CRM para exportarlo. El administrador no puede leer las tablas de un CRM (RLS);
+ * export_tenant_snapshot() se lo entrega completo, y solo a él.
+ */
+export async function loadCompanyExportData(db: SupabaseClient, companyId: string): Promise<DbResult<TenantData>> {
+  const { data, error } = await db.rpc('export_tenant_snapshot', { p_company_id: companyId });
+  if (error || !data) return { ok: false, error: dbErrorMessage(error, 'No se pudieron leer los datos del CRM para exportarlos.') };
+  return { ok: true, data: assembleTenantData(tenantRowsFromSnapshot(data as TenantSnapshotV2)) };
+}
+
+/** Deja constancia de la exportación en data_exports (quién, cuándo y cuántas filas). */
+export async function recordDataExport(
+  db: SupabaseClient,
+  data: { companyId: string; userId: string; rowCounts: Record<string, number> }
+): Promise<string | null> {
+  const { error } = await db.from('data_exports').insert({
+    company_id: data.companyId,
+    exported_by: data.userId,
+    format: 'xlsx',
+    format_version: 'v2',
+    row_counts: data.rowCounts,
+  });
+  return error ? dbErrorMessage(error, 'No se pudo registrar la exportación.') : null;
+}
+
 const QUE: Record<SyncOp['kind'], string> = {
+  'stage-upsert': 'No se pudo guardar la etapa del pipeline',
   'catalog-upsert': 'No se pudo guardar el producto o servicio',
   'catalog-delete': 'No se pudo eliminar el producto o servicio',
   'account-insert': 'No se pudo crear la empresa cliente',
@@ -127,6 +136,8 @@ const QUE: Record<SyncOp['kind'], string> = {
 
 async function applyOne(db: SupabaseClient, op: SyncOp, userId: string): Promise<DbErrorLike | 'sin-filas' | null> {
   switch (op.kind) {
+    case 'stage-upsert':
+      return (await db.from('pipeline_stage_configs').upsert(op.row, { onConflict: 'company_id,stage' })).error;
     case 'catalog-upsert': {
       const { error } = await db.from('catalog_items').upsert(op.row);
       if (error) return error;

@@ -1333,14 +1333,19 @@
       "sha256": "9ad23e8d6746d9760b7d30307a3ca503bde37e3a3bbf31d042bbaa620d3f5430"
     },
     {
+      "archivo": "evidence/prueba-etapas-exportacion-supabase-2026-09-26.txt",
+      "bytes": 4902,
+      "sha256": "2bfc6c0eee9b13accb4ec04634bacd2316c260bca340489e409260cb82a04b5f"
+    },
+    {
       "archivo": "evidence/prueba-plataforma-supabase-2026-09-25.txt",
       "bytes": 2486,
       "sha256": "9837720df64c8295eb1d4f2aff7fbedbce4c7feef059c667505c23068c170125"
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 12693,
-      "sha256": "1ccc6271edb061ca3aba441d8722d6a7eb9e70a945d7457b969c0da4830c130f"
+      "bytes": 13717,
+      "sha256": "25312491a6f6059669737eb4fb93109d5fe4587781e2441ef7528f447d357325"
     },
     {
       "archivo": "legal-status.md",
@@ -1408,5 +1413,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-26T23:27:27.856Z"
+  "generadoUtc": "2026-09-27T00:25:54.067Z"
 }

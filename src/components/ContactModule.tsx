@@ -19,6 +19,7 @@ import { pendingFollowUps } from '../lib/agenda';
 import { contactsOf, extraContactsCount, leadSubtitle, leadTitle } from '../lib/contacts';
 import { blockedReason, canContact, isPendingProspect, prospectDaysLeft, type FirstContactAnswer } from '../lib/privacy';
 import { useMoney } from '../lib/money';
+import { STATUS_LABEL } from '../lib/stages';
 import { CountryFlag } from './CountryFlag';
 import { Modal } from './ui';
 import { PrivacyRequestModal } from './PrivacyRequestModal';
@@ -199,7 +200,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
                 {/* Se busca por empresa antes que por persona: es como se acuerda el vendedor del lead */}
                 {lead.companyName ?? 'Persona natural'} · {lead.fullName}
                 {extraContactsCount(lead) > 0 ? ` (+${extraContactsCount(lead)})` : ''} —{' '}
-                {lead.commercialStatus.toUpperCase()} · {money.fmtLead(lead)}
+                {STATUS_LABEL[lead.commercialStatus]} · {money.fmtLead(lead)}
                 {showCountry ? ` · ${COUNTRIES[lead.countryCode].name}` : ''}
               </option>
             ))}
@@ -215,7 +216,7 @@ export const ContactModule: React.FC<ContactModuleProps> = ({
                 {leadTitle(currentLead)}
               </span>
               <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-300 uppercase">
-                {currentLead.commercialStatus}
+                {STATUS_LABEL[currentLead.commercialStatus]}
               </span>
             </div>
             {leadSubtitle(currentLead) && (

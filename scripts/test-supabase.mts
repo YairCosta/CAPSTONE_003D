@@ -17,7 +17,19 @@ import {
   revertKindFor,
   type CompanyRow,
 } from '../src/lib/db/mappers.ts';
-import { catalogToRow, leadFromRow, leadToRow, privacyRequestFor, territoryFromRow } from '../src/lib/db/crmMappers.ts';
+import {
+  accountToRow,
+  assembleTenantData,
+  catalogToRow,
+  leadFromRow,
+  leadToRow,
+  mergeStageConfigs,
+  privacyRequestFor,
+  stageFromRow,
+  stageToRow,
+  tenantRowsFromSnapshot,
+  territoryFromRow,
+} from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
 import { locateInCommune } from '../src/lib/geocoding.ts';
 import type { ClientAccount, Lead } from '../src/types/crm.ts';
@@ -155,11 +167,10 @@ test('Auditoría: "Volver atrás" funciona con lo guardado en la base', () => {
   assert.equal(revertKindFor('lead', 'stage'), 'lead');
 });
 
-test('Auditoría: van a la base CRMs, usuarios, leads, empresas, catálogo y contactos; etapas y exportación esperan', () => {
-  for (const conectada of ['company', 'user', 'lead', 'account', 'catalog', 'activity'] as const) {
+test('Auditoría: todo el historial va a la base (CRMs, usuarios, leads, empresas, catálogo, contactos, etapas y exportaciones)', () => {
+  for (const conectada of ['company', 'user', 'lead', 'account', 'catalog', 'activity', 'stage', 'export'] as const) {
     assert.ok(isAuditEntityConnected(conectada), conectada);
   }
-  for (const pendiente of ['stage', 'export'] as const) assert.ok(!isAuditEntityConnected(pendiente), pendiente);
 });
 
 // ------------------------------------------------------------------ etapa 3: leads y sincronización
@@ -281,6 +292,51 @@ test('Errores: los mensajes de las reglas de Revela se muestran; los técnicos n
   assert.match(dbErrorMessage({ code: '42501', message: 'new row violates row-level security policy for table "leads"' }, 'x'), /permiso/);
   assert.equal(dbErrorMessage({ code: '23514', message: 'La zona asignada pertenece a otro país' }, 'x'), 'La zona asignada pertenece a otro país');
   assert.match(dbErrorMessage({ code: '23514', message: 'new row for relation "leads" violates check constraint "leads_email_check"' }, 'x'), /reglas/);
+});
+
+// ------------------------------------------------------------------ etapas 4 y 5: pipeline y exportación
+const etapaPorDefecto = { id: 'qualified' as const, label: 'Calificado', shortCode: 'CALIF', color: '#6366F1', description: 'Necesidad confirmada', winProbability: 40, slaDays: 3, orderIndex: 2 };
+
+test('Etapas: lo guardado reemplaza a lo por defecto y la base recibe valores válidos', () => {
+  const guardada = stageFromRow({ stage: 'qualified', label: 'Calificado Piloto', short_code: 'CAL', color_hex: '#22C55E', description: null, win_probability: 55, sla_days: 5, order_index: 2 });
+  const nueva = { ...etapaPorDefecto, id: 'won' as const, label: 'Ganado' };
+  const mezcla = mergeStageConfigs([etapaPorDefecto, nueva], [guardada]);
+  assert.deepEqual(mezcla.map((e) => e.label), ['Calificado Piloto', 'Ganado']);
+  const fila = stageToRow(CRM_A, { ...etapaPorDefecto, winProbability: 140.6, slaDays: -2, description: '  ' });
+  assert.deepEqual([fila.win_probability, fila.sla_days, fila.description, fila.stage], [100, 0, null, 'qualified']);
+});
+
+test('Sincronización: editar una etapa la guarda primero; sin cambios no se escribe nada', () => {
+  const antes = { ...vacio, companyId: CRM_A, stages: [etapaPorDefecto] };
+  assert.deepEqual(diffTenantData(antes, antes), []);
+  const ops = diffTenantData(antes, { ...antes, accounts: [cuenta()], stages: [{ ...etapaPorDefecto, winProbability: 60 }] });
+  assert.deepEqual(ops.map((o) => o.kind), ['stage-upsert', 'account-insert']);
+  const op = ops[0];
+  assert.ok(op.kind === 'stage-upsert' && op.row.company_id === CRM_A && op.row.win_probability === 60);
+});
+
+test('Exportación: el JSON de la base arma los mismos datos que la carga normal', () => {
+  const filaLead = { ...leadToRow(lead()), estimated_deal_value: '1000.00', anonymized_at: null, anonymized_reason: null, created_at: '2026-09-26T12:00:00+00:00', created_by: 'u1', updated_at: 'x', location: 'no-debe-usarse' };
+  const datos = assembleTenantData(
+    tenantRowsFromSnapshot({
+      format_version: 'v2',
+      client_accounts: [{ ...accountToRow(cuenta()), created_at: '2026-09-26T12:00:00+00:00' }],
+      leads: [filaLead],
+      lead_contacts: [
+        { id: 'p1', lead_id: 'lead-1', full_name: 'Ana Pérez', job_title: null, email: null, phone: null, is_primary: true },
+        { id: 'c1', lead_id: 'lead-1', full_name: 'Juan Firma', job_title: 'Gerente', email: null, phone: null, is_primary: false },
+      ],
+      catalog_items: [{ id: 'i1', company_id: CRM_A, item_type: 'service', name: 'Soporte', sku: null, category: null, description: null, billing_type: 'monthly', is_active: true, created_at: 'x', prices: { CL: 50000, PE: '180.00' } }],
+      pipeline_stage_configs: [{ stage: 'won', label: 'Cerrado', short_code: 'WIN', color_hex: '#22C55E', description: null, win_probability: 100, sla_days: 0, order_index: 5 }],
+      territories: [{ id: 'z1', company_id: CRM_A, country_code: 'CL', name: 'Providencia', code: 'PROV-01', color_hex: '#3B82F6', geojson: { type: 'MultiPolygon', coordinates: [] } }],
+    })
+  );
+  assert.equal(datos.leads[0].companyName, 'Minera Sur');
+  // El contacto principal ya está en el lead: solo se agregan los adicionales
+  assert.deepEqual(datos.leads[0].contacts?.map((c) => c.fullName), ['Juan Firma']);
+  assert.deepEqual(datos.catalog[0].prices, { CL: 50000, PE: 180 });
+  assert.equal(datos.stages[0].label, 'Cerrado');
+  assert.equal(datos.territories[0].geojsonPolygon.type, 'MultiPolygon');
 });
 
 // ------------------------------------------------------------------ quién invita a quién

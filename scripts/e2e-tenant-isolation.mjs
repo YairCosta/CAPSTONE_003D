@@ -971,7 +971,7 @@ try {
   }));
   check(
     'Con la respuesta registrada, deja de ser prospecto y el contacto avanza la etapa',
-    !trasPrimerContacto.sigueProspecto && /CONTACTED/.test(trasPrimerContacto.lead),
+    !trasPrimerContacto.sigueProspecto && /— Contactado ·/.test(trasPrimerContacto.lead),
     JSON.stringify(trasPrimerContacto)
   );
 

@@ -17,6 +17,7 @@ import { enabledCountriesOf, scopeActivities } from './tenantGuards.ts';
 import { isManualValue } from './catalog.ts';
 import { leadCurrency } from './currency.ts';
 import { CHANNEL_LABEL } from './agenda.ts';
+import { STATUS_LABEL } from './stages.ts';
 
 export const EXPORT_FORMAT_VERSION = 'Revela · exportación de datos v1';
 
@@ -57,15 +58,6 @@ export interface TenantExportInput {
   now?: Date;
 }
 
-const STATUS_LABEL: Record<Lead['commercialStatus'], string> = {
-  new: 'Nuevo',
-  contacted: 'Contactado',
-  qualified: 'Calificado',
-  proposal: 'Propuesta',
-  pending_payment: 'Pago pendiente',
-  won: 'Ganado',
-  lost: 'Perdido',
-};
 
 
 const OUTCOME_LABEL: Record<ContactOutcome, string> = {

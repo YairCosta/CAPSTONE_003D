@@ -74,6 +74,23 @@ BEGIN
 
     INSERT INTO public.client_accounts (id, company_id, country_code, name) VALUES (acc_libre, co_a, 'CL', 'Empresa Sin Leads');
 
+    -- Etapas del pipeline (etapa 4): se guardan con upsert, como la app
+    INSERT INTO public.pipeline_stage_configs (company_id, stage, label, short_code, color_hex, description, win_probability, sla_days, order_index)
+    VALUES (co_a, 'qualified', 'Calificado Piloto', 'CALIF', '#6366F1', 'Probado', 45, 3, 2)
+    ON CONFLICT (company_id, stage) DO UPDATE SET label = EXCLUDED.label, win_probability = EXCLUDED.win_probability;
+    INSERT INTO public.pipeline_stage_configs (company_id, stage, label, short_code, color_hex, description, win_probability, sla_days, order_index)
+    VALUES (co_a, 'qualified', 'Calificado Piloto', 'CALIF', '#6366F1', 'Probado', 50, 3, 2)
+    ON CONFLICT (company_id, stage) DO UPDATE SET label = EXCLUDED.label, win_probability = EXCLUDED.win_probability;
+    SELECT win_probability INTO v_count FROM public.pipeline_stage_configs WHERE company_id = co_a AND stage = 'qualified';
+    res := res || jsonb_build_object('prueba', 'Gerencia guarda y vuelve a editar una etapa del pipeline (etapa 4)', 'ok', v_count = 50, 'detalle', v_count);
+
+    BEGIN
+        UPDATE public.pipeline_stage_configs SET win_probability = 150 WHERE company_id = co_a AND stage = 'qualified';
+        res := res || jsonb_build_object('prueba', 'La probabilidad de una etapa va de 0 a 100', 'ok', FALSE, 'detalle', 'se guardó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'La probabilidad de una etapa va de 0 a 100', 'ok', SQLSTATE = '23514', 'detalle', SQLSTATE);
+    END;
+
     -- ------------------------------------------------------------ como USUARIO BASE del CRM A: captura
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_agent_a, 'role', 'authenticated')::text, TRUE);
 
@@ -138,6 +155,14 @@ BEGIN
     GET DIAGNOSTICS v_count = ROW_COUNT;
     res := res || jsonb_build_object('prueba', 'El usuario base no elimina empresas cliente', 'ok', v_count = 0, 'detalle', v_count);
 
+    BEGIN
+        INSERT INTO public.pipeline_stage_configs (company_id, stage, label, short_code, color_hex, win_probability, sla_days, order_index)
+        VALUES (co_a, 'won', 'Ganado', 'WIN', '#22C55E', 100, 0, 5);
+        res := res || jsonb_build_object('prueba', 'El usuario base no configura etapas', 'ok', FALSE, 'detalle', 'se guardó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'El usuario base no configura etapas', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
+    END;
+
     -- ------------------------------------------------------------ GERENTE del CRM B no ve nada del A
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_b, 'role', 'authenticated')::text, TRUE);
     SELECT (SELECT count(*) FROM public.leads WHERE company_id = co_a)
@@ -145,8 +170,9 @@ BEGIN
          + (SELECT count(*) FROM public.lead_items WHERE company_id = co_a)
          + (SELECT count(*) FROM public.territories_geojson WHERE company_id = co_a)
          + (SELECT count(*) FROM public.catalog_items WHERE company_id = co_a)
+         + (SELECT count(*) FROM public.pipeline_stage_configs WHERE company_id = co_a)
     INTO v_count;
-    res := res || jsonb_build_object('prueba', 'Otro CRM no ve leads, contactos, productos, zonas ni catálogo ajenos', 'ok', v_count = 0, 'detalle', v_count);
+    res := res || jsonb_build_object('prueba', 'Otro CRM no ve leads, contactos, productos, zonas, catálogo ni etapas ajenos', 'ok', v_count = 0, 'detalle', v_count);
 
     -- ------------------------------------------------------------ GERENTE del CRM A: empresas y privacidad
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_a, 'role', 'authenticated')::text, TRUE);

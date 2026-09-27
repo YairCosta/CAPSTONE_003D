@@ -20,11 +20,14 @@ import { isAuditEntityConnected } from './lib/db/mappers';
 import {
   applySyncOps,
   insertPrivacyRequest,
+  loadCompanyExportData,
   loadTenantData,
   markAuditReverted,
+  recordDataExport,
   resolvePrivacyRequest,
   type TenantData,
 } from './lib/db/crm';
+import { mergeStageConfigs } from './lib/db/crmMappers';
 import { acceptLeads, diffTenantData, snapshotFor, type TenantSnapshot } from './lib/db/sync';
 import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
@@ -133,7 +136,7 @@ import {
   type AuditContext,
   type NewAuditEntry,
 } from './lib/audit';
-import { buildTenantExport } from './lib/tenantExport';
+import { buildTenantExport, type TenantExport } from './lib/tenantExport';
 import { downloadTenantExport } from './lib/xlsxDownload';
 import { applyLeadValue } from './lib/catalog';
 import { CatalogInsights } from './components/CatalogInsights';
@@ -155,8 +158,6 @@ const initialData: DemoData = usingSupabase
     });
 const db = usingSupabase ? supabase : null;
 
-const EXPORT_PENDING_REASON =
-  'La exportación se habilita cuando los leads y el resto de los datos del CRM estén conectados a la base.';
 
 const DISPLAY_CURRENCY_KEY = 'revela-display-currency';
 
@@ -337,7 +338,9 @@ export function App() {
   // ---------- Sincronización con la base (Supabase) ----------
   // Todo lo del CRM, tal como está en la base
   const applyTenantData = (companyId: string, data: TenantData) => {
-    synced.current = snapshotFor(companyId, data);
+    const stages = mergeStageConfigs(defaultStageConfigs, data.stages);
+    synced.current = snapshotFor(companyId, { ...data, stages });
+    setStageConfigsByTenant((prev) => ({ ...prev, [companyId]: stages }));
     setAccounts(data.accounts);
     setAllLeads(data.leads);
     setAllActivities(data.activities);
@@ -362,7 +365,13 @@ export function App() {
   // solo la diferencia va a la base. Si la base rechaza algo, se avisa y se recarga lo real.
   useEffect(() => {
     if (!db || !tenantId || !currentUser || !synced.current) return;
-    const next = snapshotFor(tenantId, { leads: allLeads, accounts, activities: allActivities, catalog });
+    const next = snapshotFor(tenantId, {
+      leads: allLeads,
+      accounts,
+      activities: allActivities,
+      catalog,
+      stages: stageConfigsForTenant(stageConfigsByTenant, tenantId, defaultStageConfigs),
+    });
     const ops = diffTenantData(synced.current, next);
     synced.current = next;
     const calls = pendingCalls.current.splice(0);
@@ -381,7 +390,7 @@ export function App() {
     });
     // Se compara solo cuando cambian los datos del CRM o hay llamadas pendientes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allLeads, accounts, allActivities, catalog, syncTick]);
+  }, [allLeads, accounts, allActivities, catalog, stageConfigsByTenant, syncTick]);
 
   const canAdminister = isSuperadmin(currentUser) && isSessionValid;
 
@@ -544,6 +553,7 @@ export function App() {
       setComplianceAccessLog([]);
       setAuditWarning(null);
       setTerritories([]);
+      setStageConfigsByTenant({});
       setSyncError(null);
       synced.current = null;
       pendingCalls.current = [];
@@ -1188,9 +1198,28 @@ export function App() {
   };
 
   // ---------- Portabilidad: exportación de los datos de un CRM (solo administrador) ----------
-  const buildCompanyExport = (companyId: string) => {
+  // Con Supabase el administrador no lee las tablas de un CRM: los datos llegan de
+  // export_tenant_snapshot() y se arma el mismo Excel que en la demo
+  const buildCompanyExport = (companyId: string): TenantExport | null | Promise<TenantExport> => {
     const company = companies.find((c) => c.id === companyId);
     if (!canAdminister || !currentUser || !company) return null;
+    const exportedBy = `${currentUser.fullName} (${currentUser.email})`;
+    if (db) {
+      return loadCompanyExportData(db, companyId).then((datos) => {
+        if (!datos.ok) throw new Error(datos.error);
+        return buildTenantExport({
+          company,
+          users,
+          accounts: datos.data.accounts,
+          leads: datos.data.leads,
+          activities: datos.data.activities,
+          catalog: datos.data.catalog,
+          stageConfigs: mergeStageConfigs(defaultStageConfigs, datos.data.stages),
+          territories: datos.data.territories,
+          exportedBy,
+        });
+      });
+    }
     return buildTenantExport({
       company,
       users,
@@ -1200,14 +1229,23 @@ export function App() {
       catalog,
       stageConfigs: stageConfigsForTenant(stageConfigsByTenant, company.id, defaultStageConfigs),
       territories,
-      exportedBy: `${currentUser.fullName} (${currentUser.email})`,
+      exportedBy,
     });
   };
 
-  const handleExportCompany = async (companyId: string) => {
-    const result = buildCompanyExport(companyId);
+  // prepared: el archivo que ya se armó para la vista previa (con Supabase evita pedirlo dos veces)
+  const handleExportCompany = async (companyId: string, prepared?: TenantExport) => {
+    const result = prepared ?? (await buildCompanyExport(companyId));
     if (!result || !currentUser) throw new Error('Exportación no permitida');
     await downloadTenantExport(result);
+    if (db) {
+      const error = await recordDataExport(db, {
+        companyId,
+        userId: currentUser.id,
+        rowCounts: Object.fromEntries(result.counts.map((c) => [c.label, c.count])),
+      });
+      if (error) setAuditWarning(`El archivo se descargó, pero no quedó registrada la exportación: ${error}`);
+    }
     record({
       companyId,
       action: 'export',
@@ -1216,7 +1254,7 @@ export function App() {
       entityLabel: result.fileName,
       summary: `Exportación de datos del CRM (${result.counts.map((c) => `${c.count} ${c.label.toLowerCase()}`).join(', ')})`,
     });
-    // Registro de la última exportación (en producción: tabla data_exports)
+    // Última exportación del CRM (con Supabase queda además en data_exports)
     setCompanies((prev) =>
       prev.map((c) => (c.id === companyId ? { ...c, lastExportedAt: result.exportedAt, lastExportedBy: currentUser.fullName } : c))
     );
@@ -1916,7 +1954,6 @@ export function App() {
             onCreateUser={handleCreateUser}
             onUpdateUser={handleUpdateUser}
             invitations={Boolean(db)}
-            exportDisabledReason={db ? EXPORT_PENDING_REASON : undefined}
           />
         )}
       </main>

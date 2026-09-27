@@ -47,7 +47,11 @@ npm run test:export
 
 Genera el Excel real con los datos de todos los CRMs, lo descomprime y verifica que solo contenga el CRM exportado, que no haya contraseñas y que las relaciones entre hojas sean válidas. El e2e (`npm run test:e2e`) descarga el archivo desde el panel de administración y revisa lo mismo.
 
-En producción: `supabase/migrations/20260924000006_data_exports.sql` agrega la función `export_tenant_snapshot()` (solo superadmin/service_role) y la tabla de auditoría `data_exports`.
+## Con la base de Supabase
+
+Con `VITE_DATA_SOURCE=supabase` el administrador de la plataforma no puede leer las tablas de un CRM (RLS). Por eso la exportación pide el CRM completo a `export_tenant_snapshot()` (formato v2, solo administrador o `service_role`; migraciones 0006 y 0013), lo traduce con las mismas funciones de la carga normal (`tenantRowsFromSnapshot` y `assembleTenantData`, `src/lib/db/crmMappers.ts`) y arma **el mismo Excel** que en la demo con `buildTenantExport()`. Los usuarios salen de los perfiles que el administrador ya tiene cargados, sin contraseñas.
+
+Al abrir "Exportar" la ventana muestra "Preparando la exportación…" mientras llegan los datos; la descarga usa ese mismo resumen, sin pedirlo dos veces. Cada descarga queda en `data_exports` (quién, cuándo y cuántas filas por hoja) y en el historial del CRM; la última exportación de cada CRM se muestra en el panel. La gerencia de un CRM no puede exportarlo completo ni ver ese registro (`npm run test:db`).
 
 ## Importar con Claude
 

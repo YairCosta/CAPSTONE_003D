@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { AppUser, Company, Lead, NewAppUser, NewCompany, UserRole } from '../types/crm';
 import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale, Send } from 'lucide-react';
 import type { TenantExport } from '../lib/tenantExport';
@@ -46,11 +46,10 @@ interface AdminModuleProps {
   onUpdateUser: SaveHandler<AppUser>;
   /** Con Supabase los usuarios se invitan por correo y eligen su contraseña; nadie la escribe por ellos */
   invitations?: boolean;
-  /** Si la exportación no está disponible (por ejemplo, datos aún no conectados a la base), el motivo */
-  exportDisabledReason?: string;
-  // Portabilidad: resumen previo y descarga del Excel con los datos de un CRM
-  getExportPreview: (companyId: string) => TenantExport | null;
-  onExportCompany: (companyId: string) => Promise<void>;
+  // Portabilidad: resumen previo y descarga del Excel con los datos de un CRM. Con Supabase el
+  // resumen llega después (los datos se piden a la base) y la descarga reutiliza lo ya armado.
+  getExportPreview: (companyId: string) => TenantExport | null | Promise<TenantExport>;
+  onExportCompany: (companyId: string, prepared?: TenantExport) => Promise<void>;
   // Portal fiscalizador: expediente de cumplimiento en solo lectura, con registro de accesos
   currentUserName: string;
   complianceAccessLog: { at: string; who: string; what: string }[];
@@ -118,7 +117,6 @@ function TenantsSection({
   onUpdateCompany,
   getExportPreview,
   onExportCompany,
-  exportDisabledReason,
 }: AdminModuleProps) {
   const [editing, setEditing] = useState<Company | 'new' | null>(null);
   const [exporting, setExporting] = useState<Company | null>(null);
@@ -230,9 +228,8 @@ function TenantsSection({
                       <button
                         type="button"
                         onClick={() => setExporting(company)}
-                        disabled={Boolean(exportDisabledReason)}
                         aria-label={`Exportar datos de ${company.name}`}
-                        title={exportDisabledReason ?? 'Descargar un Excel con todos los datos de este CRM'}
+                        title="Descargar un Excel con todos los datos de este CRM"
                         className={`${secondaryButton} px-3 py-2 text-sm`}
                       >
                         <Download className="h-4 w-4" />
@@ -267,8 +264,8 @@ function TenantsSection({
       {exporting && (
         <ExportModal
           company={companies.find((c) => c.id === exporting.id) ?? exporting}
-          preview={getExportPreview(exporting.id)}
-          onExport={() => onExportCompany(exporting.id)}
+          loadPreview={() => getExportPreview(exporting.id)}
+          onExport={(prepared) => onExportCompany(exporting.id, prepared)}
           onClose={() => setExporting(null)}
         />
       )}
@@ -309,21 +306,46 @@ function TenantsSection({
 // Portabilidad de datos: resumen de lo que se descargará y advertencia de datos personales
 function ExportModal({
   company,
-  preview,
+  loadPreview,
   onExport,
   onClose,
 }: {
   company: Company;
-  preview: TenantExport | null;
-  onExport: () => Promise<void>;
+  loadPreview: () => TenantExport | null | Promise<TenantExport>;
+  onExport: (prepared: TenantExport) => Promise<void>;
   onClose: () => void;
 }) {
   const [status, setStatus] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+  const [preview, setPreview] = useState<TenantExport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vigente = true;
+    Promise.resolve()
+      .then(loadPreview)
+      .then((resultado) => {
+        if (!vigente) return;
+        setPreview(resultado);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!vigente) return;
+        setLoadError(error instanceof Error ? error.message : 'No se pudo preparar la exportación de este CRM.');
+        setLoading(false);
+      });
+    return () => {
+      vigente = false;
+    };
+    // Una sola vez al abrir: el resumen es una foto de ese momento
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const download = async () => {
+    if (!preview) return;
     setStatus('working');
     try {
-      await onExport();
+      await onExport(preview);
       setStatus('done');
     } catch {
       setStatus('error');
@@ -347,8 +369,13 @@ function ExportModal({
         </>
       }
     >
-      {!preview ? (
-        <p className="text-[15px] text-rose-300">No se pudo preparar la exportación de este CRM.</p>
+      {loading ? (
+        <p role="status" className="flex items-center gap-2 text-[15px] text-slate-300">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Preparando la exportación con los datos actuales del CRM…
+        </p>
+      ) : !preview ? (
+        <p role="alert" className="text-[15px] text-rose-300">{loadError ?? 'No se pudo preparar la exportación de este CRM.'}</p>
       ) : (
         <div className="space-y-4">
           <p className="text-[15px] text-slate-300">

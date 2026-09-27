@@ -152,10 +152,12 @@ La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`
 | 1. Sesión y plataforma | Login con Supabase Auth, perfil y CRM de la sesión, Admin → CRMs (crear, editar, activar, plan y países) y Admin → Usuarios (invitar, perfil, activar) | **Conectada** |
 | 2. Gerencia → Usuarios y auditoría | Equipo del CRM administrado por el gerente; historial de CRMs y usuarios en `audit_log` | **Conectada** (0015) |
 | 3. El trabajo diario del CRM | Leads (con sus contactos y productos), empresas cliente, bitácora de contactos, catálogo, zonas del mapa, derechos del titular y "Volver atrás" del historial | **Conectada** (0017, 0018) |
-| 4. Etapas del pipeline | Configuración de etapas por CRM (`pipeline_stage_configs`); hoy su pestaña está oculta y se usan las etapas por defecto | Pendiente |
-| 5. Exportación | `export_tenant_snapshot()` | Pendiente (el botón queda desactivado con Supabase) |
+| 4. Etapas del pipeline | Configuración de etapas por CRM (`pipeline_stage_configs`): las guardadas reemplazan a las por defecto (`mergeStageConfigs`). La pestaña sigue oculta por decisión de producto; al mostrarla, lo que edite gerencia ya se guarda | **Conectada** |
+| 5. Exportación | El administrador exporta un CRM con `export_tenant_snapshot()` (el mismo Excel de la demo) y cada exportación queda en `data_exports` | **Conectada** |
 
 **Cómo se guarda el trabajo diario (etapa 3).** Al entrar, la app carga todo el CRM desde la base (`loadTenantData`, `src/lib/db/crm.ts`). Desde ahí cada módulo sigue trabajando como en la demo, con los mismos guards, y un solo efecto compara el estado con lo último guardado (`diffTenantData`, `src/lib/db/sync.ts`) y manda **solo la diferencia**, en orden: catálogo → empresas → leads → sus contactos y productos → bitácora → bajas. Los leads se actualizan columna por columna, así dos personas que editan campos distintos no se pisan. Si la base rechaza algo (RLS, un trigger de privacidad, un país no habilitado), la app muestra el motivo y vuelve a cargar lo que de verdad quedó. Los derechos del titular no pasan por la comparación: la solicitud se inserta en `lead_privacy_requests` y aprobarla la resuelve `resolve_lead_privacy_request()`, la única que anonimiza. Los ids nuevos son UUID (`newUuid`, `src/lib/ids.ts`).
+
+Con la etapa 5, **toda la app usa la base** cuando `VITE_DATA_SOURCE=supabase`: la demo en memoria queda solo para la cuenta de demostración y las pruebas automáticas.
 
 Límites de hoy: los cambios de otra persona se ven al recargar la página (no hay tiempo real) y la carga pide los datos en páginas de 1.000 filas.
 
@@ -199,7 +201,7 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 76 pruebas funcionales: privacidad, aislamiento, administración, equipos y trabajo diario
+npm run test:db                               # 81 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, etapas y exportación
 ```
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un

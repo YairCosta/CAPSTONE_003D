@@ -209,3 +209,19 @@ Se agrega; lo anterior no se modifica.
   nuevas, todas deshechas al terminar) y `npm run test:supabase` (36 sin conexión).
 
 Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 26-09-2026 (noche) · Etapas del pipeline y exportación desde la base
+
+Se agrega; lo anterior no se modifica.
+
+- **Portabilidad (art. 9) con la base**: el administrador exporta el CRM completo de un cliente
+  con `export_tenant_snapshot()` y la app arma el mismo Excel de la demo (sin contraseñas). Cada
+  exportación queda en `data_exports` y en el historial del CRM. La gerencia no puede exportar el
+  CRM completo ni ver ese registro.
+- **Toda la auditoría en la base**, incluidas la configuración de etapas y las exportaciones.
+- **Etiquetas en español**: la etapa del lead se mostraba con su código interno ("QUALIFIED")
+  en el registro de contacto y la tabla de leads; ahora usa un solo diccionario (`src/lib/stages.ts`).
+- **Evidencia**: `evidence/prueba-etapas-exportacion-supabase-2026-09-26.txt` (81 pruebas contra
+  la base real, todas deshechas al terminar) y `npm run test:supabase` (39 sin conexión).
+
+Estado de estos controles: `CODIGO_NO_DESPLEGADO` (sin release en producción).

@@ -1,7 +1,7 @@
 // Sincronización del CRM con la base. La app sigue trabajando sobre su estado (con sus guards), y
 // cada cambio se compara con lo último que quedó guardado para mandar a la base solo lo distinto,
-// en un orden que respeta las claves foráneas: catálogo → empresas → leads → sus contactos y
-// productos → actividades → bajas. Función pura: se prueba en npm run test:supabase.
+// en un orden que respeta las claves foráneas: etapas → catálogo → empresas → leads → sus contactos
+// y productos → actividades → bajas. Función pura: se prueba en npm run test:supabase.
 //
 // Lo que NO pasa por aquí:
 //   · Derechos del titular: la solicitud y su resolución van por su propia llamada, y anonimizar
@@ -9,7 +9,7 @@
 //   · Leads eliminados: la app no elimina leads.
 //   · Actividades editadas: la bitácora solo se agrega.
 
-import type { CatalogItem, ClientAccount, Lead, LeadActivity } from '../../types/crm.ts';
+import type { CatalogItem, ClientAccount, Lead, LeadActivity, StageConfig } from '../../types/crm.ts';
 import {
   accountToRow,
   activityToRow,
@@ -18,6 +18,7 @@ import {
   contactToRow,
   leadItemToRow,
   leadToRow,
+  stageToRow,
   type LeadWriteRow,
 } from './crmMappers.ts';
 
@@ -26,11 +27,15 @@ export interface TenantSnapshot {
   accounts: ClientAccount[];
   activities: LeadActivity[];
   catalog: CatalogItem[];
+  /** Etapas del pipeline que usa el CRM (las guardadas o, si no hay, las por defecto) */
+  stages?: StageConfig[];
+  companyId?: string;
 }
 
 type Row = Record<string, unknown>;
 
 export type SyncOp =
+  | { kind: 'stage-upsert'; row: ReturnType<typeof stageToRow> }
   | { kind: 'catalog-upsert'; row: ReturnType<typeof catalogToRow>; prices: ReturnType<typeof catalogPriceRows>; removedCountries: string[] }
   | { kind: 'catalog-delete'; id: string }
   | { kind: 'account-insert'; row: ReturnType<typeof accountToRow> }
@@ -49,6 +54,8 @@ export function snapshotFor(companyId: string, data: TenantSnapshot): TenantSnap
     accounts: data.accounts.filter((a) => a.companyId === companyId),
     activities: data.activities.filter((a) => (a.companyId ?? companyId) === companyId),
     catalog: data.catalog.filter((i) => i.companyId === companyId),
+    stages: data.stages ?? [],
+    companyId,
   };
 }
 
@@ -67,12 +74,22 @@ function changedColumns<T extends Row>(before: T, after: T, skip: string[] = [])
 const byId = <T extends { id: string }>(list: T[]) => new Map(list.map((x) => [x.id, x]));
 
 export function diffTenantData(prev: TenantSnapshot, next: TenantSnapshot): SyncOp[] {
+  const stageOps: SyncOp[] = [];
   const catalogOps: SyncOp[] = [];
   const accountOps: SyncOp[] = [];
   const leadOps: SyncOp[] = [];
   const childOps: SyncOp[] = [];
   const activityOps: SyncOp[] = [];
   const deleteOps: SyncOp[] = [];
+
+  // Etapas del pipeline: se guarda la etapa completa, la primera vez también (antes era la por defecto)
+  const companyId = next.companyId ?? prev.companyId;
+  if (companyId) {
+    for (const stage of next.stages ?? []) {
+      const before = (prev.stages ?? []).find((s) => s.id === stage.id);
+      if (!before || !same(before, stage)) stageOps.push({ kind: 'stage-upsert', row: stageToRow(companyId, stage) });
+    }
+  }
 
   // Catálogo (con precios por país)
   const prevCatalog = byId(prev.catalog);
@@ -149,7 +166,7 @@ export function diffTenantData(prev: TenantSnapshot, next: TenantSnapshot): Sync
   }
 
   // Las bajas van al final: primero se sueltan las referencias
-  return [...catalogOps, ...accountOps, ...leadOps, ...childOps, ...activityOps, ...deleteOps];
+  return [...stageOps, ...catalogOps, ...accountOps, ...leadOps, ...childOps, ...activityOps, ...deleteOps];
 }
 
 /** Reemplaza en lo ya sincronizado los leads que la base cambió por su cuenta (p. ej. al anonimizar). */
