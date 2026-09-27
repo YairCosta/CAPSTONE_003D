@@ -1,4 +1,4 @@
-// Invitaciones de usuarios (/api/admin/*), dentro del servidor de Vite; en producción, una Edge Function.
+// Invitaciones de usuarios (/api/admin/*): en desarrollo dentro de Vite; publicada, en la función de Vercel.
 //
 // Invitar exige la clave secreta de Supabase (service_role), que salta RLS: por eso vive solo aquí y
 // nunca en el navegador. Quien invita se identifica con SU sesión (Authorization: Bearer <token>), y
@@ -10,7 +10,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { authorizeInvite } from '../src/lib/userAdmin.ts';
-import type { UserRole } from '../src/types/crm.ts';
+import { bearerToken, identifyCaller } from './session.ts';
 
 export interface AdminServerConfig {
   supabaseUrl?: string;
@@ -84,8 +84,7 @@ export function createAdminMiddleware(config: AdminServerConfig) {
       return;
     }
 
-    const auth = req.headers.authorization ?? '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    const token = bearerToken(req);
     if (!token) {
       sendJson(res, 401, { error: 'Inicia sesión para invitar usuarios.' });
       return;
@@ -95,28 +94,15 @@ export function createAdminMiddleware(config: AdminServerConfig) {
       const admin = makeClient(config.supabaseUrl!, config.serviceKey!);
 
       // 1. Quién llama: se verifica su sesión con Auth, no se confía en lo que diga el cuerpo
-      const { data: sesion, error: errorSesion } = await admin.auth.getUser(token);
-      if (errorSesion || !sesion?.user) {
+      const quien = await identifyCaller(admin, token);
+      if (!quien.valid) {
         sendJson(res, 401, { error: 'Tu sesión expiró. Vuelve a iniciar sesión.' });
         return;
-      }
-      const { data: perfil } = await admin
-        .from('profiles')
-        .select('role, company_id, is_active')
-        .eq('id', sesion.user.id)
-        .maybeSingle();
-      let callerActivo = Boolean(perfil?.is_active);
-      if (perfil && perfil.role !== 'superadmin' && perfil.company_id) {
-        const { data: crm } = await admin.from('companies').select('is_active').eq('id', perfil.company_id).maybeSingle();
-        callerActivo = callerActivo && Boolean(crm?.is_active);
       }
 
       // 2. Qué pide y si puede
       const body = await readJson(req);
-      const decision = authorizeInvite(
-        perfil ? { role: perfil.role as UserRole, companyId: perfil.company_id, isActive: callerActivo } : null,
-        body
-      );
+      const decision = authorizeInvite(quien.caller, body);
       if (!decision.ok) {
         sendJson(res, decision.status, { error: decision.error });
         return;

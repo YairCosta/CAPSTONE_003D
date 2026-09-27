@@ -1,0 +1,52 @@
+Ataques desde dentro contra el CRM 'Revela Pruebas', ANTES de la migración 0022 (27-09-2026)
+npm run test:db · scripts/sql/prueba-ataques-remota.sql · todo se deshizo al terminar
+Cada ✗ es una operación que la base dejó pasar y no debía.
+
+Ataques desde dentro (CRM Revela Pruebas)
+✓ Sin invitación: una cuenta de registro abierto no ve nada de ningún CRM
+✗ Sin invitación: no puede tocar el valor de un lead ajeno (recalculate_lead_value)
+    se ejecutó
+✗ Sin invitación: no averigua si un lead ajeno tiene una solicitud del titular
+    true
+✓ Sin invitación: no crea empresas cliente en un CRM
+✓ Sin invitación: no se crea un perfil de gerente para sí misma
+✓ Usuario base: avanza un lead en el pipeline
+✗ Usuario base: no retrocede un lead (la regla del pipeline está en la base)
+    retrocedió
+✗ Usuario base: no cambia el monto de un lead
+    cambió el monto
+✗ Usuario base: no mueve un lead a otra zona
+    lo movió
+✗ Usuario base: no agrega productos a un lead que no capturó (inflar su valor)
+    los agregó
+✗ Usuario base: no borra personas de un lead que no capturó
+    1 borradas
+✓ Usuario base: agrega una persona al lead desde el registro de contacto
+✓ Usuario base: registra un contacto en la bitácora
+✓ Usuario base: captura un lead con sus productos y el valor se calcula solo
+✗ Usuario base: el lead queda a nombre de quien lo capturó, aunque diga otro autor
+    otro usuario
+✓ Usuario base: no borra leads
+✓ Usuario base: no lee el historial de cambios
+✓ Usuario base: lo que escribe en el historial queda a su nombre, no al de otro
+✓ Usuario base: no se sube a gerente
+✓ Usuario base: no edita zonas
+✓ Usuario base: no resuelve solicitudes del titular
+✓ Gerencia: retrocede leads y corrige montos (es su facultad)
+✗ Gerencia: no renombra ni borra las zonas oficiales
+    {"borradas":1,"renombradas":1}
+✓ Gerencia: no crea administradores de plataforma
+✓ Gerencia: no mueve a un usuario a otro CRM
+✓ Gerencia: no exporta el CRM completo (es del administrador)
+✓ Otro CRM: no ve leads, personas, bitácora, historial ni usuarios del CRM de prueba
+✓ Otro CRM: no mete productos en un lead ajeno
+✓ Otro CRM: no registra contactos en un lead ajeno
+✓ Otro CRM: no resuelve solicitudes del titular ajenas
+✓ Otro CRM: no consulta las ventas del CRM de prueba
+✗ Otro CRM: no toca el valor de un lead ajeno por su ID
+    se ejecutó
+✗ Otro CRM: no averigua si un lead ajeno tiene una solicitud del titular
+    true
+✗ La base registra quién cambió qué columna, aunque se salte la app
+    no existe la bitácora de la base
+

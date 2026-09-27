@@ -11,7 +11,8 @@ import { adminConfigFrom, aiConfigFrom } from './server/api.ts'
 
 // API del asistente IA (/api/ai/*). Las variables sin prefijo VITE_ nunca llegan al navegador.
 function aiAssistantApi(env: Record<string, string>): Plugin {
-  const middleware = createAiMiddleware(aiConfigFrom(env))
+  // En local (npm run dev) la cuenta demo usa las claves del servidor sin sesión; publicada, no
+  const middleware = createAiMiddleware(aiConfigFrom(env, { requireSession: false }))
 
   return {
     name: 'revela-ai-assistant-api',

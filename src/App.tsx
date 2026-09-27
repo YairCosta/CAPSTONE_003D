@@ -2032,6 +2032,7 @@ export function App() {
           onSaveLead={handleAiSaveLead}
           onFindLeads={handleAiFindLeads}
           onUpdateLeadStage={handleAiUpdateLeadStage}
+          getAccessToken={db ? async () => (await db.auth.getSession()).data.session?.access_token ?? null : undefined}
         />
       )}
 

@@ -260,3 +260,26 @@ Se agrega; lo anterior no se modifica.
   (0021)", y las 6 revisiones de la app publicada).
 
 Estado: `CODIGO_NO_DESPLEGADO` (sin release en producción).
+
+## Actualización 27-09-2026 (tarde) · Revisión de seguridad de la app publicada
+
+Se agrega; lo anterior no se modifica.
+
+- **Hay ambiente productivo de piloto** desde el 27-09-2026: `https://revela-henna.vercel.app` (Vercel)
+  con la base de Supabase del proyecto. Las pruebas de esta entrada corren contra esa base y esa app.
+- **Deber de seguridad (medidas técnicas)**: revisión completa por casos de uso, detallada en
+  `docs/SEGURIDAD.md` §5. Once hallazgos (B1–B11); nueve corregidos en código y en la base (migración 0022)
+  y dos que dependen de la configuración de Supabase Auth (registro abierto y largo mínimo de contraseña),
+  pendientes del dueño del proyecto.
+- **Aislamiento y mínimo privilegio verificados en la base real**: un ataque simulado contra el CRM de
+  prueba "Revela Pruebas", como cuenta sin invitación, usuario base, gerente y gerente de otro CRM, pasó de
+  12 operaciones indebidas permitidas a 0 (37 casos).
+- **Trazabilidad**: la base registra quién cambió qué columnas de qué fila (`change_log`), aunque el cambio
+  no pase por la app, sin guardar valores ni datos personales. Complementa a `audit_log`.
+- **Evidencia**: `evidence/prueba-ataques-antes-2026-09-27.txt` y
+  `evidence/prueba-ataques-despues-2026-09-27.txt` (npm run test:db, 121/121), además de
+  `npm run test:vercel` (20 revisiones de la app publicada: encabezados, CSP en Chrome, API sin sesión).
+
+Estado: desplegado en piloto. Esta evidencia de runtime no cambia por sí sola el estado de ningún control
+de la matriz: eso corresponde a una revisión formal del expediente.
+

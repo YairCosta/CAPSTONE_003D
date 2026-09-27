@@ -1318,6 +1318,16 @@
       "sha256": "1368e642c7d8e6e9bf21c18ec255b1b8bb4278245742376414ae4448069ec12a"
     },
     {
+      "archivo": "evidence/prueba-ataques-antes-2026-09-27.txt",
+      "bytes": 2626,
+      "sha256": "b86e0e1aa4b8838e99f3762d7ec74dc0be5229fe52f5a7c6dda9549178bf329a"
+    },
+    {
+      "archivo": "evidence/prueba-ataques-despues-2026-09-27.txt",
+      "bytes": 2686,
+      "sha256": "9825c42091d4559e665a6df9cfd4aadaa473ca29fd8eb33ad6c66f2879c8672e"
+    },
+    {
       "archivo": "evidence/prueba-base-supabase-2026-09-25.txt",
       "bytes": 1487,
       "sha256": "f3592ecfd06581202d67f0dd40a50eab061ecd8da6d0c23e5e06047011291f96"
@@ -1354,8 +1364,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 15782,
-      "sha256": "190184efa42f303a233c68755a408a767b623270df1312ec9e5e2bc2890026bc"
+      "bytes": 17381,
+      "sha256": "0ddd175de089e1c9ba57ae89f3dfe801001d7bb4cab9296b6b6143513931b340"
     },
     {
       "archivo": "legal-status.md",
@@ -1423,5 +1433,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-27T05:05:51.794Z"
+  "generadoUtc": "2026-09-27T16:55:45.025Z"
 }

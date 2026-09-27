@@ -13,7 +13,7 @@ tocar la real. Si algo sale mal, en Vercel se vuelve a la versión anterior con 
 |---|---|
 | `static/` | La app compilada (`vite build`) |
 | `functions/api.func/` | Una sola función de Node para toda la API: asistente IA (`/api/ai`), tipos de cambio (`/api/rates`) e invitaciones (`/api/admin`). Se empaqueta en JavaScript con todas sus dependencias (`scripts/build-vercel.mjs`) |
-| `config.json` | Rutas: los archivos se sirven tal cual, `/api/*` va a la función y cualquier otra ruta abre la app. Encabezados de seguridad y caché larga para `/assets` |
+| `config.json` | Rutas: los archivos se sirven tal cual, `/api/*` va a la función y cualquier otra ruta abre la app. Encabezados de seguridad (entre ellos la política de contenido, CSP) y caché larga para `/assets` |
 
 En desarrollo la misma API corre dentro de Vite. Las dos arman la API igual, desde las variables de
 entorno (`server/api.ts`): lo que se prueba en local es lo que se publica.
@@ -51,9 +51,18 @@ npm run test:vercel
 ```
 
 Arma `.vercel/output`, levanta un servidor local con las mismas rutas y prueba la función
-empaquetada: que la app abra, que las tres APIs respondan, que una ruta inexistente dé 404 y que
-ninguna clave de `.env.local` quede en lo que se sube. `npm run test:bundle` revisa además que la
-app no traiga los CRMs de prueba.
+empaquetada: que la app abra, que las tres APIs respondan, que una ruta inexistente dé 404, que
+ninguna clave de `.env.local` quede en lo que se sube, que el asistente rechace a quien no inició
+sesión y, en Chrome, que la política de contenido deje abrir la app sin violaciones, hablar con
+Supabase y **no** mandar datos a otros sitios (20 revisiones). `npm run test:bundle` revisa además
+que la app no traiga los CRMs de prueba.
+
+## Política de contenido (CSP)
+
+`scripts/build-vercel.mjs` la arma en cada publicación: scripts solo de la app (el del tema oscuro de
+`index.html`, por su huella sha256), conexiones solo a la app y a Supabase (la dirección sale de
+`VITE_SUPABASE_URL`), imágenes de los mapas de Esri y fuentes de Google. Si se agrega un servicio
+externo (otro mapa, analítica, un widget), hay que sumarlo ahí o el navegador lo bloqueará.
 
 ## Plan y límites
 

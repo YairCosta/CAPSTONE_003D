@@ -29,12 +29,30 @@ Reinicia el servidor: `npm run dev`.
 Alternativa rápida para pruebas: en el chat, botón de llave → pegar una API key personal.
 Se guarda solo en esa pestaña (sessionStorage) y se envía únicamente al backend propio.
 
+### Quién puede usar las claves del servidor
+
+Publicada, la API del asistente está en internet. Las claves del servidor (IA y Google Places) solo las
+usa quien tiene **sesión en un CRM** (usuario base o gerente, activo, con su CRM activo): el navegador
+manda el token de Supabase y el servidor lo verifica con Supabase Auth y lee el perfil (`server/session.ts`).
+
+| Quién llama | Claves del servidor | Google Places | Clave propia de Gemini |
+|---|---|---|---|
+| Usuario base o gerente con sesión | Sí, hasta 60 consultas cada 10 minutos | Sí | Sí (tiene prioridad) |
+| Sin sesión (cuenta demo), administrador de plataforma, usuario o CRM desactivado | **No** (401) | No | Sí |
+| Servidor local (`npm run dev`) | Sí, sin sesión (`requireSession: false`) | Sí | Sí |
+
+Además, la conversación solo puede traer texto y llamadas a herramientas (nada de imágenes ni archivos) y
+tiene un tope de 60.000 caracteres en total, para que una sola consulta no dispare el costo.
+Pruebas: `npm run test:ai` (sin sesión, token falso, administrador, desactivado, Supabase caído, límite y
+formato) y `npm run test:vercel` (la versión publicada rechaza a quien no inició sesión).
+
 ## 3. Arquitectura
 
 ```
-Navegador (AiChatWidget)                  Servidor Vite / Node (server/aiChat.ts)          Google
+Navegador (AiChatWidget)                  Servidor (server/aiChat.ts)                     Google
 ───────────────────────                  ───────────────────────────────────────          ──────
-POST /api/ai/chat  {contents, context} ─► valida y llama a Gemini con las tools   ───────► Gemini
+POST /api/ai/chat  {contents, context} ─► verifica la sesión, valida y llama       ───────► Gemini
+  + Authorization: Bearer <token>          a Gemini con las tools
                                           ◄── functionCall: search_potential_leads
                                           ejecuta búsqueda (Places o demo)         ───────► Places (opcional)
                                           ◄── functionCall: save_lead_to_crm

@@ -5,8 +5,9 @@
 // Por qué así y no la carpeta api/ de Vercel: el código del servidor se importa entre sí con
 // extensión .ts (lo exige Node para correr las pruebas sin compilar) y aquí se empaqueta todo antes,
 // así Vercel recibe JavaScript listo y lo que se prueba en local es lo mismo que se publica.
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { build } from 'vite';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { build, loadEnv } from 'vite';
 
 const SALIDA = '.vercel/output';
 const FUNCION = `${SALIDA}/functions/api.func`;
@@ -55,14 +56,40 @@ writeFileSync(
   )
 );
 
-// 3. Rutas y encabezados. Lo que existe como archivo se sirve tal cual; /api/* va a la función;
+// 3. Política de contenido (CSP): de dónde puede cargar cosas la página. Si alguna vez se colara un
+//    script ajeno (XSS), no podría cargar código de otro sitio ni mandar la sesión a otro servidor.
+//    Orígenes: la propia app, Supabase (datos y login), los mapas de Esri y las fuentes de Google.
+//    El único script en línea de index.html (tema oscuro) se permite por su huella exacta.
+const env = { ...loadEnv('production', process.cwd(), 'VITE_'), ...process.env };
+const supabase = env.VITE_SUPABASE_URL ? new URL(env.VITE_SUPABASE_URL).origin : '';
+const html = readFileSync('dist/index.html', 'utf8');
+const huellas = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+  ([, codigo]) => `'sha256-${createHash('sha256').update(codigo).digest('base64')}'`
+);
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' ${huellas.join(' ')}`.trim(),
+  // Leaflet y React ponen estilos en línea en los elementos del mapa y de la interfaz
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob: https://server.arcgisonline.com",
+  `connect-src 'self'${supabase ? ` ${supabase} ${supabase.replace(/^https:/, 'wss:')}` : ''}`,
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ');
+
+// 4. Rutas y encabezados. Lo que existe como archivo se sirve tal cual; /api/* va a la función;
 //    cualquier otra ruta abre la app (los enlaces de invitación y de contraseña vuelven a /).
 const seguridad = {
+  'Content-Security-Policy': csp,
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+  'Cross-Origin-Opener-Policy': 'same-origin',
 };
 writeFileSync(
   `${SALIDA}/config.json`,

@@ -58,6 +58,8 @@ type ChatResponse =
 interface AiStatus {
   provider?: 'gemini' | 'openai';
   serverKeyConfigured: boolean;
+  /** Publicada, la clave del servidor solo se usa con una sesión de CRM (la demo necesita clave propia) */
+  requiresSession?: boolean;
   model: string;
   leadSource: 'google_places' | 'demo';
 }
@@ -80,6 +82,8 @@ interface AiChatWidgetProps {
   // Buscar y mover leads existentes: sin estas dos, "mueve a X a descartado" terminaba creando un duplicado
   onFindLeads: (args: Record<string, unknown>) => Record<string, unknown>;
   onUpdateLeadStage: (args: Record<string, unknown>) => Record<string, unknown>;
+  /** Token de la sesión de Supabase: el servidor lo verifica antes de usar sus claves (sin Supabase, no hay) */
+  getAccessToken?: () => Promise<string | null>;
 }
 
 const KEY_STORAGE = 'revela-gemini-key';
@@ -194,6 +198,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   onSaveLead,
   onFindLeads,
   onUpdateLeadStage,
+  getAccessToken,
 }) => {
   const keyStorage = `${KEY_STORAGE}:${userId}`;
   const [isOpen, setIsOpen] = useState(false);
@@ -291,7 +296,9 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   };
 
   const isLoading = loadingLabel !== null;
-  const hasKey = Boolean(personalKey || status?.serverKeyConfigured);
+  // La clave del servidor sirve si no exige sesión o si hay una sesión de CRM (con Supabase)
+  const serverKeyUsable = Boolean(status?.serverKeyConfigured && (!status.requiresSession || getAccessToken));
+  const hasKey = Boolean(personalKey || serverKeyUsable);
 
   useEffect(() => {
     if (!isOpen || status) return;
@@ -316,10 +323,12 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
 
   const postChat = async (history: ChatContent[]): Promise<ChatResponse> => {
     try {
+      const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(personalKey ? { 'X-Gemini-Api-Key': personalKey } : {}),
         },
         body: JSON.stringify({ contents: history, context: { userName, tenantName, countries } }),
@@ -541,7 +550,12 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                   Proveedor: {status?.provider === 'openai' ? 'OpenAI (GPT)' : 'Google (Gemini)'}
                 </p>
                 <p className="text-slate-400">
-                  API key del servidor: {status?.serverKeyConfigured ? 'configurada ✓' : 'no configurada'}
+                  API key del servidor:{' '}
+                  {!status?.serverKeyConfigured
+                    ? 'no configurada'
+                    : serverKeyUsable
+                      ? 'configurada ✓'
+                      : 'solo con sesión en un CRM (en la demo, usa tu propia clave)'}
                 </p>
                 <p className="text-slate-400">API key personal: {personalKey ? 'en uso ✓' : 'no ingresada'}</p>
                 <p className="text-slate-400">

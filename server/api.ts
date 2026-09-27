@@ -4,21 +4,40 @@
 // Las variables sin prefijo VITE_ (claves de IA, de Places y la secreta de Supabase) solo existen acá,
 // en el servidor: nunca llegan al navegador.
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createClient } from '@supabase/supabase-js';
 import { createAiMiddleware, resolveProvider, type AiServerConfig } from './aiChat.ts';
 import { createRatesMiddleware } from './exchangeRates.ts';
 import { createAdminMiddleware, type AdminServerConfig } from './adminUsers.ts';
+import { identifyCaller, type SessionCaller } from './session.ts';
 
 export type ServerEnv = Record<string, string | undefined>;
 type Middleware = (req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => void | Promise<void>;
 
-export const aiConfigFrom = (env: ServerEnv): AiServerConfig => ({
+/**
+ * Configuración del asistente. Por defecto las claves del servidor exigen una sesión de CRM; solo el
+ * servidor de desarrollo local lo apaga (requireSession: false) para probar con la cuenta demo.
+ */
+export const aiConfigFrom = (env: ServerEnv, { requireSession = true }: { requireSession?: boolean } = {}): AiServerConfig => ({
   provider: resolveProvider(env),
   geminiApiKey: env.GEMINI_API_KEY || undefined,
   geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
   openaiApiKey: env.OPENAI_API_KEY || undefined,
   openaiModel: env.OPENAI_MODEL || 'gpt-5-mini',
   placesApiKey: env.GOOGLE_PLACES_API_KEY || undefined,
+  requireSession,
+  identify: sessionIdentifierFrom(env),
 });
+
+/** Verificador de sesiones de Supabase (necesita la URL y la clave secreta); sin ellas no hay. */
+export function sessionIdentifierFrom(env: ServerEnv): ((token: string) => Promise<SessionCaller | null>) | undefined {
+  const { supabaseUrl, serviceKey } = adminConfigFrom(env);
+  if (!supabaseUrl || !serviceKey) return undefined;
+  const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  return async (token) => {
+    const quien = await identifyCaller(admin, token);
+    return quien.valid ? quien.caller : null;
+  };
+}
 
 // La clave secreta de Supabase salta RLS: por eso vive solo en el servidor
 export const adminConfigFrom = (env: ServerEnv): AdminServerConfig => ({

@@ -46,6 +46,8 @@ Un lead avanza por el embudo: Nuevo → Contactado → Calificado → Propuesta 
 
 La regla está en `canChangeStage()` (`src/lib/tenantGuards.ts`) y se aplica **también al guardar**, no solo en la interfaz: aunque alguien fuerce la acción desde fuera, el cambio se rechaza. También aplica al avance automático de etapa al registrar un contacto.
 
+Desde la migración 0022 la regla también está **en la base** (`trg_leads_verify_role_rules`, con `lead_stage_rank()`): con Supabase el navegador habla directo con la base, y quien usara la consola del navegador para retroceder un lead recibe `42501`. Lo prueba `scripts/sql/prueba-ataques-remota.sql` (`npm run test:db`).
+
 ## Base de datos
 
 `supabase/migrations/20260926000008_audit_log.sql` crea la tabla `audit_log`:
@@ -58,6 +60,23 @@ La regla está en `canChangeStage()` (`src/lib/tenantGuards.ts`) y se aplica **t
 - **El administrador de la plataforma** registra sus acciones (crear un CRM, activarlo, cambiar el plan, invitar o editar usuarios) en el historial del CRM afectado (política `Auditoría: registro plataforma`, 0015). No puede leer ese historial: es de la gerencia del CRM.
 
 Con `VITE_DATA_SOURCE=supabase`, van a la base **todas** las entradas: CRMs, usuarios, leads, empresas cliente, catálogo, registros de contacto, configuración de etapas y exportaciones (`CONNECTED_AUDIT_ENTITIES` en `src/lib/db/mappers.ts`). El estado anterior para **"Volver atrás"** se guarda en `revert_snapshot` (sin datos personales) y el tipo de reversión se deduce del dato y la acción (`revertKindFor`). Revertir restaura el dato con la misma sincronización del resto de la app y marca la entrada original con `mark_audit_entry_reverted()`. La gerencia ve al entrar las 500 entradas más recientes. Si una entrada no alcanza a llegar a la base, la app avisa que el cambio se guardó pero no quedó registrado.
+
+## Registro de cambios de la base (`change_log`)
+
+`audit_log` lo escribe la app: es el historial rico (qué cambió, de qué a qué, con "Volver atrás"). Pero con Supabase el navegador habla directo con la base, y quien se salte la app no deja entrada ahí. Por eso, desde la migración 0022, **la propia base** anota cada cambio en `change_log`:
+
+| Columna | Qué guarda |
+|---|---|
+| `table_name`, `row_id` | Qué fila cambió |
+| `operation` | `INSERT`, `UPDATE` o `DELETE` |
+| `changed_columns` | En un `UPDATE`, los **nombres** de las columnas que cambiaron. Nunca valores: no guarda datos personales |
+| `actor_id`, `actor_role` | Quién (la sesión de Supabase) y con qué perfil |
+| `created_at` | Cuándo, con la hora de la base |
+
+- Lo escribe un trigger (`log_row_change`, como dueño) en 12 tablas: leads, sus personas, productos, bitácora y solicitudes del titular, empresas cliente, catálogo y precios, etapas, perfiles, CRMs y sus países. Las zonas no (son de referencia).
+- Solo registra cambios de personas con sesión; las tareas del sistema (pg_cron) firman en `audit_log`.
+- Nadie lo edita ni lo borra: no hay políticas de escritura. Lo lee la gerencia de su CRM (y el administrador de la plataforma).
+- Si una fila de `change_log` no tiene su entrada en `audit_log`, alguien cambió el dato sin pasar por la app.
 
 ## Pruebas
 

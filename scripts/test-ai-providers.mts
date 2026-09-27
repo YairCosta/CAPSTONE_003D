@@ -129,10 +129,10 @@ test('Errores: cada falla de OpenAI se explica en español', async () => {
 });
 
 // ------------------------------------------------------------------ servidor completo con OpenAI simulado
-const pedir = (middleware: ReturnType<typeof createAiMiddleware>, url: string, body?: object) =>
+const pedir = (middleware: ReturnType<typeof createAiMiddleware>, url: string, body?: object, headers: Record<string, string> = {}) =>
   new Promise<{ status: number; json: Record<string, unknown> }>((resolve) => {
     const req = Readable.from(body ? [Buffer.from(JSON.stringify(body))] : []) as unknown as IncomingMessage;
-    Object.assign(req, { method: body ? 'POST' : 'GET', url, headers: {} });
+    Object.assign(req, { method: body ? 'POST' : 'GET', url, headers });
     let status = 200;
     const res = {
       set statusCode(v: number) { status = v; },
@@ -154,7 +154,7 @@ test('Servidor con GPT: pide al navegador guardar el lead y luego responde', asy
     return guiones.shift()!;
   }) as unknown as typeof fetch;
   try {
-    const mw = createAiMiddleware({ provider: 'openai', openaiApiKey: 'sk-x', openaiModel: 'gpt-5-mini', geminiModel: 'g' });
+    const mw = createAiMiddleware({ provider: 'openai', openaiApiKey: 'sk-x', openaiModel: 'gpt-5-mini', geminiModel: 'g', requireSession: false });
 
     const estado = await pedir(mw, '/status');
     assert.deepEqual([estado.json.provider, estado.json.model, estado.json.serverKeyConfigured], ['openai', 'gpt-5-mini', true]);
@@ -183,10 +183,89 @@ test('Servidor con GPT: pide al navegador guardar el lead y luego responde', asy
 });
 
 test('Servidor con GPT y sin clave: explica qué falta', async () => {
-  const mw = createAiMiddleware({ provider: 'openai', openaiModel: 'gpt-5-mini', geminiModel: 'g' });
+  const mw = createAiMiddleware({ provider: 'openai', openaiModel: 'gpt-5-mini', geminiModel: 'g', requireSession: false });
   const r = await pedir(mw, '/chat', { contents: [{ role: 'user', parts: [{ text: 'hola' }] }], context: {} });
   assert.equal(r.status, 400);
   assert.match(String(r.json.error), /OPENAI_API_KEY/);
+});
+
+// ------------------------------------------------------------------ claves del servidor: solo con sesión
+// Publicada, la API del asistente está en internet: sin estas reglas cualquiera usaría las claves del
+// servidor (y su saldo). Ninguna de estas pruebas llega al modelo: cada barrera actúa antes.
+const HOLA = { contents: [{ role: 'user', parts: [{ text: 'hola' }] }], context: {} };
+const conSesion = (caller: object | null) => ({
+  provider: 'openai' as const,
+  openaiModel: 'gpt-5-mini',
+  geminiModel: 'g',
+  requireSession: true,
+  identify: async (token: string) => (token === 'token-valido' ? (caller as never) : null),
+});
+const vendedor = { userId: 'u-vendedor', role: 'agent', companyId: 'crm-1', isActive: true };
+
+test('Sesión: sin iniciar sesión ni clave propia, el asistente no usa las claves del servidor', async () => {
+  const mw = createAiMiddleware({ ...conSesion(vendedor), openaiApiKey: 'sk-servidor' });
+  const sinToken = await pedir(mw, '/chat', HOLA);
+  assert.equal(sinToken.status, 401);
+  assert.match(String(sinToken.json.error), /Inicia sesión/);
+  const tokenFalso = await pedir(mw, '/chat', HOLA, { authorization: 'Bearer inventado' });
+  assert.equal(tokenFalso.status, 401);
+  const estado = await pedir(mw, '/status');
+  assert.equal(estado.json.requiresSession, true);
+});
+
+test('Sesión: el administrador de plataforma y los usuarios desactivados tampoco las usan', async () => {
+  for (const caller of [
+    { userId: 'u-admin', role: 'superadmin', companyId: null, isActive: true },
+    { ...vendedor, isActive: false },
+  ]) {
+    const mw = createAiMiddleware({ ...conSesion(caller), openaiApiKey: 'sk-servidor' });
+    const r = await pedir(mw, '/chat', HOLA, { authorization: 'Bearer token-valido' });
+    assert.equal(r.status, 401, `${caller.role} activo=${caller.isActive}`);
+  }
+});
+
+test('Sesión: si verificar la sesión falla, se trata como sin sesión (falla cerrado)', async () => {
+  const mw = createAiMiddleware({
+    ...conSesion(vendedor),
+    openaiApiKey: 'sk-servidor',
+    identify: async () => {
+      throw new Error('Supabase caído');
+    },
+  });
+  const r = await pedir(mw, '/chat', HOLA, { authorization: 'Bearer token-valido' });
+  assert.equal(r.status, 401);
+});
+
+test('Sesión: un usuario del CRM con sesión sí pasa (y sin clave configurada se le explica qué falta)', async () => {
+  const mw = createAiMiddleware(conSesion(vendedor));
+  const r = await pedir(mw, '/chat', HOLA, { authorization: 'Bearer token-valido' });
+  assert.equal(r.status, 400);
+  assert.match(String(r.json.error), /OPENAI_API_KEY/);
+});
+
+test('Límite: cada persona tiene un tope de consultas con las claves del servidor', async () => {
+  const mw = createAiMiddleware({ ...conSesion(vendedor), rateLimit: { max: 2, windowMs: 60_000 } });
+  const sesion = { authorization: 'Bearer token-valido' };
+  assert.equal((await pedir(mw, '/chat', HOLA, sesion)).status, 400);
+  assert.equal((await pedir(mw, '/chat', HOLA, sesion)).status, 400);
+  const tercera = await pedir(mw, '/chat', HOLA, sesion);
+  assert.equal(tercera.status, 429);
+  assert.match(String(tercera.json.error), /límite/);
+});
+
+test('Conversación: no acepta imágenes ni archivos, y tiene un tope de texto total', async () => {
+  const mw = createAiMiddleware(conSesion(vendedor));
+  const sesion = { authorization: 'Bearer token-valido' };
+  const imagen = await pedir(
+    mw,
+    '/chat',
+    { contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/png', data: 'AAAA' } }] }], context: {} },
+    sesion
+  );
+  assert.equal(imagen.status, 400);
+  const parte = { text: 'x'.repeat(4000) };
+  const larga = await pedir(mw, '/chat', { contents: [{ role: 'user', parts: Array(16).fill(parte) }], context: {} }, sesion);
+  assert.equal(larga.status, 413);
 });
 
 await Promise.all(pending);

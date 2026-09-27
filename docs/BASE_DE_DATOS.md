@@ -38,7 +38,8 @@ De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e import
 11. lead_activities             (→ leads)
     lead_privacy_requests       (→ leads; solicitudes del titular)
 12. data_exports                (auditoría de exportaciones)
-13. audit_log                   (historial de cambios del CRM)
+13. audit_log                   (historial de cambios del CRM, lo escribe la app)
+14. change_log                  (registro de cambios que escribe la base, 0022)
 ```
 
 Relaciones principales:
@@ -188,6 +189,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0019 | Minimización: los leads se ubican por zona, nunca por coordenada. Borra las coordenadas y la caché de geocodificación, agrega `leads_sin_coordenadas` y retira `rpc_update_lead_coordinates()` de la API. Paso "la base lo rechaza": las columnas `latitude`, `longitude` y `location` se eliminan en una migración posterior (contraer) |
 | 0020 | Zonas oficiales: carga en `zone_catalog` las 345 comunas de Chile (BCN) y los 1.893 distritos de Perú (INEI) con su región, provincia y orden (columnas nuevas también en `territories` y en la vista `territories_geojson`). Convierte las 10 zonas de ejemplo de cada CRM en sus equivalentes oficiales **conservando los leads**, suelta la unicidad del nombre (la identidad es el código) y completa las zonas de todos los CRMs. 3,2 MB: se genera con `npm run zonas` |
 | 0021 | Contraer la minimización de la 0019: elimina `leads.latitude`, `longitude`, `location` y `address_hash`, la tabla `geocoding_cache`, el trigger que calculaba `location` y `rpc_update_lead_coordinates()`. Reescribe sin ellas la anonimización y el trigger de privacidad; `get_lead_distribution_by_territories()` cuenta por zona asignada. Estaban vacías en todos los CRMs |
+| 0022 | Revisión de seguridad (27-09-2026): las reglas del usuario base pasan a la base (solo avanza etapas; no cambia monto, moneda, zona, empresa cliente, país, origen ni autor; productos y personas solo de los leads que capturó), `created_by` lo firma la base, `recalculate_lead_value()` sale de la API, `lead_is_blocked()` solo responde por el propio CRM, gerencia ya no edita las zonas oficiales y nace `change_log` (quién cambió qué columnas, sin valores). Ver `docs/SEGURIDAD.md` §5 |
 
 ## 8. Revisión automática
 
@@ -204,13 +206,17 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error   # funciones con columnas o tipos inexistentes
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 84 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas y exportación
+npm run test:db                               # 121 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación y ataques desde dentro
+npm run test:db -- --con supabase/migrations/<nueva>.sql   # ensaya una migración con todas las pruebas SIN aplicarla
 ```
+
+El ensayo corre la migración y cada prueba en la misma transacción, que el error forzado deshace entera:
+así se aplica a la base real solo lo que ya pasó todas las pruebas.
 
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 y 0021 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0022 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

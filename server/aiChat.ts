@@ -1,12 +1,17 @@
 // API del asistente IA de prospección (proxy hacia Gemini u OpenAI con function calling).
-// Corre en Node dentro del servidor de Vite: la API key nunca se envía al bundle del navegador.
-// El proveedor se elige con AI_PROVIDER; la conversación se guarda siempre en formato Gemini.
+// Corre en el servidor (Vite en desarrollo, función de Vercel publicada): la API key nunca se envía
+// al navegador. El proveedor se elige con AI_PROVIDER; la conversación se guarda en formato Gemini.
+//
+// Las claves del servidor (IA y Google Places) cuestan dinero: publicada, solo las usa quien tiene
+// sesión en un CRM (usuario base o gerente), con un límite de consultas por persona. Sin sesión (la
+// cuenta demo) el asistente funciona solo con una API key propia de Gemini, sin Google Places.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
 import { ApiError, GoogleGenAI, Type, type Content, type FunctionDeclaration, type Part } from '@google/genai';
 import { searchPotentialLeads, type LeadSearchResult } from './leadSearch.ts';
 import { callOpenAi, describeOpenAiError, toOpenAiMessages, toOpenAiTools, type ModelStep } from './openaiChat.ts';
+import { bearerToken, createRateLimiter, type SessionCaller } from './session.ts';
 
 export type AiProvider = 'gemini' | 'openai';
 
@@ -17,6 +22,15 @@ export interface AiServerConfig {
   openaiApiKey?: string;
   openaiModel: string;
   placesApiKey?: string;
+  /**
+   * Si las claves del servidor exigen una sesión de CRM. Publicada, siempre; en desarrollo local se
+   * puede apagar para probar con la cuenta demo.
+   */
+  requireSession: boolean;
+  /** Verifica el token de Supabase y devuelve el perfil de quien llama (sin Supabase no hay cómo) */
+  identify?: (token: string) => Promise<SessionCaller | null>;
+  /** Límite de consultas por persona con las claves del servidor (por defecto 60 cada 10 minutos) */
+  rateLimit?: { max: number; windowMs: number };
 }
 
 /**
@@ -64,7 +78,12 @@ export interface SearchEvent {
 const MAX_BODY_BYTES = 1_000_000;
 const MAX_CONTENTS = 60;
 const MAX_TEXT_LENGTH = 4000;
+// Tope de texto de toda la conversación: sin él, una sola consulta podía mandar ~1 MB al modelo
+const MAX_TOTAL_TEXT = 60_000;
 const MAX_MODEL_STEPS = 6;
+// Partes que la conversación puede traer: texto y las llamadas a herramientas del propio modelo.
+// Imágenes o archivos (inlineData, fileData) no: el asistente no los usa y cuestan más.
+const ALLOWED_PART_KEYS = new Set(['text', 'functionCall', 'functionResponse', 'thought', 'thoughtSignature']);
 
 // Herramientas que ejecuta el navegador (los leads viven en el estado del CRM del cliente)
 const CLIENT_TOOLS = new Set(['save_lead_to_crm', 'find_leads_in_crm', 'update_lead_stage']);
@@ -263,16 +282,22 @@ function parseContents(value: unknown): Content[] {
   if (!Array.isArray(value) || value.length === 0) throw new HttpError(400, 'Falta el mensaje.');
   if (value.length > MAX_CONTENTS) throw new HttpError(413, 'La conversación es muy larga. Reinicia el chat.');
 
+  let totalTexto = 0;
   return value.map((item) => {
     if (!isRecord(item) || (item.role !== 'user' && item.role !== 'model') || !Array.isArray(item.parts)) {
       throw new HttpError(400, 'Formato de conversación inválido.');
     }
     for (const part of item.parts) {
-      if (!isRecord(part)) throw new HttpError(400, 'Formato de conversación inválido.');
-      if (typeof part.text === 'string' && part.text.length > MAX_TEXT_LENGTH) {
-        throw new HttpError(413, `El mensaje supera ${MAX_TEXT_LENGTH} caracteres.`);
+      if (!isRecord(part) || Object.keys(part).some((key) => !ALLOWED_PART_KEYS.has(key))) {
+        throw new HttpError(400, 'Formato de conversación inválido.');
       }
+      if (typeof part.text === 'string') {
+        if (part.text.length > MAX_TEXT_LENGTH) throw new HttpError(413, `El mensaje supera ${MAX_TEXT_LENGTH} caracteres.`);
+        totalTexto += part.text.length;
+      }
+      if (part.functionResponse !== undefined) totalTexto += JSON.stringify(part.functionResponse).length;
     }
+    if (totalTexto > MAX_TOTAL_TEXT) throw new HttpError(413, 'La conversación es muy larga. Reinicia el chat.');
     return { role: item.role, parts: item.parts as Part[] };
   });
 }
@@ -388,6 +413,8 @@ function describeGeminiError(error: unknown, model: string): { status: number; m
 
 // ------------------------------------------------------------------ middleware
 export function createAiMiddleware(config: AiServerConfig) {
+  const dentroDelLimite = createRateLimiter(config.rateLimit ?? { max: 60, windowMs: 10 * 60 * 1000 });
+
   return async (req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => {
     const path = (req.url ?? '').split('?')[0];
 
@@ -396,6 +423,7 @@ export function createAiMiddleware(config: AiServerConfig) {
       sendJson(res, 200, {
         provider: config.provider,
         serverKeyConfigured: Boolean(openai ? config.openaiApiKey : config.geminiApiKey),
+        requiresSession: config.requireSession,
         model: openai ? config.openaiModel : config.geminiModel,
         leadSource: config.placesApiKey ? 'google_places' : 'demo',
       });
@@ -415,14 +443,34 @@ export function createAiMiddleware(config: AiServerConfig) {
     let model = config.geminiModel;
     let provider: AiProvider = config.provider;
     try {
+      // Una API key personal (ingresada en el chat) es de Gemini y tiene prioridad sobre el servidor
+      const headerKey = req.headers['x-gemini-api-key'];
+      const personalKey = typeof headerKey === 'string' ? headerKey.trim() : '';
+
+      // Quién llama: las claves del servidor son para quien tiene sesión en un CRM
+      const token = bearerToken(req);
+      const caller = token && config.identify ? await config.identify(token).catch(() => null) : null;
+      const deCrm = Boolean(caller?.isActive && (caller.role === 'agent' || caller.role === 'manager'));
+      if (config.requireSession && !deCrm && !personalKey) {
+        sendJson(res, 401, {
+          type: 'error',
+          error:
+            'Inicia sesión en tu CRM para usar el asistente. En la cuenta demo puedes usarlo con tu propia API key de Gemini (botón de configuración del chat).',
+        });
+        return;
+      }
+      if (!personalKey && !dentroDelLimite(caller?.userId ?? 'local')) {
+        sendJson(res, 429, { type: 'error', error: 'Llegaste al límite de consultas del asistente por ahora. Espera unos minutos.' });
+        return;
+      }
+      // Google Places es del servidor: solo con sesión de CRM (o en desarrollo local)
+      const placesApiKey = deCrm || !config.requireSession ? config.placesApiKey : undefined;
+
       const body = await readJsonBody(req);
       const payload = isRecord(body) ? body : {};
       const history = parseContents(payload.contents);
       const context = parseContext(payload.context);
 
-      // Una API key personal (ingresada en el chat) es de Gemini y tiene prioridad sobre el servidor
-      const headerKey = req.headers['x-gemini-api-key'];
-      const personalKey = typeof headerKey === 'string' ? headerKey.trim() : '';
       if (personalKey) provider = 'gemini';
       const apiKey = provider === 'openai' ? config.openaiApiKey : personalKey || config.geminiApiKey;
       if (!apiKey) {
@@ -534,7 +582,7 @@ export function createAiMiddleware(config: AiServerConfig) {
             const name = call.name;
             const args = call.args;
             if (name === 'search_potential_leads') {
-              const result = await searchPotentialLeads(args, config.placesApiKey, context.countries);
+              const result = await searchPotentialLeads(args, placesApiKey, context.countries);
               events.push({ tool: name, args, result });
               return { id: call.id, name, args, executedOn: 'server', result: { ...result } };
             }

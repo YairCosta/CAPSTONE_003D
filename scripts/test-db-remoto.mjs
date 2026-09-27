@@ -3,11 +3,15 @@
 // reales y lo deshacen todo al final con un error forzado. Requiere que el dueño del proyecto haya
 // hecho `npx supabase login` y `npx supabase link`.
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join } from 'node:path';
 
 const ARCHIVOS = [
   { archivo: 'scripts/sql/prueba-privacidad-remota.sql', titulo: 'Privacidad y aislamiento' },
   { archivo: 'scripts/sql/prueba-plataforma-remota.sql', titulo: 'Administración de la plataforma' },
   { archivo: 'scripts/sql/prueba-crm-remota.sql', titulo: 'Trabajo diario del CRM (etapa 3)' },
+  { archivo: 'scripts/sql/prueba-ataques-remota.sql', titulo: 'Ataques desde dentro (CRM Revela Pruebas)' },
 ];
 
 const fallar = (motivo, salida) => {
@@ -15,7 +19,20 @@ const fallar = (motivo, salida) => {
   process.exit(1);
 };
 
-const ejecutar = (archivo) => {
+// Ensayo de una migración sin aplicarla: npm run test:db -- --con supabase/migrations/<archivo>.sql
+// La migración y cada prueba corren en la misma transacción, que el error forzado deshace entera.
+const indiceCon = process.argv.indexOf('--con');
+const migracionPrevia = indiceCon > -1 ? readFileSync(process.argv[indiceCon + 1], 'utf8') : null;
+const temporal = mkdtempSync(join(tmpdir(), 'revela-db-'));
+
+const ejecutar = (original) => {
+  let archivo = original;
+  if (migracionPrevia) {
+    archivo = join(temporal, basename(original));
+    writeFileSync(archivo, `${migracionPrevia}
+
+${readFileSync(original, 'utf8')}`);
+  }
   const r = spawnSync('npx', ['supabase', 'db', 'query', '--linked', '-f', archivo], {
     encoding: 'utf8',
     shell: process.platform === 'win32',
