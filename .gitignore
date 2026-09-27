@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
+# Salida para Vercel (npm run build:vercel): se genera en cada publicación
+.vercel
 dist-ssr
 *.local
 

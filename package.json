@@ -3,9 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:vercel": "tsc -b && vite build && node scripts/build-vercel.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "test:tenant": "node --experimental-strip-types --no-warnings scripts/test-tenant-guards.mts",
@@ -15,6 +19,7 @@
     "test:db": "node scripts/test-db-remoto.mjs",
     "test:supabase": "node --experimental-strip-types --no-warnings scripts/test-supabase.mts",
     "test:bundle": "node --experimental-strip-types --no-warnings scripts/test-bundle.mts",
+    "test:vercel": "node scripts/test-vercel.mjs",
     "diagramas": "node scripts/generar-diagramas.mjs",
     "evidencia": "node scripts/generar-evidencia.mjs",
     "test:e2e": "node scripts/e2e-tenant-isolation.mjs",

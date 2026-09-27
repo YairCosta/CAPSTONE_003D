@@ -1,21 +1,17 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { createAiMiddleware, resolveProvider } from './server/aiChat.ts'
+import { createAiMiddleware } from './server/aiChat.ts'
 import { createRatesMiddleware } from './server/exchangeRates.ts'
 import { createAdminMiddleware } from './server/adminUsers.ts'
+import { adminConfigFrom, aiConfigFrom } from './server/api.ts'
 
-// API del asistente IA (/api/ai/*): corre en Node dentro del servidor de Vite.
-// Las variables sin prefijo VITE_ (GEMINI_API_KEY, OPENAI_API_KEY, GOOGLE_PLACES_API_KEY) nunca llegan al navegador.
+// La API (/api/*) corre en Node dentro del servidor de Vite; publicada, en una función de Vercel
+// (server/vercel.ts). La configuración sale de las mismas variables en los dos casos (server/api.ts).
+
+// API del asistente IA (/api/ai/*). Las variables sin prefijo VITE_ nunca llegan al navegador.
 function aiAssistantApi(env: Record<string, string>): Plugin {
-  const middleware = createAiMiddleware({
-    provider: resolveProvider(env),
-    geminiApiKey: env.GEMINI_API_KEY || undefined,
-    geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
-    openaiApiKey: env.OPENAI_API_KEY || undefined,
-    openaiModel: env.OPENAI_MODEL || 'gpt-5-mini',
-    placesApiKey: env.GOOGLE_PLACES_API_KEY || undefined,
-  })
+  const middleware = createAiMiddleware(aiConfigFrom(env))
 
   return {
     name: 'revela-ai-assistant-api',
@@ -45,11 +41,7 @@ function exchangeRatesApi(): Plugin {
 // Invitaciones de usuarios (/api/admin/*). La clave secreta de Supabase (SUPABASE_SERVICE_ROLE_KEY)
 // salta RLS: por eso vive solo en el servidor, sin prefijo VITE_, y nunca llega al navegador.
 function adminUsersApi(env: Record<string, string>): Plugin {
-  const middleware = createAdminMiddleware({
-    supabaseUrl: env.VITE_SUPABASE_URL || undefined,
-    serviceKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || undefined,
-    appUrl: env.APP_URL || 'http://localhost:5173',
-  })
+  const middleware = createAdminMiddleware(adminConfigFrom(env))
   return {
     name: 'revela-admin-users-api',
     configureServer(server) {

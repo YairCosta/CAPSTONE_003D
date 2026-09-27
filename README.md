@@ -67,6 +67,7 @@ npm run test:db       # reglas de la base real de Supabase (lo deshace todo al t
 npm run test:supabase # conexión con Supabase e invitaciones, con Supabase simulado
 npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
 npm run test:bundle   # lo que se publica no trae datos de prueba ni claves
+npm run test:vercel   # la app y la API tal como quedarían en Vercel (ver docs/DESPLIEGUE.md)
 ```
 
 ## Documentación

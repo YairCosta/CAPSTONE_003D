@@ -38,7 +38,7 @@ No se pueden debilitar sin decirlo explícitamente:
 | `src/components/` | Módulos de la interfaz (KPI y mapa, Pipeline, Contacto, Gerencia, Auditoría, Admin; `StageAdminModule` existe pero su pestaña está oculta, ver `src/lib/permissions.ts`) |
 | `src/lib/` | Lógica pura y reutilizable: guards, monedas, catálogo, métricas, exportación. La capa de datos de Supabase va en `src/lib/db/` |
 | `src/data/` | Registro de países (`countries.ts`), cuenta demo (`mockGeoData.ts`) y CRMs de prueba, solo en desarrollo (`testTenants.ts`) |
-| `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase), dentro de Vite |
+| `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase). En desarrollo corre dentro de Vite; publicada, en una función de Vercel (`server/vercel.ts`). Las dos se arman igual desde `server/api.ts`. Ver `docs/DESPLIEGUE.md` |
 | `supabase/migrations/` | Esquema de la base de datos |
 | `docs/` | Base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
 | `scripts/` | Pruebas de aislamiento, exportación y punta a punta |
@@ -57,6 +57,7 @@ npm run test:db      # pruebas funcionales contra la base de Supabase enlazada (
 npm run test:supabase # capa de datos e invitaciones con Supabase simulado (sin conexión)
 npm run test:e2e     # punta a punta con Chrome (requiere npm run dev en marcha)
 npm run test:bundle  # la app compilada no trae CRMs de prueba, cuentas de desarrollo ni claves de .env.local
+npm run test:vercel  # arma .vercel/output y prueba la app y la API tal como quedarían en Vercel (antes de cada push)
 npx tsc -b && npm run lint && npm run build
 npm run diagramas   # regenera los diagramas de componentes y estados (docs/diagramas/)
 npm run expediente  # regenera el expediente de cumplimiento que muestra el portal fiscalizador

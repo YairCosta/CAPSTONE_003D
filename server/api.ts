@@ -1,0 +1,60 @@
+// La API de Revela (/api/*) armada desde las variables de entorno. La usan el servidor de desarrollo
+// (vite.config.ts, con .env.local) y la función de Vercel (server/vercel.ts, con las variables del
+// proyecto en Vercel): así las dos corren exactamente el mismo código.
+// Las variables sin prefijo VITE_ (claves de IA, de Places y la secreta de Supabase) solo existen acá,
+// en el servidor: nunca llegan al navegador.
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createAiMiddleware, resolveProvider, type AiServerConfig } from './aiChat.ts';
+import { createRatesMiddleware } from './exchangeRates.ts';
+import { createAdminMiddleware, type AdminServerConfig } from './adminUsers.ts';
+
+export type ServerEnv = Record<string, string | undefined>;
+type Middleware = (req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => void | Promise<void>;
+
+export const aiConfigFrom = (env: ServerEnv): AiServerConfig => ({
+  provider: resolveProvider(env),
+  geminiApiKey: env.GEMINI_API_KEY || undefined,
+  geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
+  openaiApiKey: env.OPENAI_API_KEY || undefined,
+  openaiModel: env.OPENAI_MODEL || 'gpt-5-mini',
+  placesApiKey: env.GOOGLE_PLACES_API_KEY || undefined,
+});
+
+// La clave secreta de Supabase salta RLS: por eso vive solo en el servidor
+export const adminConfigFrom = (env: ServerEnv): AdminServerConfig => ({
+  supabaseUrl: env.VITE_SUPABASE_URL || undefined,
+  serviceKey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || undefined,
+  appUrl: env.APP_URL || 'http://localhost:5173',
+});
+
+const notFound = (res: ServerResponse) => {
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify({ error: 'Ruta de la API no encontrada.' }));
+};
+
+/**
+ * Un solo manejador para toda la API: reparte por prefijo, como hace Vite con sus middlewares.
+ * Vercel puede entregar la ruta original (/api/ai/chat) o la reescrita por config.json
+ * (/api?__ruta=ai/chat): se aceptan las dos.
+ */
+export function createApiHandler(env: ServerEnv) {
+  const rutas: [string, Middleware][] = [
+    ['/api/ai', createAiMiddleware(aiConfigFrom(env))],
+    ['/api/rates', createRatesMiddleware()],
+    ['/api/admin', createAdminMiddleware(adminConfigFrom(env))],
+  ];
+  return (req: IncomingMessage, res: ServerResponse) => {
+    const url = new URL(req.url ?? '/', 'http://revela.local');
+    const reescrita = url.searchParams.get('__ruta');
+    url.searchParams.delete('__ruta');
+    const ruta = reescrita !== null ? `/api/${reescrita.replace(/^\/+/, '')}` : url.pathname;
+    const destino = rutas.find(([prefijo]) => ruta === prefijo || ruta.startsWith(`${prefijo}/`));
+    if (!destino) return notFound(res);
+    const [prefijo, middleware] = destino;
+    // Cada middleware ve la ruta relativa a su prefijo, igual que en el servidor de desarrollo
+    req.url = (ruta.slice(prefijo.length) || '/') + url.search;
+    void middleware(req, res, () => notFound(res));
+  };
+}
