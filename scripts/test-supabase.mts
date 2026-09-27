@@ -32,7 +32,7 @@ import {
 } from '../src/lib/db/crmMappers.ts';
 import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
 import { loadZonePolygons } from '../src/lib/db/crm.ts';
-import { setCompanyCountry } from '../src/lib/db/platform.ts';
+import { setCompanyCountry, setCompanyViewCurrency } from '../src/lib/db/platform.ts';
 import { enabledCountriesOf } from '../src/lib/tenantGuards.ts';
 import { conTildes } from './tildes-zonas.mjs';
 import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
@@ -109,6 +109,52 @@ test('CRM: con el plan Internacional puede partir solo con el país base (la ger
   const crm = companyFromRow(filaCrm({ home_country: 'CL' }), [{ company_id: CRM_A, country_code: 'CL' }]);
   assert.equal(crm.plan, 'international');
   assert.deepEqual(crm.enabledCountries, ['CL']);
+});
+
+test('Divisas de la vista: se leen solo las del CRM y con código válido', () => {
+  const crm = companyFromRow(filaCrm({ home_country: 'CL' }), [{ company_id: CRM_A, country_code: 'PE' }], [
+    { company_id: CRM_A, currency_code: 'PEN' },
+    { company_id: CRM_A, currency_code: 'XXX' },
+    { company_id: CRM_A, currency_code: 'toString' },
+    { company_id: CRM_B, currency_code: 'MXN' },
+  ]);
+  assert.deepEqual(crm.viewCurrencies, ['PEN']);
+  assert.deepEqual(companyFromRow(filaCrm(), []).viewCurrencies, []);
+});
+
+test('Divisas de la vista: sumar no duplica; quitar borra solo esa divisa de ese CRM', async () => {
+  const llamadas: unknown[] = [];
+  const fake = {
+    from: (tabla: string) => {
+      assert.equal(tabla, 'company_view_currencies');
+      return {
+        upsert: async (fila: unknown, opciones: unknown) => {
+          llamadas.push(['upsert', fila, opciones]);
+          return { error: null };
+        },
+        delete: () => {
+          const filtros: [string, string][] = [];
+          const cadena = {
+            eq: (campo: string, valor: string) => {
+              filtros.push([campo, valor]);
+              if (filtros.length === 2) {
+                llamadas.push(['delete', filtros]);
+                return Promise.resolve({ error: null });
+              }
+              return cadena;
+            },
+          };
+          return cadena;
+        },
+      };
+    },
+  } as unknown as SupabaseClient;
+  assert.deepEqual(await setCompanyViewCurrency(fake, CRM_A, 'PEN', true), { ok: true, data: null });
+  assert.deepEqual(await setCompanyViewCurrency(fake, CRM_A, 'PEN', false), { ok: true, data: null });
+  assert.deepEqual(llamadas, [
+    ['upsert', { company_id: CRM_A, currency_code: 'PEN' }, { onConflict: 'company_id,currency_code', ignoreDuplicates: true }],
+    ['delete', [['company_id', CRM_A], ['currency_code', 'PEN']]],
+  ]);
 });
 
 test('Países: activar inserta sin duplicar; desactivar borra solo ese país de ese CRM', async () => {

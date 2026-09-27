@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RevelaLogo } from './RevelaLogo';
 import {
   Plus,
@@ -13,12 +13,14 @@ import {
   History,
   KeyRound,
   LogOut,
+  X,
 } from 'lucide-react';
 import type { AppUser, Company } from '../types/crm';
-import type { CurrencyCode } from '../data/countries';
+import type { CountryCode, CurrencyCode } from '../data/countries';
 import { ROLE_LABEL, type ActiveTab } from '../lib/permissions';
-import { CURRENCIES, DISPLAY_CURRENCIES, ratesNote, type Rates } from '../lib/currency';
+import { CURRENCIES, ratesNote, type Rates } from '../lib/currency';
 import type { RatesInfo } from '../lib/money';
+import { ViewCurrencyList } from './ViewCurrencyList';
 
 const TAB_META: Record<ActiveTab, { label: string; icon: typeof BarChart3 }> = {
   kpi: { label: 'KPI y Mapa', icon: BarChart3 },
@@ -45,8 +47,33 @@ interface NavbarProps {
   // Moneda con la que se ve todo el CRM (solo para mostrar: los montos se guardan en su moneda)
   displayCurrency?: CurrencyCode;
   onDisplayCurrencyChange?: (currency: CurrencyCode) => void;
+  // Divisas del selector: la del país base y el dólar, más las que sumó la gerencia
+  viewCurrencies?: CurrencyCode[];
+  // Solo la gerencia: el botón "$" para sumar o quitar divisas
+  currencyEditor?: {
+    homeCountry: CountryCode;
+    countries: CountryCode[];
+    onSetViewCurrency: (currency: CurrencyCode, enabled: boolean) => Promise<string | null> | string | null;
+  };
   rates?: Rates;
   ratesInfo?: RatesInfo;
+}
+
+// Menú del botón "$": se cierra con Escape o al hacer clic fuera
+function useDismiss(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    const onDown = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && close();
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [open, close]);
+  return ref;
 }
 
 const initials = (name: string) =>
@@ -71,9 +98,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onChangePassword,
   displayCurrency,
   onDisplayCurrencyChange,
+  viewCurrencies = ['CLP', 'USD'],
+  currencyEditor,
   rates,
   ratesInfo,
 }) => {
+  const [divisasAbierto, setDivisasAbierto] = useState(false);
+  const cerrarDivisas = useCallback(() => setDivisasAbierto(false), []);
+  const divisasRef = useDismiss(divisasAbierto, cerrarDivisas);
   return (
     <header className="sticky top-0 z-30 border-b border-slate-700 bg-slate-900/95 backdrop-blur-md dark:bg-slate-950/95">
       {/* Fila superior: marca + acciones (siempre a todo el ancho) */}
@@ -97,19 +129,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="flex items-center gap-2.5">
           {displayCurrency && onDisplayCurrencyChange && (
+            <div ref={divisasRef} className="relative hidden sm:block">
             <div
               role="group"
               aria-label="Moneda para ver el CRM"
               title={
                 rates && ratesInfo
-                  ? `${ratesNote(rates)}\nFuente: ${ratesInfo.sources.join(' + ')}${
+                  ? `${ratesNote(rates, viewCurrencies)}\nFuente: ${ratesInfo.sources.join(' + ')}${
                       ratesInfo.updatedAt ? ` · ${new Date(ratesInfo.updatedAt).toLocaleDateString('es-CL')}` : ''
                     }${ratesInfo.live ? '' : ' (sin conexión: tasa de respaldo)'}`
                   : undefined
               }
               className="hidden items-center gap-1 rounded-xl border border-slate-600 bg-slate-900 p-1 sm:flex"
             >
-              {DISPLAY_CURRENCIES.map((code) => (
+              {viewCurrencies.map((code) => (
                 <button
                   key={code}
                   type="button"
@@ -128,6 +161,49 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ⚠
                 </span>
               )}
+              {currencyEditor && (
+                <button
+                  type="button"
+                  onClick={() => setDivisasAbierto((v) => !v)}
+                  aria-haspopup="dialog"
+                  aria-expanded={divisasAbierto}
+                  aria-label="Agregar o quitar divisas para ver el CRM"
+                  title="Agregar o quitar divisas"
+                  className="flex cursor-pointer items-center gap-0.5 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-300 transition hover:bg-slate-800"
+                >
+                  <Plus className="h-3.5 w-3.5" />$
+                </button>
+              )}
+            </div>
+            {currencyEditor && divisasAbierto && (
+              <div
+                role="dialog"
+                aria-label="Divisas para ver el CRM"
+                className="absolute right-0 top-full z-[1200] mt-2 w-80 rounded-2xl border border-slate-600 bg-slate-900 p-4 shadow-2xl"
+              >
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[15px] font-bold text-slate-100">Divisas para ver el CRM</p>
+                    <p className="text-[13px] text-slate-400">Todo el equipo verá los botones que sumes. Los montos no cambian.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDivisasAbierto(false)}
+                    aria-label="Cerrar divisas"
+                    className="cursor-pointer rounded-lg p-1 text-slate-400 hover:bg-slate-800"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <ViewCurrencyList
+                  homeCountry={currencyEditor.homeCountry}
+                  countries={currencyEditor.countries}
+                  viewCurrencies={viewCurrencies}
+                  onSetViewCurrency={currencyEditor.onSetViewCurrency}
+                  emptyHint="Para sumar otra divisa, activa el país que la usa en Gerencia → Países y divisas."
+                />
+              </div>
+            )}
             </div>
           )}
 

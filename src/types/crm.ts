@@ -238,6 +238,8 @@ export interface Company {
   plan: CompanyPlan;
   homeCountry: CountryCode;
   enabledCountries: CountryCode[]; // incluye el país base
+  // Divisas que la gerencia sumó al selector de moneda (la del país base y el dólar están siempre)
+  viewCurrencies?: CurrencyCode[];
   createdAt: string;
   defaultLat: number;
   defaultLng: number;

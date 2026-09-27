@@ -400,7 +400,7 @@ export const mockTerritories: TerritoryMetric[] = [
       ]]]
     }
   },
-  // Una zona por cada otro país de América Latina, para probar Gerencia → Países en la demo
+  // Una zona por cada otro país de América Latina, para probar Gerencia → Países y divisas en la demo
   ...DEMO_LATAM_ZONES,
 ];
 

@@ -66,11 +66,13 @@ interface ManagerModuleProps {
   onRequestPrivacy: (leadId: string, reason: PrivacyRequestReason, detail: string) => string | null;
   onResolvePrivacy: (leadId: string, approve: boolean, note: string) => void;
   onDownloadSubjectReport: (leadId: string) => void;
-  // Países del CRM: con el plan Internacional los elige la gerencia
+  // Países del CRM (con el plan Internacional los elige la gerencia) y divisas para ver el CRM
   plan: 'national' | 'international';
   homeCountry: CountryCode;
   leadCountsByCountry: Partial<Record<CountryCode, number>>;
   onSetCountry: (code: CountryCode, enabled: boolean) => Promise<string | null> | string | null;
+  viewCurrencies: CurrencyCode[];
+  onSetViewCurrency: (currency: CurrencyCode, enabled: boolean) => Promise<string | null> | string | null;
 }
 
 export const ManagerModule: React.FC<ManagerModuleProps> = ({
@@ -101,6 +103,8 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
   homeCountry,
   leadCountsByCountry,
   onSetCountry,
+  viewCurrencies,
+  onSetViewCurrency,
 }) => {
   const [section, setSection] = useState<Section>('accounts');
   const queueCount = leads.filter((l) => !hasCommune(l)).length;
@@ -119,7 +123,7 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
           { id: 'catalog', label: 'Catálogo', icon: Boxes, count: catalog.length },
           { id: 'team', label: 'Usuarios', icon: Users2, count: teamUsers.length },
           { id: 'queue', label: `Leads sin ${zoneLabel}`, icon: MapPinOff, count: queueCount, highlight: queueCount > 0 },
-          { id: 'countries', label: 'Países', icon: Globe2, count: enabledCountries.length },
+          { id: 'countries', label: 'Países y divisas', icon: Globe2, count: enabledCountries.length },
         ]}
       />
 
@@ -130,6 +134,8 @@ export const ManagerModule: React.FC<ManagerModuleProps> = ({
           enabledCountries={enabledCountries}
           leadCounts={leadCountsByCountry}
           onSetCountry={onSetCountry}
+          viewCurrencies={viewCurrencies}
+          onSetViewCurrency={onSetViewCurrency}
         />
       )}
 

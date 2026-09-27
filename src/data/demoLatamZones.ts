@@ -1,7 +1,7 @@
 import type { TerritoryMetric } from '../types/crm';
 
 // Una zona por país de América Latina para la cuenta demo: su capital (o la zona central de la capital),
-// con el contorno oficial muy simplificado. Así, al activar un país en Gerencia → Países, la demo ya
+// con el contorno oficial muy simplificado. Así, al activar un país en Gerencia → Países y divisas, la demo ya
 // tiene dónde ubicar un lead. Las cuentas reales usan el catálogo completo de la base (zone_catalog).
 // Contornos de datos/zonas/zonas-<país>.geojson (npm run zonas), reducidos a unos 25 puntos.
 const zona = (

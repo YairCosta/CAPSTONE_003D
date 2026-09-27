@@ -1,4 +1,5 @@
--- Países de América Latina elegidos por la gerencia (0023 a 0028), contra la base real (npm run test:db).
+-- Países de América Latina y divisas de la vista elegidos por la gerencia (0023 a 0029), contra la base
+-- real (npm run test:db).
 --
 -- El administrador define el plan; con el plan Internacional la gerencia activa y desactiva países de
 -- su CRM. Se prueba quién puede, qué llega al activar (las zonas del país, sin copiar su contorno) y
@@ -123,6 +124,25 @@ BEGIN
     SELECT count(*) INTO v_num FROM public.leads WHERE id = lead_pe;
     res := res || jsonb_build_object('prueba', 'Al reactivar Perú, sus leads vuelven (desactivar no borra)', 'ok', v_num = 1, 'detalle', v_num);
 
+    -- ------------------------------------------------------------ divisas de la vista (0029)
+    BEGIN
+        INSERT INTO public.company_view_currencies (company_id, currency_code) VALUES (co_i, 'PEN');
+        SELECT count(*) INTO v_count FROM public.company_view_currencies WHERE company_id = co_i;
+        SELECT count(*) INTO v_num FROM public.change_log
+        WHERE table_name = 'company_view_currencies' AND company_id = co_i AND actor_id = u_mgr_i AND operation = 'INSERT';
+        res := res || jsonb_build_object('prueba', 'La gerencia suma el sol peruano a las divisas de la vista, y queda quién lo hizo',
+            'ok', v_count = 1 AND v_num = 1, 'detalle', jsonb_build_object('divisas', v_count, 'registro', v_num));
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'La gerencia suma el sol peruano a las divisas de la vista, y queda quién lo hizo', 'ok', FALSE, 'detalle', SQLERRM);
+    END;
+
+    BEGIN
+        INSERT INTO public.company_view_currencies (company_id, currency_code) VALUES (co_i, 'BRL');
+        res := res || jsonb_build_object('prueba', 'No se suma la moneda de un país que el CRM no tiene activo (Brasil)', 'ok', FALSE, 'detalle', 'la sumó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'No se suma la moneda de un país que el CRM no tiene activo (Brasil)', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
+    END;
+
     -- ------------------------------------------------------------ quién NO puede
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_agent_i, 'role', 'authenticated')::text, TRUE);
     BEGIN
@@ -134,6 +154,17 @@ BEGIN
     DELETE FROM public.company_countries WHERE company_id = co_i AND country_code = 'MX';
     GET DIAGNOSTICS v_count = ROW_COUNT;
     res := res || jsonb_build_object('prueba', 'El usuario base no desactiva países', 'ok', v_count = 0, 'detalle', v_count);
+    BEGIN
+        INSERT INTO public.company_view_currencies (company_id, currency_code) VALUES (co_i, 'MXN');
+        res := res || jsonb_build_object('prueba', 'El usuario base no suma divisas a la vista', 'ok', FALSE, 'detalle', 'la sumó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'El usuario base no suma divisas a la vista', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
+    END;
+    DELETE FROM public.company_view_currencies WHERE company_id = co_i;
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    SELECT count(*) INTO v_num FROM public.company_view_currencies WHERE company_id = co_i;
+    res := res || jsonb_build_object('prueba', 'El usuario base ve las divisas de su CRM pero no las quita',
+        'ok', v_count = 0 AND v_num = 1, 'detalle', jsonb_build_object('quitadas', v_count, 'visibles', v_num));
 
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_n, 'role', 'authenticated')::text, TRUE);
     BEGIN
@@ -141,6 +172,12 @@ BEGIN
         res := res || jsonb_build_object('prueba', 'Con el plan Nacional la gerencia no suma países (lo decide el administrador)', 'ok', FALSE, 'detalle', 'lo sumó');
     EXCEPTION WHEN OTHERS THEN
         res := res || jsonb_build_object('prueba', 'Con el plan Nacional la gerencia no suma países (lo decide el administrador)', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
+    END;
+    BEGIN
+        INSERT INTO public.company_view_currencies (company_id, currency_code) VALUES (co_n, 'PEN');
+        res := res || jsonb_build_object('prueba', 'Con el plan Nacional no se suman divisas de otros países', 'ok', FALSE, 'detalle', 'la sumó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'Con el plan Nacional no se suman divisas de otros países', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
     END;
 
     PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_x, 'role', 'authenticated')::text, TRUE);
@@ -153,6 +190,22 @@ BEGIN
     DELETE FROM public.company_countries WHERE company_id = co_i AND country_code = 'MX';
     GET DIAGNOSTICS v_count = ROW_COUNT;
     res := res || jsonb_build_object('prueba', 'El gerente de otro CRM no desactiva países en uno ajeno', 'ok', v_count = 0, 'detalle', v_count);
+    BEGIN
+        INSERT INTO public.company_view_currencies (company_id, currency_code) VALUES (co_i, 'MXN');
+        res := res || jsonb_build_object('prueba', 'El gerente de otro CRM no suma divisas en uno ajeno', 'ok', FALSE, 'detalle', 'la sumó');
+    EXCEPTION WHEN OTHERS THEN
+        res := res || jsonb_build_object('prueba', 'El gerente de otro CRM no suma divisas en uno ajeno', 'ok', SQLSTATE = '42501', 'detalle', SQLSTATE);
+    END;
+    DELETE FROM public.company_view_currencies WHERE company_id = co_i;
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    SELECT count(*) INTO v_num FROM public.company_view_currencies WHERE company_id = co_i;
+    res := res || jsonb_build_object('prueba', 'El gerente de otro CRM no ve ni quita las divisas de uno ajeno',
+        'ok', v_count = 0 AND v_num = 0, 'detalle', jsonb_build_object('quitadas', v_count, 'visibles', v_num));
+
+    PERFORM set_config('request.jwt.claims', json_build_object('sub', u_mgr_i, 'role', 'authenticated')::text, TRUE);
+    DELETE FROM public.company_view_currencies WHERE company_id = co_i AND currency_code = 'PEN';
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    res := res || jsonb_build_object('prueba', 'La gerencia quita una divisa de la vista', 'ok', v_count = 1, 'detalle', v_count);
 
     EXECUTE 'RESET ROLE';
     RAISE EXCEPTION 'RESULTADOS:%', res::text;

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Globe2, Info, Loader2 } from 'lucide-react';
-import { COUNTRIES, COUNTRY_CODES, type CountryCode } from '../data/countries';
-import { CURRENCIES } from '../lib/currency';
+import { Coins, Globe2, Info, Loader2 } from 'lucide-react';
+import { COUNTRIES, COUNTRY_CODES, type CountryCode, type CurrencyCode } from '../data/countries';
+import { CURRENCIES, fixedViewCurrencies } from '../lib/currency';
 import { cardClass, primaryButton, secondaryButton } from '../lib/styles';
 import { CountryFlag } from './CountryFlag';
 import { ActiveSwitch, Modal, Pill } from './ui';
+import { ViewCurrencyList } from './ViewCurrencyList';
 
 interface CountrySettingsProps {
   plan: 'national' | 'international';
@@ -13,13 +14,24 @@ interface CountrySettingsProps {
   /** Leads por país (solo se conocen los de los países activos) */
   leadCounts: Partial<Record<CountryCode, number>>;
   onSetCountry: (code: CountryCode, enabled: boolean) => Promise<string | null> | string | null;
+  /** Divisas que hoy ofrece el selector de moneda del encabezado */
+  viewCurrencies: CurrencyCode[];
+  onSetViewCurrency: (currency: CurrencyCode, enabled: boolean) => Promise<string | null> | string | null;
 }
 
 const cuantosLeads = (n = 0) => `${n} ${n === 1 ? 'lead' : 'leads'}`;
 
-// Gerencia → Países: con el plan Internacional, la gerencia elige en qué países trabaja su CRM. Cada
+// Gerencia → Países y divisas: con el plan Internacional, la gerencia elige en qué países trabaja su CRM. Cada
 // país activo suma sus zonas (comunas, municipios, cantones…), su moneda y su forma de nombrarlas.
-export const CountrySettings: React.FC<CountrySettingsProps> = ({ plan, homeCountry, enabledCountries, leadCounts, onSetCountry }) => {
+export const CountrySettings: React.FC<CountrySettingsProps> = ({
+  plan,
+  homeCountry,
+  enabledCountries,
+  leadCounts,
+  onSetCountry,
+  viewCurrencies,
+  onSetViewCurrency,
+}) => {
   const [pendiente, setPendiente] = useState<CountryCode | null>(null);
   const [confirmando, setConfirmando] = useState<CountryCode | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +46,11 @@ export const CountrySettings: React.FC<CountrySettingsProps> = ({ plan, homeCoun
     if (resultado) setError(resultado);
   };
 
+  // "el peso chileno y el dólar"; en Panamá, Ecuador y El Salvador la moneda base ya es el dólar
+  const fijas = fixedViewCurrencies(homeCountry)
+    .map((c) => (c === 'USD' ? 'el dólar' : `el ${CURRENCIES[c].name.toLowerCase()}`))
+    .join(' y ');
+
   // País base primero, después los activos y al final el resto, cada grupo en orden alfabético
   const orden = [...COUNTRY_CODES].sort((a, b) => {
     const peso = (c: CountryCode) => (c === homeCountry ? 0 : enabledCountries.includes(c) ? 1 : 2);
@@ -41,6 +58,7 @@ export const CountrySettings: React.FC<CountrySettingsProps> = ({ plan, homeCoun
   });
 
   return (
+    <div className="space-y-5">
     <section className={`${cardClass} p-5`} aria-labelledby="paises-titulo">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -132,5 +150,24 @@ export const CountrySettings: React.FC<CountrySettingsProps> = ({ plan, homeCoun
         </Modal>
       )}
     </section>
+
+    <section className={`${cardClass} p-5`} aria-labelledby="divisas-titulo">
+      <h2 id="divisas-titulo" className="flex items-center gap-2 text-lg font-bold text-slate-100">
+        <Coins className="h-5 w-5 text-indigo-400" />
+        Divisas para ver el CRM
+      </h2>
+      <p className="mb-4 mt-1 max-w-3xl text-sm text-slate-400">
+        El selector de moneda de arriba ofrece siempre {fijas}. Suma la moneda de otro país activo y todo el equipo podrá
+        ver los montos convertidos a ella. Cada lead sigue guardado en la moneda en que se negoció.
+      </p>
+      <ViewCurrencyList
+        homeCountry={homeCountry}
+        countries={enabledCountries}
+        viewCurrencies={viewCurrencies}
+        onSetViewCurrency={onSetViewCurrency}
+        emptyHint="Para sumar otra divisa, activa arriba el país que la usa."
+      />
+    </section>
+    </div>
   );
 };

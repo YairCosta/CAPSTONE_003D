@@ -13,6 +13,7 @@ import {
   userFromRow,
   type CompanyCountryRow,
   type CompanyRow,
+  type CompanyViewCurrencyRow,
   type ProfileRow,
 } from './mappers.ts';
 import { dbErrorMessage } from './errors.ts';
@@ -24,9 +25,10 @@ const PROFILE_COLUMNS = 'id, company_id, full_name, email, role, is_active, crea
 
 /** Todos los CRMs y usuarios que la sesión puede ver (RLS decide cuáles). */
 export async function loadPlatform(db: SupabaseClient): Promise<DbResult<{ companies: Company[]; users: AppUser[] }>> {
-  const [empresas, paises, perfiles, exportaciones] = await Promise.all([
+  const [empresas, paises, divisas, perfiles, exportaciones] = await Promise.all([
     db.from('companies').select(COMPANY_COLUMNS).order('created_at'),
     db.from('company_countries').select('company_id, country_code'),
+    db.from('company_view_currencies').select('company_id, currency_code'),
     db.from('profiles').select(PROFILE_COLUMNS).order('created_at'),
     // Solo el administrador ve las exportaciones (RLS); para el resto llega vacío
     db.from('data_exports').select('company_id, exported_by, exported_at').order('exported_at', { ascending: false }).limit(500),
@@ -34,13 +36,15 @@ export async function loadPlatform(db: SupabaseClient): Promise<DbResult<{ compa
   const error = empresas.error ?? paises.error ?? perfiles.error;
   if (error) return { ok: false, error: dbErrorMessage(error, 'No se pudieron cargar los CRMs y usuarios.') };
   const filasPaises = (paises.data ?? []) as CompanyCountryRow[];
+  // Las divisas de la vista son una preferencia: si no se pueden leer, el CRM igual se carga
+  const filasDivisas = (divisas.data ?? []) as CompanyViewCurrencyRow[];
   const users = ((perfiles.data ?? []) as ProfileRow[]).map(userFromRow);
   const ultimas = (exportaciones.data ?? []) as { company_id: string; exported_by: string | null; exported_at: string }[];
   return {
     ok: true,
     data: {
       companies: ((empresas.data ?? []) as CompanyRow[]).map((row) => {
-        const company = companyFromRow(row, filasPaises);
+        const company = companyFromRow(row, filasPaises, filasDivisas);
         const ultima = ultimas.find((e) => e.company_id === row.id);
         if (!ultima) return company;
         const quien = users.find((u) => u.id === ultima.exported_by)?.fullName;
@@ -91,7 +95,11 @@ export async function updateCompany(db: SupabaseClient, company: Company): Promi
   }
 
   const { data: paises } = await db.from('company_countries').select('company_id, country_code').eq('company_id', company.id);
-  return { ok: true, data: companyFromRow(fila as CompanyRow, (paises ?? deseadas) as CompanyCountryRow[]) };
+  // Las divisas de la vista no se editan aquí (las elige la gerencia): se conservan las que ya tenía
+  return {
+    ok: true,
+    data: { ...companyFromRow(fila as CompanyRow, (paises ?? deseadas) as CompanyCountryRow[]), viewCurrencies: company.viewCurrencies ?? [] },
+  };
 }
 
 /**
@@ -103,6 +111,17 @@ export async function setCompanyCountry(db: SupabaseClient, companyId: string, c
     ? await db.from('company_countries').upsert({ company_id: companyId, country_code: countryCode }, { ignoreDuplicates: true })
     : await db.from('company_countries').delete().eq('company_id', companyId).eq('country_code', countryCode);
   if (error) return { ok: false, error: dbErrorMessage(error, enabled ? 'No se pudo activar el país.' : 'No se pudo desactivar el país.') };
+  return { ok: true, data: null };
+}
+
+/** La gerencia suma o quita una divisa del selector de moneda de su CRM. La base revisa su CRM, su perfil y que la moneda sea de un país activo. */
+export async function setCompanyViewCurrency(db: SupabaseClient, companyId: string, currency: string, enabled: boolean): Promise<DbResult<null>> {
+  const { error } = enabled
+    ? await db
+        .from('company_view_currencies')
+        .upsert({ company_id: companyId, currency_code: currency }, { onConflict: 'company_id,currency_code', ignoreDuplicates: true })
+    : await db.from('company_view_currencies').delete().eq('company_id', companyId).eq('currency_code', currency);
+  if (error) return { ok: false, error: dbErrorMessage(error, enabled ? 'No se pudo agregar la divisa.' : 'No se pudo quitar la divisa.') };
   return { ok: true, data: null };
 }
 

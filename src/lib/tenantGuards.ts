@@ -4,9 +4,9 @@
 // En producción, la misma garantía la aplica la base de datos con RLS y triggers (ver supabase/migrations).
 
 import type { AppUser, CatalogItem, ClientAccount, Company, ConsentStatus, Lead, LeadActivity, LeadContact, LeadDataOrigin, LeadItem, NewAppUser, StageConfig } from '../types/crm';
-import { COUNTRIES, isCountryCode, type CountryCode } from '../data/countries.ts';
+import { COUNTRIES, isCountryCode, type CountryCode, type CurrencyCode } from '../data/countries.ts';
 import { applyLeadValue } from './catalog.ts';
-import { isAllowedLeadCurrency } from './currency.ts';
+import { fixedViewCurrencies, isAllowedLeadCurrency, leadCurrenciesFor } from './currency.ts';
 import { MAX_LEAD_CONTACTS } from './contacts.ts';
 import {
   anonymizeLead,
@@ -51,6 +51,24 @@ export function normalizeCompanyCountries<T extends Pick<Company, 'plan' | 'home
 }
 
 export type CountryChange = { ok: true; company: Company } | { ok: false; error: string };
+
+/**
+ * La gerencia suma o quita una divisa del selector de moneda de su CRM. Solo monedas de sus países
+ * activos; la del país base y el dólar están siempre. Solo cambia cómo se ven los montos.
+ */
+export function setViewCurrencyByManager(company: Company | null, currency: CurrencyCode, enabled: boolean, actor: AppUser | null): CountryChange {
+  if (!company || !isManager(actor) || actor?.companyId !== company.id) {
+    return { ok: false, error: 'Solo la gerencia del CRM elige las divisas para ver el CRM.' };
+  }
+  if (fixedViewCurrencies(company.homeCountry).includes(currency)) {
+    return { ok: false, error: `${currency} siempre está disponible para ver el CRM.` };
+  }
+  if (enabled && !leadCurrenciesFor(enabledCountriesOf(company)).includes(currency)) {
+    return { ok: false, error: `${currency} no es la moneda de un país activo del CRM. Activa primero ese país.` };
+  }
+  const otras = (company.viewCurrencies ?? []).filter((c) => c !== currency);
+  return { ok: true, company: { ...company, viewCurrencies: enabled ? [...otras, currency] : otras } };
+}
 
 /**
  * La gerencia activa o desactiva un país de su CRM. Solo con el plan Internacional (el plan lo define

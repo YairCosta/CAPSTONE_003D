@@ -90,7 +90,7 @@ export const CatalogInsights: React.FC<CatalogInsightsProps> = ({ leads, catalog
   const rowMoney = (summary: MoneySummary) =>
     summary.currencies.length === 0 ? '—' : money.fmtSummary(summary, { compact: true });
   const rowTitle = (summary: MoneySummary) =>
-    otherCurrencies(summary).length > 0 ? `Incluye ${otherCurrencies(summary).join(' y ')} convertido · ${ratesNote(money.rates)}` : undefined;
+    otherCurrencies(summary).length > 0 ? `Incluye ${otherCurrencies(summary).join(' y ')} convertido · ${ratesNote(money.rates, [money.display, ...otherCurrencies(summary)])}` : undefined;
   const mixed = otherCurrencies(revenueWon).length > 0;
 
   const cards = [
@@ -110,7 +110,7 @@ export const CatalogInsights: React.FC<CatalogInsightsProps> = ({ leads, catalog
         : 'Suma de ítems en leads ganados',
       icon: DollarSign,
       tone: 'bg-amber-500/15 text-amber-300',
-      title: mixed ? ratesNote(money.rates) : undefined,
+      title: mixed ? ratesNote(money.rates, [money.display, ...otherCurrencies(revenueWon)]) : undefined,
     },
     {
       label: 'Ticket promedio',

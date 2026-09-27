@@ -14,7 +14,7 @@
 //   2. Agregar su configuración en COUNTRIES, y la moneda y su tasa de respaldo en src/lib/currency.ts.
 //   3. Su bandera en src/components/CountryFlag.tsx.
 //   4. Sus zonas con `npm run zonas` y una migración nueva (tabla countries y zone_catalog).
-//   5. Con el plan Internacional, el gerente lo activa desde Gerencia → Países.
+//   5. Con el plan Internacional, el gerente lo activa desde Gerencia → Países y divisas.
 
 export type CountryCode =
   | 'CL'

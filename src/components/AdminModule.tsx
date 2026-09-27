@@ -125,7 +125,7 @@ function TenantsSection({
 
   const quickUpdate = async (company: Company) => setRowError(await onUpdateCompany(company));
 
-  // Plan Internacional: la gerencia activa los países que necesite desde Gerencia → Países. Al
+  // Plan Internacional: la gerencia activa los países que necesite desde Gerencia → Países y divisas. Al
   // desactivarlo cuenta solo el país base, pero la lista se conserva: al reactivarlo vuelven los países
   // que el CRM ya usaba, con sus datos (nada se borra).
   const setInternational = (company: Company, international: boolean) =>
@@ -560,7 +560,7 @@ function CompanyModal({
           {isInternational && (
             <fieldset className="mt-3">
               <legend className="mb-2 text-sm text-slate-400">
-                Países adicionales habilitados (la gerencia del CRM también los elige, en Gerencia → Países):
+                Países adicionales habilitados (la gerencia del CRM también los elige, en Gerencia → Países y divisas):
               </legend>
               <div className="flex flex-wrap gap-2">
                 {availableExtras.map((code) => (

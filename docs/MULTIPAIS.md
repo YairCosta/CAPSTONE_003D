@@ -3,7 +3,7 @@
 Un CRM puede trabajar en **un país** (plan Nacional) o en **varios** (plan Internacional). Revela cubre los **19 países de América Latina**:
 
 - El administrador de la plataforma define el plan en **Administración → CRMs por empresa → Plan Internacional**.
-- Con el plan Internacional, la **gerencia de cada CRM elige sus países** en **Gerencia → Países**.
+- Con el plan Internacional, la **gerencia de cada CRM elige sus países** en **Gerencia → Países y divisas**.
 - Un CRM parte solo con su país base (Chile por defecto) y suma los demás cuando los necesita. Así no se cargan miles de zonas que nadie usa.
 
 ## Cómo funciona
@@ -15,7 +15,7 @@ Un CRM puede trabajar en **un país** (plan Nacional) o en **varios** (plan Inte
 | Desactivar | **Oculta, no borra.** Los leads, empresas y zonas del país dejan de verse en todo el CRM y vuelven al activarlo de nuevo. Si el país tiene leads, la app pide confirmación. |
 | Plan Nacional | Cuenta solo el país base, pero **la lista de países se guarda**: al reactivar el plan vuelven los países que el CRM ya usaba, con sus datos. |
 | Zona por país | Cada país nombra su zona a su manera (tabla de abajo). Los textos de la app se adaptan solos: "Selecciona el municipio", "el cantón", "la comuna"… Con varios países, la app dice "la zona". |
-| Moneda | Cada país activo suma su moneda a las que se pueden usar en los leads (más US$, siempre). Todo el CRM se ve en una sola moneda (CLP o US$) con tasas del día. Ver `docs/MONEDAS.md`. |
+| Moneda | Cada país activo suma su moneda a las que se pueden usar en los leads (más US$, siempre). Todo el CRM se ve en una sola moneda, con tasas del día: la del país base, US$ o la de otro país activo que la gerencia sume al selector (botón "+ $" o Gerencia → Países y divisas). Ver `docs/MONEDAS.md`. |
 | Porcentajes por zona | Se calculan **dentro de cada país** (el % de Miraflores es sobre los leads de Perú). |
 | Filtro de países | Barra "Plan Internacional" bajo el menú: filtra KPI, mapa, pipeline, registro de contacto, gerencia y estados. Solo aparece si el CRM tiene más de un país. |
 | Mapa | Hasta 3 países, botones **Todos / Chile / Perú…** para encuadrar cada uno; con más, un selector. En barras, las zonas se agrupan por país. Solo se dibujan las zonas con leads (una zona aparece con su primer lead) y el ranking solo lista esas. De lejos, una burbuja por región; al acercarse (zoom 9 o más), una por zona. |
@@ -128,7 +128,7 @@ Fuente y licencia de cada país en geoBoundaries:
 
 ### Demo
 
-La cuenta demo trae sus 10 zonas de ejemplo de Chile y Perú. Suma además una zona por cada otro país, su capital (`src/data/demoLatamZones.ts`), para que activar un país en Gerencia → Países funcione también en la demo. Las cuentas reales usan el catálogo completo de la base.
+La cuenta demo trae sus 10 zonas de ejemplo de Chile y Perú. Suma además una zona por cada otro país, su capital (`src/data/demoLatamZones.ts`), para que activar un país en Gerencia → Países y divisas funcione también en la demo. Las cuentas reales usan el catálogo completo de la base.
 
 ### Regenerar o agregar zonas
 
@@ -178,7 +178,7 @@ En la base:
 
    Después, `npm run zonas` y el SQL generado a una migración nueva.
 5. **Base de datos** — `INSERT INTO public.countries …` en esa migración (ver la 0023).
-6. **Activar** — la gerencia del CRM, desde Gerencia → Países.
+6. **Activar** — la gerencia del CRM, desde Gerencia → Países y divisas.
 
 No hay que tocar los módulos: KPI, mapa, ranking, formularios y asistente IA leen el registro de países.
 
@@ -221,7 +221,7 @@ npm run test:e2e
   - desactivar Perú oculta su lead y reactivarlo lo devuelve;
   - el usuario base, un gerente con plan Nacional y el gerente de otro CRM no pueden cambiar países.
 - **`test:e2e`**:
-  - en la demo: Gerencia → Países muestra los 19 países con Chile fijo;
+  - en la demo: Gerencia → Países y divisas muestra los 19 países con Chile fijo;
   - la gerencia activa Argentina y aparece en el filtro;
   - la captura ofrece su "Partido o departamento";
   - el lead de Argentina se guarda, desactivar lo oculta (con confirmación) y reactivar lo devuelve;

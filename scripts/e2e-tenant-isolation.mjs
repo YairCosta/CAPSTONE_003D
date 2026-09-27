@@ -1041,6 +1041,11 @@ try {
     !pestanasAgente.includes('Gerencia') && !pestanasAgente.includes('Auditoría'),
     pestanasAgente
   );
+  check(
+    'El usuario base elige en qué moneda ver el CRM, pero no suma divisas (sin botón "$")',
+    (await page.$('[aria-label="Moneda para ver el CRM"] button[aria-pressed]')) !== null &&
+      (await page.$('button[aria-label="Agregar o quitar divisas para ver el CRM"]')) === null
+  );
 
   await tab('Registro de contacto');
   await sleep(500);
@@ -1288,7 +1293,7 @@ try {
   const auditRowsAfter = await page.evaluate(() => document.querySelectorAll('main tbody tr').length);
   check('El historial nunca se borra: solo se agregan registros', auditRowsAfter > auditRows, `${auditRows} → ${auditRowsAfter}`);
 
-  // ================================================================ 10. Gerencia → Países: la gerencia elige sus países
+  // ================================================================ 10. Gerencia → Países y divisas: la gerencia elige sus países
   const abrirPaises = async () => {
     await tab('Gerencia');
     await clickText('main button', 'Países');
@@ -1299,7 +1304,7 @@ try {
   const interruptores = await page.$$eval('ul[aria-label="Países disponibles"] [role=switch]', (els) =>
     els.map((e) => ({ label: e.getAttribute('aria-label'), on: e.getAttribute('aria-checked') === 'true', disabled: e.disabled }))
   );
-  check('Gerencia → Países muestra los 19 países de América Latina', interruptores.length === 19, String(interruptores.length));
+  check('Gerencia → Países y divisas muestra los 19 países de América Latina', interruptores.length === 19, String(interruptores.length));
   check(
     'El país base (Chile) queda siempre activo',
     interruptores.some((i) => i.label === 'Chile es el país base' && i.on && i.disabled),
@@ -1350,13 +1355,50 @@ try {
   await sleep(800);
   check('Al reactivar Argentina su lead vuelve (desactivar no borra)', (await cuantosLeads()) === leadsAntes + 1, await leadChip());
 
+  // Divisas para ver el CRM: la gerencia suma el peso argentino con el botón "$" del encabezado
+  const botonesMoneda = () =>
+    page.$$eval('[aria-label="Moneda para ver el CRM"] button[aria-pressed]', (bs) =>
+      bs.map((b) => `${b.childNodes[0].textContent.trim()}${b.getAttribute('aria-pressed') === 'true' ? '*' : ''}`).join(' ')
+    );
+  await tab('KPI y Mapa');
+  const monedasAntes = await botonesMoneda();
+  await domClick('button[aria-label="Agregar o quitar divisas para ver el CRM"]');
+  await sleep(300);
+  const menuDivisas = await page.$eval('[role=dialog][aria-label="Divisas para ver el CRM"]', (d) => d.innerText).catch(() => '');
+  check(
+    'El botón "$" ofrece CLP y US$ fijos, y las monedas de los países activos (PEN y ARS)',
+    monedasAntes === 'CLP* USD' && /CLP[\s\S]*Siempre disponible/.test(menuDivisas) && menuDivisas.includes('ARS') && menuDivisas.includes('PEN'),
+    `${monedasAntes} · ${menuDivisas.replace(/\s+/g, ' ').slice(0, 160)}`
+  );
+  await domClick('[role=dialog] [role=switch][aria-label="Agregar ARS a las divisas para ver el CRM"]');
+  await sleep(600);
+  await page.keyboard.press('Escape');
+  await sleep(200);
+  await clickText('[aria-label="Moneda para ver el CRM"] button', 'ARS');
+  await sleep(600);
+  const kpiEnArs = await mainText();
+  check(
+    'La gerencia suma ARS y todo el CRM se puede ver en pesos argentinos',
+    (await botonesMoneda()) === 'CLP USD ARS*' && kpiEnArs.includes('AR$'),
+    await botonesMoneda()
+  );
+
   await tab('Auditoría');
   await sleep(400);
   const auditoriaPaises = await mainText();
   check(
-    'Activar y desactivar países queda en la auditoría',
-    auditoriaPaises.includes('Activó Argentina') && auditoriaPaises.includes('Desactivó Argentina'),
+    'Activar y desactivar países, y sumar divisas, queda en la auditoría',
+    auditoriaPaises.includes('Activó Argentina') && auditoriaPaises.includes('Desactivó Argentina') && auditoriaPaises.includes('Sumó ARS'),
     auditoriaPaises.slice(0, 200).replace(/\s+/g, ' ')
+  );
+
+  await abrirPaises();
+  await domClick('main [role=switch][aria-label="Quitar ARS de las divisas para ver el CRM"]');
+  await sleep(600);
+  check(
+    'Al quitar ARS desde Gerencia → Países y divisas, la vista vuelve a CLP',
+    (await botonesMoneda()) === 'CLP* USD',
+    await botonesMoneda()
   );
 } catch (error) {
   const shot = `e2e-fallo-${Date.now()}.png`;

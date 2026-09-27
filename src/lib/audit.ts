@@ -15,7 +15,7 @@ import type {
   StageConfig,
 } from '../types/crm.ts';
 import { COUNTRIES } from '../data/countries.ts';
-import { formatMoney, leadCurrency } from './currency.ts';
+import { formatMoney, leadCurrency, viewCurrenciesFor } from './currency.ts';
 import { isManualValue, itemsSubtotal } from './catalog.ts';
 import { contactLine } from './contacts.ts';
 import { CONSENT_LABEL, ORIGIN_LABEL } from './privacy.ts';
@@ -164,6 +164,12 @@ export const companyFields: FieldDef<Company>[] = [
     key: 'enabledCountries',
     label: 'Países',
     value: (c) => (c.plan === 'international' ? c.enabledCountries : [c.homeCountry]).map((x) => COUNTRIES[x]?.name ?? x).join(', '),
+  },
+  {
+    key: 'viewCurrencies',
+    label: 'Divisas para ver el CRM',
+    value: (c) =>
+      viewCurrenciesFor(c.homeCountry, c.plan === 'international' ? c.enabledCountries : [c.homeCountry], c.viewCurrencies).join(', '),
   },
 ];
 

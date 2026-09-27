@@ -66,13 +66,12 @@ export const FALLBACK_RATES: Rates = {
   VES: 150,
 };
 
-// Monedas en las que se puede VER el CRM. Agregar una aquí basta para ofrecerla en el selector.
-export const DISPLAY_CURRENCIES: CurrencyCode[] = ['CLP', 'USD'];
-
 // El dólar se ofrece siempre como moneda de lead: es habitual cotizar en US$ en ventas entre empresas
 export const ALWAYS_AVAILABLE_LEAD_CURRENCY: CurrencyCode = 'USD';
 
 export const currencyOfCountry = (code: CountryCode): CurrencyCode => COUNTRIES[code].currency;
+
+export const isCurrencyCode = (value: unknown): value is CurrencyCode => typeof value === 'string' && Object.hasOwn(CURRENCIES, value);
 
 // Moneda en que se negoció el lead. Los leads antiguos no la tenían: se asume la de su país.
 export const leadCurrency = (lead: { currency?: CurrencyCode; countryCode: CountryCode }): CurrencyCode =>
@@ -88,6 +87,20 @@ export function leadCurrenciesFor(countries: CountryCode[]): CurrencyCode[] {
 
 export const isAllowedLeadCurrency = (currency: unknown, countries: CountryCode[]): currency is CurrencyCode =>
   typeof currency === 'string' && leadCurrenciesFor(countries).includes(currency as CurrencyCode);
+
+/**
+ * Divisas del selector del encabezado (la moneda en que se VE el CRM): la del país base y el dólar
+ * siempre; además las que sumó la gerencia, mientras su país siga activo. Solo cambian cómo se
+ * muestran y suman los montos, nunca cómo se guardan.
+ */
+export function viewCurrenciesFor(homeCountry: CountryCode, countries: CountryCode[], extra: CurrencyCode[] = []): CurrencyCode[] {
+  const posibles = leadCurrenciesFor(countries);
+  return Array.from(new Set([currencyOfCountry(homeCountry), ALWAYS_AVAILABLE_LEAD_CURRENCY, ...extra.filter((c) => posibles.includes(c))]));
+}
+
+/** Las que siempre están y no se pueden quitar: la del país base y el dólar */
+export const fixedViewCurrencies = (homeCountry: CountryCode): CurrencyCode[] =>
+  Array.from(new Set([currencyOfCountry(homeCountry), ALWAYS_AVAILABLE_LEAD_CURRENCY]));
 
 export function convert(amount: number, from: CurrencyCode, to: CurrencyCode, rates: Rates = FALLBACK_RATES): number {
   if (from === to) return amount;
@@ -140,8 +153,9 @@ export const formatBreakdown = (summary: MoneySummary, options: { compact?: bool
 
 // "1 US$ = 958 CLP · 3,38 PEN": se muestra junto a los montos convertidos
 export function ratesNote(rates: Rates, currencies: CurrencyCode[] = ['CLP', 'PEN']): string {
-  const partes = currencies
+  const partes = Array.from(new Set(currencies))
     .filter((c) => c !== 'USD')
     .map((c) => `${rates[c].toLocaleString('es-CL', { maximumFractionDigits: 2 })} ${c}`);
-  return `1 US$ = ${partes.join(' = ')}`;
+  // Panamá, Ecuador y El Salvador usan el dólar: puede no haber nada que convertir
+  return partes.length === 0 ? 'Montos en dólares (US$)' : `1 US$ = ${partes.join(' = ')}`;
 }

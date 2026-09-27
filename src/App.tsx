@@ -14,7 +14,15 @@ import { SetPasswordScreen } from './components/SetPasswordScreen';
 import { usingSupabase } from './lib/dataSource';
 import { supabase, initialAuthLinkError, initialAuthLinkType } from './lib/supabaseClient';
 import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswordFromLink, signIn, signOut } from './lib/db/auth';
-import { insertCompany, inviteUser, loadPlatform, setCompanyCountry, updateCompany as saveCompanyInDb, updateProfile } from './lib/db/platform';
+import {
+  insertCompany,
+  inviteUser,
+  loadPlatform,
+  setCompanyCountry,
+  setCompanyViewCurrency,
+  updateCompany as saveCompanyInDb,
+  updateProfile,
+} from './lib/db/platform';
 import { loadAuditLog, saveAuditEntry } from './lib/db/audit';
 import { isAuditEntityConnected } from './lib/db/mappers';
 import {
@@ -38,11 +46,11 @@ import { CountryBar } from './components/CountryBar';
 import { CountryFlag } from './components/CountryFlag';
 import { COUNTRIES, type CountryCode } from './data/countries';
 import {
-  DISPLAY_CURRENCIES,
   FALLBACK_RATES,
   isAllowedLeadCurrency,
   leadCurrency,
   ratesNote,
+  viewCurrenciesFor,
   type Rates,
 } from './lib/currency';
 import { MoneyContext, buildMoneyApi, fetchRates, type RatesInfo } from './lib/money';
@@ -59,6 +67,7 @@ import {
   sanitizeAccountUpdate,
   sanitizeCompanyUpdate,
   setCountryByManager,
+  setViewCurrencyByManager,
   sanitizeLeadUpdate,
   sanitizeTeamUserUpdate,
   sanitizeUserUpdate,
@@ -432,8 +441,16 @@ export function App() {
 
   // ---------- KPI ----------
   // Moneda de la vista: la elegida por el usuario, o CLP para un CRM con base en Chile y US$ para el resto
+  // Las que ofrece el selector: la del país base y el dólar siempre, más las que sumó la gerencia
   const defaultDisplay: CurrencyCode = currentCompany?.homeCountry === 'CL' ? 'CLP' : 'USD';
-  const displayCurrency: CurrencyCode = DISPLAY_CURRENCIES.includes(displayPref as CurrencyCode)
+  const viewCurrencies = useMemo(
+    () =>
+      currentCompany
+        ? viewCurrenciesFor(currentCompany.homeCountry, enabledCountriesOf(currentCompany), currentCompany.viewCurrencies)
+        : (['CLP', 'USD'] as CurrencyCode[]),
+    [currentCompany]
+  );
+  const displayCurrency: CurrencyCode = viewCurrencies.includes(displayPref as CurrencyCode)
     ? (displayPref as CurrencyCode)
     : defaultDisplay;
   const money = useMemo(
@@ -1333,7 +1350,7 @@ export function App() {
     return null;
   };
 
-  // Gerencia → Países: la gerencia activa o desactiva países de su CRM (plan Internacional). Con
+  // Gerencia → Países y divisas: la gerencia activa o desactiva países de su CRM (plan Internacional). Con
   // Supabase, al activar uno la base copia sus zonas al CRM; se recarga el CRM para traerlas (y, al
   // desactivarlo, para dejar de mostrar sus datos).
   const handleSetCountry = async (code: CountryCode, enabled: boolean): Promise<string | null> => {
@@ -1356,6 +1373,29 @@ export function App() {
       changes: diffFields(before, after, companyFields),
     });
     return db ? loadTenant(after.id) : null;
+  };
+
+  // Divisas para ver el CRM: solo cambian cómo se muestran los montos, que siguen guardados en su moneda
+  const handleSetViewCurrency = async (currency: CurrencyCode, enabled: boolean): Promise<string | null> => {
+    const before = currentCompany;
+    const cambio = setViewCurrencyByManager(before, currency, enabled, currentUser);
+    if (!cambio.ok || !before) return cambio.ok ? 'No hay un CRM en la sesión.' : cambio.error;
+    if (db) {
+      const guardado = await setCompanyViewCurrency(db, before.id, currency, enabled);
+      if (!guardado.ok) return guardado.error;
+    }
+    const after = cambio.company;
+    setCompanies((prev) => prev.map((c) => (c.id === after.id ? after : c)));
+    record({
+      companyId: after.id,
+      action: 'update',
+      entity: 'company',
+      entityId: after.id,
+      entityLabel: after.name,
+      summary: enabled ? `Sumó ${currency} a las divisas para ver el CRM` : `Quitó ${currency} de las divisas para ver el CRM`,
+      changes: diffFields(before, after, companyFields),
+    });
+    return null;
   };
 
   // Con Supabase el usuario no se crea con una contraseña: se le envía una invitación y la elige él
@@ -1713,7 +1753,7 @@ export function App() {
     return otras.length === 0 ? (
       text
     ) : (
-      <span title={`${ratesNote(exchange.rates)} · ${exchange.info.sources.join(' + ')}`}>
+      <span title={`${ratesNote(exchange.rates, [displayCurrency, ...otras])} · ${exchange.info.sources.join(' + ')}`}>
         {text}
         <span className="block text-[13px]">
           Incluye {otras.join(' y ')} convertido a {displayCurrency}
@@ -1799,6 +1839,12 @@ export function App() {
         onChangePassword={() => setIsPasswordModalOpen(true)}
         displayCurrency={currentUser.role === 'superadmin' ? undefined : displayCurrency}
         onDisplayCurrencyChange={changeDisplayCurrency}
+        viewCurrencies={viewCurrencies}
+        currencyEditor={
+          currentUser.role === 'manager' && currentCompany
+            ? { homeCountry: currentCompany.homeCountry, countries: enabledCountries, onSetViewCurrency: handleSetViewCurrency }
+            : undefined
+        }
         rates={exchange.rates}
         ratesInfo={exchange.info}
       />
@@ -1957,6 +2003,8 @@ export function App() {
             homeCountry={currentCompany?.homeCountry ?? 'CL'}
             leadCountsByCountry={leadCountsByCountry}
             onSetCountry={handleSetCountry}
+            viewCurrencies={viewCurrencies}
+            onSetViewCurrency={handleSetViewCurrency}
           />
         )}
 

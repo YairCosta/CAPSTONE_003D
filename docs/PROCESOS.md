@@ -86,7 +86,7 @@ gerente; el gerente invita a su equipo. Nadie crea la contraseña de otra person
 | Actividad | Quién | Qué lo hace cumplir |
 |---|---|---|
 | Crear el CRM | Administrador de la plataforma | Solo el administrador escribe en `companies` (RLS) |
-| Copiar zonas y etapas | Revela | Triggers de la base: las zonas oficiales de su país base (345 comunas de Chile) y las etapas por defecto. Las de otro país llegan cuando la gerencia lo activa en Gerencia → Países (plan Internacional), sin copiar el contorno ([`MULTIPAIS.md`](MULTIPAIS.md)) |
+| Copiar zonas y etapas | Revela | Triggers de la base: las zonas oficiales de su país base (345 comunas de Chile) y las etapas por defecto. Las de otro país llegan cuando la gerencia lo activa en Gerencia → Países y divisas (plan Internacional), sin copiar el contorno ([`MULTIPAIS.md`](MULTIPAIS.md)) |
 | Invitar | Administrador o gerente | `/api/admin/invite`: el servidor verifica la sesión con Supabase Auth y el perfil (`server/session.ts`); el gerente solo invita a su CRM y nunca administradores (`authorizeInvite()`) |
 | Enviar la invitación | Revela | Supabase Auth envía el correo (SMTP de Brevo); el perfil se crea con su CRM y su rol |
 | Crear su contraseña | Persona invitada | Solo su dueño la conoce y la cambia; Supabase la guarda con hash (invariante 10) |

@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AppUser, Company } from '../../types/crm.ts';
-import { companyFromRow, userFromRow, type CompanyCountryRow, type CompanyRow, type ProfileRow } from './mappers.ts';
+import { companyFromRow, userFromRow, type CompanyCountryRow, type CompanyRow, type CompanyViewCurrencyRow, type ProfileRow } from './mappers.ts';
 import { authErrorMessage, dbErrorMessage } from './errors.ts';
 import { validateNewPassword } from '../passwords.ts';
 import type { DbResult } from './platform.ts';
@@ -26,20 +26,28 @@ export async function loadSessionProfile(db: SupabaseClient, userId: string): Pr
   const user = userFromRow(perfil as ProfileRow);
   if (!user.companyId) return { ok: true, data: { user, company: null } };
 
-  const [empresa, paises] = await Promise.all([
+  const [empresa, paises, divisas] = await Promise.all([
     db
       .from('companies')
       .select('id, name, slug, tax_id, is_active, plan, home_country, default_lat, default_lng, default_zoom, created_at')
       .eq('id', user.companyId)
       .maybeSingle(),
     db.from('company_countries').select('company_id, country_code').eq('company_id', user.companyId),
+    db.from('company_view_currencies').select('company_id, currency_code').eq('company_id', user.companyId),
   ]);
   if (empresa.error || !empresa.data) {
     return { ok: false, error: dbErrorMessage(empresa.error, 'No se pudo cargar tu CRM.') };
   }
   return {
     ok: true,
-    data: { user, company: companyFromRow(empresa.data as CompanyRow, (paises.data ?? []) as CompanyCountryRow[]) },
+    data: {
+      user,
+      company: companyFromRow(
+        empresa.data as CompanyRow,
+        (paises.data ?? []) as CompanyCountryRow[],
+        (divisas.data ?? []) as CompanyViewCurrencyRow[]
+      ),
+    },
   };
 }
 

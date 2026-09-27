@@ -7,6 +7,7 @@ import {
   enabledCountriesOf,
   normalizeCompanyCountries,
   setCountryByManager,
+  setViewCurrencyByManager,
   sanitizeAccountUpdate,
   sanitizeCatalogItemUpdate,
   sanitizeLeadItems,
@@ -51,8 +52,10 @@ import {
   formatMoney,
   leadCurrenciesFor,
   leadCurrency,
+  ratesNote,
   roundForCurrency,
   summarizeLeads,
+  viewCurrenciesFor,
   summaryIn,
   type Rates,
 } from '../src/lib/currency.ts';
@@ -203,7 +206,7 @@ test('enabledCountriesOf: plan Nacional solo ve su país base aunque tenga otros
 });
 
 test('normalizeCompanyCountries: un plan Internacional puede partir solo con su país base', () => {
-  // La gerencia suma los demás países desde Gerencia → Países
+  // La gerencia suma los demás países desde Gerencia → Países y divisas
   assert.equal(normalizeCompanyCountries(company('international', ['CL'])).plan, 'international');
   assert.deepEqual(normalizeCompanyCountries(company('international', ['CL'])).enabledCountries, ['CL']);
   assert.deepEqual(normalizeCompanyCountries(company('international', ['PE', 'CL', 'PE', 'XX' as never])).enabledCountries, ['CL', 'PE']);
@@ -261,6 +264,35 @@ test('Países: cada uno nombra su zona a su manera (no en todos lados hay comuna
   assert.equal(zoneWithArticle(['CL', 'MX']), 'la zona');
   assert.equal(COUNTRIES.BR.regionLabel.singular, 'Estado');
   assert.equal(COUNTRIES.CO.regionLabel.singular, 'Departamento');
+});
+
+test('Divisas para ver el CRM: la del país base y el dólar siempre; las sumadas, solo de países activos', () => {
+  assert.deepEqual(viewCurrenciesFor('CL', ['CL']), ['CLP', 'USD']);
+  assert.deepEqual(viewCurrenciesFor('PE', ['PE', 'CL']), ['PEN', 'USD']);
+  assert.deepEqual(viewCurrenciesFor('CL', ['CL', 'PE'], ['PEN']), ['CLP', 'USD', 'PEN']);
+  // Si se desactiva Perú (o el plan pasa a Nacional), el sol deja de ofrecerse, y vuelve con él
+  assert.deepEqual(viewCurrenciesFor('CL', ['CL'], ['PEN']), ['CLP', 'USD']);
+  const nacional = { ...company('national', ['CL', 'PE']), viewCurrencies: ['PEN' as const] };
+  assert.deepEqual(viewCurrenciesFor('CL', enabledCountriesOf(nacional), nacional.viewCurrencies), ['CLP', 'USD']);
+  // Panamá usa el dólar: una sola divisa
+  assert.deepEqual(viewCurrenciesFor('PA', ['PA']), ['USD']);
+  assert.equal(ratesNote({ ...FALLBACK_RATES }, ['USD']), 'Montos en dólares (US$)');
+});
+
+test('setViewCurrencyByManager: la gerencia suma y quita divisas de países activos, nunca las fijas', () => {
+  const gerente = user('m1', 'manager', A);
+  const crm = company('international', ['CL', 'PE']);
+  const suma = setViewCurrencyByManager(crm, 'PEN', true, gerente);
+  assert.deepEqual(suma.ok && suma.company.viewCurrencies, ['PEN']);
+  const quita = setViewCurrencyByManager({ ...crm, viewCurrencies: ['PEN'] }, 'PEN', false, gerente);
+  assert.deepEqual(quita.ok && quita.company.viewCurrencies, []);
+  const falla = (r: ReturnType<typeof setViewCurrencyByManager>) => (r.ok ? 'se permitió' : r.error);
+  assert.match(falla(setViewCurrencyByManager(crm, 'MXN', true, gerente)), /Activa primero ese país/);
+  assert.match(falla(setViewCurrencyByManager(crm, 'CLP', false, gerente)), /siempre está disponible/);
+  assert.match(falla(setViewCurrencyByManager(crm, 'USD', false, gerente)), /siempre está disponible/);
+  assert.match(falla(setViewCurrencyByManager(crm, 'PEN', true, user('u1', 'agent', A))), /gerencia/);
+  assert.match(falla(setViewCurrencyByManager(crm, 'PEN', true, user('m2', 'manager', B))), /gerencia/);
+  assert.match(falla(setViewCurrencyByManager(company('national', ['CL', 'PE']), 'PEN', true, gerente)), /Activa primero ese país/);
 });
 
 test('Monedas: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos', () => {

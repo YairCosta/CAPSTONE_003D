@@ -26,7 +26,7 @@ De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e import
 
 ```
 1. countries ── zone_catalog     (catálogos globales: 19 países de América Latina y sus 14.489 zonas con contorno)
-2. companies                    (CRM / tenant)  ── company_countries
+2. companies                    (CRM / tenant)  ── company_countries, company_view_currencies
 3. profiles                     (usuarios del CRM)
 4. territories                  (zonas del CRM, por país)
 5. pipeline_stage_configs       (etapas del embudo del CRM)
@@ -123,7 +123,7 @@ La app usa `camelCase` y la base `snake_case`. La conversión va en un solo luga
 
 | App (`src/types/crm.ts`) | Base de datos |
 |---|---|
-| `Company` | `companies` (+ `company_countries`) |
+| `Company` | `companies` (+ `company_countries` y `company_view_currencies`) |
 | `AppUser` | `profiles` (+ `auth.users`) |
 | `ClientAccount` | `client_accounts` |
 | `Lead` | `leads` |
@@ -196,6 +196,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0026 | Zonas de Brasil: 5.570 municipios |
 | 0027 | Zonas de México, Centroamérica y el Caribe: México, Guatemala, El Salvador, Honduras, Nicaragua, Costa Rica, Panamá, Cuba y República Dominicana (4.004 zonas) |
 | 0028 | Nombres de zona corregidos: tildes (Costa Rica, Ecuador, Honduras, distritos de Perú), El Salvador y Paraguay desde la edición humanitaria (sin zonas "Null" ni nombres cortados), lagos fuera y traducciones de la fuente. Actualiza también el nombre en las copias de cada CRM; se detiene si un CRM usa una zona que sale del catálogo |
+| 0029 | Divisas para ver el CRM: `company_view_currencies` guarda las monedas que la gerencia suma al selector del encabezado (la del país base y el dólar están siempre). RLS como `company_countries` (la gerencia agrega y quita solo en su CRM, el administrador en cualquiera), trigger que rechaza la moneda de un país que no está activo y registro en `change_log`. Solo cambia cómo se ven los montos. Ver `docs/MONEDAS.md` |
 
 ## 8. Revisión automática
 
@@ -212,7 +213,7 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error --schema public   # funciones con columnas o tipos inexistentes (sin --schema también revisa las internas de PostGIS, que traen avisos propios)
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 142 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación, ataques desde dentro y países elegidos por la gerencia
+npm run test:db                               # 150 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación, ataques desde dentro y países y divisas elegidos por la gerencia
 npm run test:db -- --con supabase/migrations/<nueva>.sql   # ensaya una migración con todas las pruebas SIN aplicarla
 ```
 
@@ -222,7 +223,7 @@ así se aplica a la base real solo lo que ya pasó todas las pruebas.
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0028 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0029 el 27-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

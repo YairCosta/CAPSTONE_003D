@@ -3,6 +3,7 @@
 
 import type { AppUser, AuditAction, AuditChange, AuditEntity, AuditEntry, AuditRevert, Company, CompanyPlan, UserRole } from '../../types/crm.ts';
 import { COUNTRIES, isCountryCode, type CountryCode } from '../../data/countries.ts';
+import { isCurrencyCode } from '../currency.ts';
 
 // ------------------------------------------------------------------ CRMs (companies + company_countries)
 export interface CompanyRow {
@@ -24,7 +25,12 @@ export interface CompanyCountryRow {
   country_code: string;
 }
 
-export function companyFromRow(row: CompanyRow, countryRows: CompanyCountryRow[]): Company {
+export interface CompanyViewCurrencyRow {
+  company_id: string;
+  currency_code: string;
+}
+
+export function companyFromRow(row: CompanyRow, countryRows: CompanyCountryRow[], currencyRows: CompanyViewCurrencyRow[] = []): Company {
   const home: CountryCode = isCountryCode(row.home_country.trim()) ? (row.home_country.trim() as CountryCode) : 'CL';
   const plan: CompanyPlan = row.plan === 'international' ? 'international' : 'national';
   const extra = countryRows
@@ -35,6 +41,10 @@ export function companyFromRow(row: CompanyRow, countryRows: CompanyCountryRow[]
   // El país base va siempre primero. Con el plan Nacional las otras filas se conservan (cuentan de nuevo
   // si se reactiva el plan); qué países cuentan hoy lo dice enabledCountriesOf
   const enabledCountries: CountryCode[] = [home, ...extra];
+  const viewCurrencies = currencyRows
+    .filter((c) => c.company_id === row.id)
+    .map((c) => c.currency_code.trim())
+    .filter(isCurrencyCode);
   const vista = COUNTRIES[home].mapView;
   return {
     id: row.id,
@@ -45,6 +55,7 @@ export function companyFromRow(row: CompanyRow, countryRows: CompanyCountryRow[]
     plan,
     homeCountry: home,
     enabledCountries,
+    viewCurrencies,
     createdAt: row.created_at,
     defaultLat: row.default_lat ?? vista.lat,
     defaultLng: row.default_lng ?? vista.lng,
