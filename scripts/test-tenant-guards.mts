@@ -63,7 +63,7 @@ import { buildMoneyApi } from '../src/lib/money.ts';
 import { getRates } from '../server/exchangeRates.ts';
 import { CURRENCIES, FALLBACK_RATES } from '../src/lib/currency.ts';
 import { COUNTRIES, COUNTRY_CODES, zoneWithArticle } from '../src/data/countries.ts';
-import { applyLeadValue, computeItemSales, isManualValue, leadsWithItems } from '../src/lib/catalog.ts';
+import { applyLeadValue, computeItemSales, isManualValue, leadsWithItems, suggestedCatalogPrice } from '../src/lib/catalog.ts';
 import { accountFields, buildAuditEntry, diffFields, isRevertible, leadFields, leadSummary, scopeAuditLog } from '../src/lib/audit.ts';
 import { canMoveLeadBackwards, canRevertChanges } from '../src/lib/permissions.ts';
 import type { AuditEntry, CatalogItem, LeadContact } from '../src/types/crm.ts';
@@ -293,6 +293,22 @@ test('setViewCurrencyByManager: la gerencia suma y quita divisas de países acti
   assert.match(falla(setViewCurrencyByManager(crm, 'PEN', true, user('u1', 'agent', A))), /gerencia/);
   assert.match(falla(setViewCurrencyByManager(crm, 'PEN', true, user('m2', 'manager', B))), /gerencia/);
   assert.match(falla(setViewCurrencyByManager(company('national', ['CL', 'PE']), 'PEN', true, gerente)), /Activa primero ese país/);
+});
+
+test('Catálogo: el precio sugerido de otro país es la conversión del primero cargado, sin tocar los precios', () => {
+  const tasas = { ...FALLBACK_RATES, CLP: 950, PEN: 3.8, MXN: 18 };
+  const precios = Object.freeze({ CL: '500000', PE: '', MX: '' });
+  // Desde Chile (el país base, el primero con precio): 500.000 CLP = 2.000 PEN = 9.473,68 MXN
+  assert.deepEqual(suggestedCatalogPrice(precios, ['CL', 'PE', 'MX'], 'PE', tasas), { amount: 2000, from: 'CL' });
+  assert.deepEqual(suggestedCatalogPrice(precios, ['CL', 'PE', 'MX'], 'MX', tasas), { amount: 9473.68, from: 'CL' });
+  // Un país con precio propio no recibe sugerencia; sin ningún precio, tampoco hay
+  assert.equal(suggestedCatalogPrice(precios, ['CL', 'PE', 'MX'], 'CL', tasas), null);
+  assert.equal(suggestedCatalogPrice({ CL: '', PE: '' }, ['CL', 'PE'], 'PE', tasas), null);
+  assert.equal(suggestedCatalogPrice({ CL: '0', PE: '' }, ['CL', 'PE'], 'PE', tasas), null);
+  // Si Chile no tiene precio, se usa el siguiente que sí (Perú)
+  assert.deepEqual(suggestedCatalogPrice({ CL: '', PE: '2000' }, ['CL', 'PE'], 'CL', tasas), { amount: 500000, from: 'PE' });
+  // Nunca modifica ni agrega precios: el objeto sigue igual
+  assert.deepEqual(precios, { CL: '500000', PE: '', MX: '' });
 });
 
 test('Monedas: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos', () => {

@@ -3,7 +3,8 @@ import { Package, Wrench, Plus, Pencil, Search, Trash2, Boxes } from 'lucide-rea
 import type { BillingType, CatalogItem, CatalogItemType, Lead, NewCatalogItem } from '../types/crm';
 import { COUNTRIES, type CountryCode } from '../data/countries';
 import { CURRENCIES, formatMoney } from '../lib/currency';
-import { ITEM_TYPE_LABEL } from '../lib/catalog';
+import { ITEM_TYPE_LABEL, suggestedCatalogPrice } from '../lib/catalog';
+import { useMoney } from '../lib/money';
 import { cardClass, inputClass, labelClass, primaryButton, secondaryButton, tableCell, tableHeadRow } from '../lib/styles';
 import { ActiveSwitch, EmptyState, Modal, Pill } from './ui';
 import { TYPE_ICON } from './catalogIcons';
@@ -264,6 +265,7 @@ function CatalogItemModal({
     Object.fromEntries(countries.map((c) => [c, item?.prices[c] !== undefined ? String(item.prices[c]) : '']))
   );
   const [showErrors, setShowErrors] = useState(false);
+  const { rates, info } = useMoney();
 
   const trimmed = name.trim();
   const nameError = !trimmed
@@ -379,6 +381,8 @@ function CatalogItemModal({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {countries.map((code) => {
               const currency = COUNTRIES[code].currency;
+              // Solo una referencia en gris: no llena el campo ni se guarda
+              const sugerido = suggestedCatalogPrice(prices, countries, code, rates);
               return (
                 <div key={code}>
                   <label htmlFor={`cat-price-${code}`} className="mb-1 block text-sm text-slate-400">
@@ -391,8 +395,15 @@ function CatalogItemModal({
                     value={prices[code] ?? ''}
                     onChange={(e) => setPrices((p) => ({ ...p, [code]: e.target.value }))}
                     placeholder="Sin precio"
+                    aria-describedby={sugerido ? `cat-price-${code}-sugerido` : undefined}
                     className={inputClass}
                   />
+                  {sugerido && (
+                    <p id={`cat-price-${code}-sugerido`} className="mt-1 text-sm text-slate-500">
+                      Sugerido: ≈ {formatMoney(sugerido.amount, currency)} · convertido desde {COUNTRIES[sugerido.from].name}
+                      {info.live ? '' : ' (tasa de respaldo)'}
+                    </p>
+                  )}
                 </div>
               );
             })}

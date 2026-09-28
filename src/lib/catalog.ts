@@ -1,7 +1,7 @@
 // Catálogo de productos y servicios: valor de los leads y métricas de venta.
 
 import type { CatalogItem, CatalogItemType, CommercialStatus, Lead, LeadItem } from '../types/crm.ts';
-import { leadCurrency, summarizeMoney, type MoneySummary } from './currency.ts';
+import { convert, currencyOfCountry, leadCurrency, roundForCurrency, summarizeMoney, type MoneySummary, type Rates } from './currency.ts';
 import type { CurrencyCode } from '../data/countries.ts';
 import type { CountryCode } from '../data/countries.ts';
 
@@ -108,3 +108,26 @@ export const leadsWithItems = (leads: Lead[], itemIds: Set<string>, scope: Sales
   leads.filter(
     (lead) => matchesScope(lead.commercialStatus, scope) && (lead.items ?? []).some((line) => itemIds.has(line.itemId))
   );
+
+/**
+ * Precio de referencia para un país que todavía no tiene precio en el catálogo: el primero que sí lo
+ * tiene (en el orden de los países del CRM, que parte por el país base), convertido con la tasa del
+ * día. Es solo una sugerencia para mostrar en gris: nunca llena el campo ni se guarda.
+ */
+export function suggestedCatalogPrice(
+  prices: Partial<Record<CountryCode, string | number>>,
+  countries: CountryCode[],
+  target: CountryCode,
+  rates: Rates
+): { amount: number; from: CountryCode } | null {
+  const propio = prices[target];
+  if (propio !== undefined && propio !== '') return null;
+  for (const from of countries) {
+    if (from === target) continue;
+    const valor = Number(prices[from]);
+    if (prices[from] === undefined || prices[from] === '' || !Number.isFinite(valor) || valor <= 0) continue;
+    const moneda = currencyOfCountry(target);
+    return { amount: roundForCurrency(convert(valor, currencyOfCountry(from), moneda, rates), moneda), from };
+  }
+  return null;
+}

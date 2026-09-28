@@ -338,8 +338,27 @@ try {
   await sleep(300);
   await typeInto('#cat-name', 'Producto Aislado A');
   await typeInto('#cat-price-CL', '7000');
+  await sleep(200);
+  // Perú queda sin precio: se sugiere en gris la conversión, pero el campo sigue vacío
+  const sugerenciaPeru = await page.evaluate(() => ({
+    texto: document.querySelector('#cat-price-PE-sugerido')?.textContent ?? '',
+    valor: document.querySelector('#cat-price-PE')?.value ?? null,
+  }));
+  check(
+    'Con precio en Chile, Perú muestra un precio sugerido convertido, sin llenar el campo',
+    /Sugerido: ≈ S\/.*convertido desde Chile/.test(sugerenciaPeru.texto) && sugerenciaPeru.valor === '',
+    JSON.stringify(sugerenciaPeru)
+  );
   await domClick('button[form="catalog-form"]');
   await sleep(400);
+  const filaProducto = await page.evaluate(
+    () => [...document.querySelectorAll('main tbody tr')].find((tr) => tr.innerText.includes('Producto Aislado A'))?.innerText ?? ''
+  );
+  check(
+    'El precio sugerido no se guarda: el producto queda solo con su precio de Chile',
+    filaProducto.includes('7.000') && !filaProducto.includes('S/'),
+    filaProducto.replace(/\s+/g, ' ')
+  );
 
   await clickText('header button', 'Capturar Lead');
   await sleep(300);

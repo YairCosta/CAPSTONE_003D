@@ -18,6 +18,13 @@ Permite saber **qué se vende más** y **dónde** (comuna, distrito…).
 - "Usar total de ítems" vuelve al valor calculado.
 - Un lead sin ítems siempre tiene valor manual.
 - El precio del catálogo es **sugerido por país** (CLP en Chile, S/ en Perú). Al agregar el ítem se puede ajustar. El precio queda guardado en el lead: si cambia el catálogo, la venta no cambia.
+- **Conversión de referencia:** al crear o editar un producto, un país sin precio muestra en gris la
+  conversión del primer precio cargado. El orden parte por el país base; por ejemplo: *"Sugerido: ≈ S/ 1.763 ·
+  convertido desde Chile"*.
+  - Usa la tasa del día y avisa si es la tasa de respaldo.
+  - Es solo una referencia: **no llena el campo ni se guarda**. Cada país tiene el precio que se escribe a mano,
+    o ninguno.
+  - La calcula `suggestedCatalogPrice` (`src/lib/catalog.ts`).
 
 ## Panel "Productos y servicios"
 
