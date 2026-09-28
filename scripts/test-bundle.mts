@@ -76,5 +76,18 @@ check(
 check('La cuenta demo sí está (es pública)', bundle.includes('Revela Demo') && bundle.includes('gerente@demo.revelacrm.com'));
 check('La cuenta demo no trae contraseñas: se abre sin login (?demo)', !bundle.includes(CLAVE_DEMO_DESARROLLO));
 
+// Carga por partes (src/lib/modulos.ts): el mapa y la administración se bajan al abrirlos, no al entrar
+const rutaEntrada = readFileSync('dist/index.html', 'utf8').match(/src="\/(assets\/index-[^"]+\.js)"/)?.[1] ?? '';
+const entrada = rutaEntrada ? readFileSync(join('dist', rutaEntrada), 'utf8') : '';
+check(
+  'El mapa y el panel de administración se bajan aparte, no en la carga inicial',
+  entrada.length > 0 &&
+    bundle.includes('leaflet-container') &&
+    bundle.includes('Portal fiscalizador') &&
+    !entrada.includes('leaflet-container') &&
+    !entrada.includes('Portal fiscalizador'),
+  rutaEntrada || 'no se encontró el archivo de entrada en dist/index.html'
+);
+
 console.log(`\n${ok}/${total} revisiones de la app publicada OK`);
 if (ok !== total) process.exit(1);

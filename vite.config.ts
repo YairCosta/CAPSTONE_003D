@@ -54,11 +54,39 @@ function adminUsersApi(env: Record<string, string>): Plugin {
   }
 }
 
+// Conexión anticipada con Supabase: el login y la primera carga de datos no esperan el saludo con el
+// servidor (São Paulo). Solo si la app usa Supabase; la URL es pública (VITE_).
+function preconectarSupabase(env: Record<string, string>): Plugin {
+  const origen = env.VITE_DATA_SOURCE === 'supabase' && env.VITE_SUPABASE_URL ? new URL(env.VITE_SUPABASE_URL).origin : null
+  return {
+    name: 'revela-preconectar-supabase',
+    transformIndexHtml: () =>
+      origen ? [{ tag: 'link', attrs: { rel: 'preconnect', href: origen, crossorigin: 'anonymous' }, injectTo: 'head' }] : [],
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), tailwindcss(), aiAssistantApi(env), exchangeRatesApi(), adminUsersApi(env)],
+    plugins: [react(), tailwindcss(), aiAssistantApi(env), exchangeRatesApi(), adminUsersApi(env), preconectarSupabase(env)],
+    build: {
+      rolldownOptions: {
+        output: {
+          // Las librerías van en archivos propios: cambian poco, así que el navegador las guarda entre
+          // publicaciones y solo vuelve a bajar el código de Revela. Los íconos van juntos en vez de
+          // en decenas de archivos diminutos. Los módulos de cada pestaña se separan solos
+          // (src/lib/modulos.ts).
+          codeSplitting: {
+            groups: [
+              { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+              { name: 'supabase', test: /node_modules[\\/]@supabase[\\/]/ },
+              { name: 'iconos', test: /node_modules[\\/]lucide-react[\\/]/ },
+            ],
+          },
+        },
+      },
+    },
   }
 })

@@ -1,14 +1,23 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
-import { GeoStrategicMap } from './components/GeoStrategicMap';
 import { RankingSidebar } from './components/RankingSidebar';
 import { LeadsTable } from './components/LeadsTable';
-import { LeadCaptureModal, type NewLeadInput } from './components/LeadCaptureModal';
-import { KanbanBoard } from './components/KanbanBoard';
-import { ContactModule } from './components/ContactModule';
-import { StageAdminModule } from './components/StageAdminModule';
-import { ManagerModule, type NewClientAccount } from './components/ManagerModule';
-import { AdminModule } from './components/AdminModule';
+import type { NewLeadInput } from './components/LeadCaptureModal';
+import type { NewClientAccount } from './components/ManagerModule';
+import {
+  AdminModule,
+  AiChatWidget,
+  AuditModule,
+  CatalogInsights,
+  ContactModule,
+  GeoStrategicMap,
+  KanbanBoard,
+  LeadCaptureModal,
+  ManagerModule,
+  StageAdminModule,
+  precargarModulos,
+} from './lib/modulos';
+import { Seccion } from './components/Seccion';
 import { LoginScreen } from './components/LoginScreen';
 import { SetPasswordScreen } from './components/SetPasswordScreen';
 import { publicDemo, usingSupabase } from './lib/dataSource';
@@ -39,7 +48,6 @@ import {
 } from './lib/db/crm';
 import { mergeStageConfigs } from './lib/db/crmMappers';
 import { acceptLeads, diffTenantData, snapshotFor, type TenantSnapshot } from './lib/db/sync';
-import { AiChatWidget } from './components/AiChatWidget';
 import { locateInCommune } from './lib/geocoding';
 import { newId, newUuid } from './lib/ids';
 import { findZonesByName, regionsOf } from './lib/zones';
@@ -136,7 +144,6 @@ import type {
 import { ROLE_LABEL, ROLE_TABS, authenticate, canCaptureLeads, canMoveLeadBackwards, canRevertChanges, type ActiveTab } from './lib/permissions';
 import { Users, Target, CheckCircle2, DollarSign, Trophy, Map as MapIcon, Boxes, Database, Loader2 } from 'lucide-react';
 import { computeTerritoryMetrics } from './lib/metrics';
-import { AuditModule } from './components/AuditModule';
 import {
   accountFields,
   buildAuditEntry,
@@ -154,7 +161,6 @@ import {
 import { buildTenantExport, type TenantExport } from './lib/tenantExport';
 import { downloadTenantExport } from './lib/xlsxDownload';
 import { applyLeadValue } from './lib/catalog';
-import { CatalogInsights } from './components/CatalogInsights';
 import { SectionTabs } from './components/ui';
 
 const SESSION_KEY = 'revela-session';
@@ -518,6 +524,19 @@ export function App() {
     setSelectedTerritoryId(null);
     setSelectedLeadIdForContact(null);
   };
+
+  // Después de entrar, los módulos del perfil se bajan en segundo plano (src/lib/modulos.ts)
+  const rolEnSesion = currentUser?.role;
+  useEffect(() => {
+    if (!rolEnSesion) return;
+    // Safari no tiene requestIdleCallback: ahí se espera un momento después de dibujar
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(() => precargarModulos(rolEnSesion), { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = setTimeout(() => precargarModulos(rolEnSesion), 1200);
+    return () => clearTimeout(t);
+  }, [rolEnSesion]);
 
   // Con Supabase: perfil de quien entra y todo lo que RLS le deja ver. Si el usuario o su CRM están
   // desactivados, la sesión de Auth se cierra de inmediato.
@@ -1940,13 +1959,15 @@ export function App() {
             />
 
             {kpiView === 'catalog' ? (
-              <CatalogInsights
-                leads={kpiLeads}
-                catalog={tenantCatalog}
-                territories={visibleTerritories}
-                countries={selectedCountries}
-                theme={theme}
-              />
+              <Seccion nombre="los productos y servicios">
+                <CatalogInsights
+                  leads={kpiLeads}
+                  catalog={tenantCatalog}
+                  territories={visibleTerritories}
+                  countries={selectedCountries}
+                  theme={theme}
+                />
+              </Seccion>
             ) : (
             <>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
@@ -1969,17 +1990,19 @@ export function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[680px] gap-6">
               <div className="lg:col-span-8 h-[520px] lg:h-full min-h-0">
-                <GeoStrategicMap
-                  leads={kpiLeads}
-                  territories={kpiTerritoriesMetrics}
-                  zoneMetric={zoneMetric}
-                  onZoneMetricChange={setZoneMetric}
-                  selectedTerritoryId={selectedTerritoryId}
-                  onSelectTerritory={setSelectedTerritoryId}
-                  theme={theme}
-                  countries={selectedCountries}
-                  catalog={tenantCatalog}
-                />
+                <Seccion nombre="el mapa" alto="h-full">
+                  <GeoStrategicMap
+                    leads={kpiLeads}
+                    territories={kpiTerritoriesMetrics}
+                    zoneMetric={zoneMetric}
+                    onZoneMetricChange={setZoneMetric}
+                    selectedTerritoryId={selectedTerritoryId}
+                    onSelectTerritory={setSelectedTerritoryId}
+                    theme={theme}
+                    countries={selectedCountries}
+                    catalog={tenantCatalog}
+                  />
+                </Seccion>
               </div>
 
               <div className="lg:col-span-4 h-[680px] lg:h-full min-h-0">
@@ -2001,6 +2024,7 @@ export function App() {
           </div>
         )}
 
+        <Seccion>
         {/* GERENTE: empresas cliente, contactos y leads en cola */}
         {currentTab === 'manager' && (
           <ManagerModule
@@ -2105,9 +2129,11 @@ export function App() {
             invitations={Boolean(db)}
           />
         )}
+        </Seccion>
       </main>
 
       {canCapture && (
+        <Seccion silenciosa>
         <LeadCaptureModal
           key={`${tenantId}-${selectedCountries[0]}`}
           isOpen={isCaptureModalOpen}
@@ -2119,10 +2145,12 @@ export function App() {
           defaultCountry={selectedCountries[0]}
           zones={tenantTerritories}
         />
+        </Seccion>
       )}
 
       {/* En la demo pública no hay asistente: es lo único que enviaría texto fuera del navegador */}
       {canCapture && !publicDemo && (
+        <Seccion silenciosa>
         <AiChatWidget
           key={currentUser.id}
           userId={currentUser.id}
@@ -2141,6 +2169,7 @@ export function App() {
           onUpdateLeadStage={handleAiUpdateLeadStage}
           getAccessToken={db ? async () => (await db.auth.getSession()).data.session?.access_token ?? null : undefined}
         />
+        </Seccion>
       )}
 
       {isPasswordModalOpen && (

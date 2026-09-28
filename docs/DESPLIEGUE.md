@@ -64,6 +64,31 @@ que la app no traiga los CRMs de prueba.
 `VITE_SUPABASE_URL`), imágenes de los mapas de Esri y fuentes de Google. Si se agrega un servicio
 externo (otro mapa, analítica, un widget), hay que sumarlo ahí o el navegador lo bloqueará.
 
+## Carga por partes
+
+La app no se baja entera al abrirla (medido el 28-09-2026 con `npm run build`):
+
+| Parte | Tamaño (comprimido) | Cuándo se baja |
+|---|---:|---|
+| Código de Revela (login, encabezado, lógica) | 58 KB | Siempre |
+| React / Supabase / íconos | 68 / 55 / 9 KB | Siempre, pero el navegador los guarda entre publicaciones |
+| Mapa (Leaflet) | 50 KB | Al abrir KPI y mapa (el usuario base nunca) |
+| Administración y portal fiscalizador | 20 KB | Solo el administrador |
+| Gerencia, Pipeline, Contacto, Auditoría, captura, asistente | 3 a 13 KB cada uno | Al abrirlos |
+
+Antes era un solo archivo de 298 KB comprimidos que se volvía a bajar entero en cada publicación.
+
+- **Qué módulo va aparte:** lo define `src/lib/modulos.ts`. Después de entrar, `precargarModulos()` baja en
+  segundo plano los del perfil, así cambiar de pestaña sigue siendo instantáneo.
+- **Grupos de librerías:** `vite.config.ts` agrupa React, Supabase y los íconos.
+- **Guardado en el navegador:** los archivos de `assets/` llevan su huella en el nombre y Vercel los marca como
+  guardables para siempre (`immutable`).
+- **Si un módulo no alcanza a bajar** (sin conexión, o una publicación nueva con la pestaña abierta),
+  `src/components/Seccion.tsx` muestra "No se pudo cargar… · Recargar" en vez de dejar la pantalla en blanco.
+- **Supabase:** `index.html` abre la conexión antes de que la pida el login (`preconnect`).
+
+Para probar la versión compilada en local: `npm run build` y `npx vite preview`.
+
 ## Plan y límites
 
 - **Hobby (gratis)**: para la tesis y el piloto sin cobro. Su uso es personal, no comercial: al

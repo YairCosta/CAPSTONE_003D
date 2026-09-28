@@ -45,6 +45,8 @@ No se pueden debilitar sin decirlo explícitamente:
 
 La lógica que se pueda probar sin navegador va en `src/lib/` como función pura, no dentro de un componente.
 
+Los módulos que no se ven en la primera pantalla (mapa, pestañas, captura, asistente, administración) se cargan al abrirlos: se importan desde `src/lib/modulos.ts` y se muestran dentro de `<Seccion>`, nunca con un import directo en `App.tsx` (eso los volvería a meter en la carga inicial). Ver `docs/DESPLIEGUE.md`, "Carga por partes".
+
 ## Comandos
 
 ```bash
