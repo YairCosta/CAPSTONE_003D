@@ -2,15 +2,18 @@
 
 Cinco procesos que muestran cómo trabaja cada persona con Revela, de punta a punta, y qué parte de la
 app hace cumplir cada paso. Describen lo que la app hace **hoy**: si cambia un flujo, se cambia el
-modelo y se vuelven a generar.
+modelo y se vuelven a generar con `npm run bpmn`.
+
+Las imágenes son PNG a 4x (de 7.000 a 9.800 px de ancho), para que no se pixelen al proyectarlas.
+`bpmn/diapositiva/` tiene los mismos diagramas sin título, para diapositivas que ya lo llevan.
 
 | Proceso | Imagen | Modelo editable |
 |---|---|---|
-| 1. Comercial: de la captura al cierre | [`proceso-comercial.png`](bpmn/proceso-comercial.png) | [`proceso-comercial.bpmn`](bpmn/proceso-comercial.bpmn) |
-| 2. Derechos del titular (Ley 21.719) | [`derechos-del-titular.png`](bpmn/derechos-del-titular.png) | [`derechos-del-titular.bpmn`](bpmn/derechos-del-titular.bpmn) |
-| 3. Prospecto: primer contacto o 30 días | [`prospecto-30-dias.png`](bpmn/prospecto-30-dias.png) | [`prospecto-30-dias.bpmn`](bpmn/prospecto-30-dias.bpmn) |
-| 4. Alta de un CRM e invitaciones | [`alta-crm-e-invitaciones.png`](bpmn/alta-crm-e-invitaciones.png) | [`alta-crm-e-invitaciones.bpmn`](bpmn/alta-crm-e-invitaciones.bpmn) |
-| 5. Prospección con el asistente de IA | [`asistente-ia.png`](bpmn/asistente-ia.png) | [`asistente-ia.bpmn`](bpmn/asistente-ia.bpmn) |
+| 1. De interesado a cliente | [`proceso-comercial.png`](bpmn/proceso-comercial.png) | [`proceso-comercial.bpmn`](bpmn/proceso-comercial.bpmn) |
+| 2. Una persona pide ver, corregir o borrar sus datos | [`derechos-del-titular.png`](bpmn/derechos-del-titular.png) | [`derechos-del-titular.bpmn`](bpmn/derechos-del-titular.bpmn) |
+| 3. Datos guardados sin permiso: 30 días | [`prospecto-30-dias.png`](bpmn/prospecto-30-dias.png) | [`prospecto-30-dias.bpmn`](bpmn/prospecto-30-dias.bpmn) |
+| 4. Una empresa contrata Revela | [`alta-crm-e-invitaciones.png`](bpmn/alta-crm-e-invitaciones.png) | [`alta-crm-e-invitaciones.bpmn`](bpmn/alta-crm-e-invitaciones.bpmn) |
+| 5. Buscar clientes con el asistente de IA | [`asistente-ia.png`](bpmn/asistente-ia.png) | [`asistente-ia.bpmn`](bpmn/asistente-ia.bpmn) |
 
 ## Cómo leer los diagramas
 
@@ -26,7 +29,7 @@ modelo y se vuelven a generar.
 | Rombo con pentágono | Compuerta basada en eventos: sigue el camino del **primer** evento que ocurra |
 | Carriles | Quién hace cada actividad. El contenedor (pool) es el CRM de una empresa o la plataforma |
 
-## 1. Proceso comercial: de la captura al cierre
+## 1. De interesado a cliente: de la captura al cierre
 
 ![Proceso comercial](bpmn/proceso-comercial.png)
 
@@ -45,7 +48,7 @@ resultados por zona y producto.
 | Sumar al KPI y al mapa | Revela | Cada monto se guarda en su moneda y solo se convierte para mostrar (`useMoney()`). El mapa muestra zonas, nunca la ubicación de una persona |
 | Revisar resultados | Gerente | KPI, mapa y ranking son solo de gerencia |
 
-## 2. Derechos del titular de los datos (Ley 21.719)
+## 2. Una persona pide ver, corregir o borrar sus datos (Ley 21.719)
 
 ![Derechos del titular](bpmn/derechos-del-titular.png)
 
@@ -62,7 +65,7 @@ gerencia la resuelve.
 | Cerrar la solicitud | Revela | Queda en el historial, que nunca guarda valores personales |
 | Responder al titular | Gerente | Fuera de la app, dentro del plazo legal. Para el derecho de acceso y portabilidad, Gerencia descarga el informe del titular en Excel |
 
-## 3. Prospecto: primer contacto o anonimización a los 30 días
+## 3. Datos guardados sin permiso: se pregunta en el primer contacto o se borran a los 30 días
 
 ![Prospecto](bpmn/prospecto-30-dias.png)
 
@@ -76,7 +79,7 @@ Revela espera lo primero que ocurra: que alguien la contacte, o que pasen 30 dí
 | Pasan 30 días sin contacto | Revela | Tarea diaria de la base (`revela-anonimizar-prospectos`, pg_cron, 03:15 UTC) que llama a `anonymize_expired_prospects(30)` |
 | Anonimizar | Revela | Igual que en el proceso 2: se borran los datos personales y se conserva la operación |
 
-## 4. Alta de un CRM e invitación de su equipo
+## 4. Una empresa contrata Revela: se crea su CRM y entra su equipo
 
 ![Alta de un CRM](bpmn/alta-crm-e-invitaciones.png)
 
@@ -94,7 +97,7 @@ gerente; el gerente invita a su equipo. Nadie crea la contraseña de otra person
 Para que la invitación sea **la única** forma de entrar, el registro abierto de Supabase Auth debe
 estar desactivado (hallazgo B2 de `docs/SEGURIDAD.md`).
 
-## 5. Prospección con el asistente de IA
+## 5. Buscar clientes con el asistente de IA
 
 ![Asistente de IA](bpmn/asistente-ia.png)
 

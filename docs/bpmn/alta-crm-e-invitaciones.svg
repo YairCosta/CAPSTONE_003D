@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2264" height="798" viewBox="0 0 2264 798">
 <defs><marker id="flecha" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker></defs>
-<rect width="100%" height="100%" fill="#FFFFFF"/>
-<text x="24" y="50" font-size="24" font-weight="700" fill="#0F172A" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Alta de un CRM e invitación de su equipo</text>
+<rect y="0" width="100%" height="100%" fill="#FFFFFF"/>
+<text x="24" y="50" font-size="24" font-weight="700" fill="#0F172A" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Proceso 4 · Una empresa contrata Revela: se crea su CRM y entra su equipo</text>
 <text x="24" y="74" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Diagrama de proceso BPMN 2.0 · Revela · editable en docs/bpmn/alta-crm-e-invitaciones.bpmn</text>
 <rect x="24" y="94" width="2216" height="680" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
 <text x="46" y="434" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" transform="rotate(-90 46 434)">Plataforma Revela</text>

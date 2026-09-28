@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_proceso-comercial" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
   <bpmn:collaboration id="Colaboracion_proceso-comercial">
-    <bpmn:documentation>Proceso comercial: de la captura al cierre de un lead</bpmn:documentation>
+    <bpmn:documentation>Proceso 1 · De interesado a cliente: de la captura al cierre de un lead</bpmn:documentation>
     <bpmn:participant id="Participante_proceso-comercial" name="CRM de una empresa en Revela" processRef="Proceso_proceso-comercial" />
   </bpmn:collaboration>
-  <bpmn:process id="Proceso_proceso-comercial" name="Proceso comercial: de la captura al cierre de un lead" isExecutable="false">
+  <bpmn:process id="Proceso_proceso-comercial" name="Proceso 1 · De interesado a cliente: de la captura al cierre de un lead" isExecutable="false">
     <bpmn:laneSet id="Carriles_proceso-comercial">
       <bpmn:lane id="Carril_vendedor" name="Usuario base (vendedor)">
         <bpmn:flowNodeRef>Nodo_inicio</bpmn:flowNodeRef>

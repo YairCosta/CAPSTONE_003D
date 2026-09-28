@@ -1,11 +1,13 @@
 // Diagramas de procesos BPMN 2.0 de Revela: cómo trabaja cada persona con la app, de punta a punta.
-// Ejecutar: npm run bpmn    →    docs/bpmn/<proceso>.bpmn, .svg y .png
+// Ejecutar: npm run bpmn    →    docs/bpmn/<proceso>.bpmn, .svg y .png, y docs/bpmn/diapositiva/<proceso>.png
 //
 // Cada proceso sale en dos formas desde el mismo modelo:
 //   · .bpmn: BPMN 2.0 estándar con su diagrama (coordenadas). Se abre y se edita en Camunda Modeler o
 //     en https://demo.bpmn.io, así que sirve de fuente si hay que ajustarlo a mano.
-//   · .svg y .png: la imagen con la notación BPMN (eventos, tareas, compuertas, carriles), para las
-//     presentaciones.
+//   · .svg y .png: la imagen con la notación BPMN (eventos, tareas, compuertas, carriles). El PNG va a
+//     4x (7.000 a 9.800 px de ancho): proyectado o con zoom no se pixela.
+//   · diapositiva/<proceso>.png: el mismo diagrama sin título, para poner en una diapositiva que ya lo
+//     tiene.
 // Los procesos describen lo que hace la app hoy (ver docs/PROCESOS.md); si cambia un flujo, se
 // cambia aquí y se vuelve a generar.
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -13,7 +15,8 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const OUT = 'docs/bpmn';
-mkdirSync(OUT, { recursive: true });
+const ESCALA = 4;
+mkdirSync(`${OUT}/diapositiva`, { recursive: true });
 
 // ------------------------------------------------------------------ procesos
 // Nodo: { id, tipo, lane, col, nombre }. Tipos: inicio, inicioMensaje, inicioTimer, fin, tareaUsuario,
@@ -22,7 +25,7 @@ mkdirSync(OUT, { recursive: true });
 const PROCESOS = [
   {
     id: 'proceso-comercial',
-    titulo: 'Proceso comercial: de la captura al cierre de un lead',
+    titulo: 'Proceso 1 · De interesado a cliente: de la captura al cierre de un lead',
     pool: 'CRM de una empresa en Revela',
     lanes: [
       { id: 'vendedor', nombre: 'Usuario base (vendedor)' },
@@ -66,7 +69,7 @@ const PROCESOS = [
   },
   {
     id: 'derechos-del-titular',
-    titulo: 'Derechos del titular de los datos (Ley 21.719)',
+    titulo: 'Proceso 2 · Una persona pide ver, corregir o borrar sus datos (Ley 21.719)',
     pool: 'CRM de una empresa en Revela',
     lanes: [
       { id: 'titular', nombre: 'Titular de los datos' },
@@ -101,7 +104,7 @@ const PROCESOS = [
   },
   {
     id: 'prospecto-30-dias',
-    titulo: 'Prospecto: primer contacto o anonimización a los 30 días',
+    titulo: 'Proceso 3 · Datos guardados sin permiso: se pregunta en el primer contacto o se borran a los 30 días',
     pool: 'CRM de una empresa en Revela',
     lanes: [
       { id: 'vendedor', nombre: 'Usuario base (vendedor)' },
@@ -137,7 +140,7 @@ const PROCESOS = [
   },
   {
     id: 'alta-crm-e-invitaciones',
-    titulo: 'Alta de un CRM e invitación de su equipo',
+    titulo: 'Proceso 4 · Una empresa contrata Revela: se crea su CRM y entra su equipo',
     pool: 'Plataforma Revela',
     lanes: [
       { id: 'admin', nombre: 'Administrador de la plataforma' },
@@ -177,7 +180,7 @@ const PROCESOS = [
   },
   {
     id: 'asistente-ia',
-    titulo: 'Prospección con el asistente de IA',
+    titulo: 'Proceso 5 · Buscar clientes con el asistente de IA',
     pool: 'CRM de una empresa en Revela',
     lanes: [
       { id: 'usuario', nombre: 'Usuario del CRM (vendedor o gerente)' },
@@ -607,16 +610,21 @@ function dibujarFlujo(f) {
   return `<path d="${d}" fill="none" stroke="${C.flujo}" stroke-width="1.6" marker-end="url(#flecha)"/>${etiqueta}`;
 }
 
-function svg(L) {
+function svg(L, { conTitulo = true } = {}) {
   const p = L.proc;
   const partes = [];
-  partes.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${L.ancho}" height="${L.alto}" viewBox="0 0 ${L.ancho} ${L.alto}">`);
+  // Sin título, la imagen empieza justo sobre el contenedor (pool), con un margen chico
+  const arriba = conTitulo ? 0 : L.poolY - 8;
+  const alto = conTitulo ? L.alto : L.poolAlto + 16;
+  partes.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${L.ancho}" height="${alto}" viewBox="0 ${arriba} ${L.ancho} ${alto}">`);
   partes.push(
     `<defs><marker id="flecha" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="${C.flujo}"/></marker></defs>`
   );
-  partes.push(`<rect width="100%" height="100%" fill="${C.fondo}"/>`);
-  partes.push(texto(M.margen, M.margen + 26, p.titulo, { tam: 24, peso: 700, ancla: 'start' }));
-  partes.push(texto(M.margen, M.margen + 50, 'Diagrama de proceso BPMN 2.0 · Revela · editable en docs/bpmn/' + p.id + '.bpmn', { tam: 13, color: C.suave, ancla: 'start' }));
+  partes.push(`<rect y="${arriba}" width="100%" height="100%" fill="${C.fondo}"/>`);
+  if (conTitulo) {
+    partes.push(texto(M.margen, M.margen + 26, p.titulo, { tam: 24, peso: 700, ancla: 'start' }));
+    partes.push(texto(M.margen, M.margen + 50, 'Diagrama de proceso BPMN 2.0 · Revela · editable en docs/bpmn/' + p.id + '.bpmn', { tam: 13, color: C.suave, ancla: 'start' }));
+  }
 
   // Pool y carriles
   partes.push(`<rect x="${L.poolX}" y="${L.poolY}" width="${L.poolAncho}" height="${L.poolAlto}" fill="${C.pool}" stroke="${C.poolBorde}" stroke-width="2"/>`);
@@ -658,10 +666,14 @@ try {
 
     writeFileSync(`${OUT}/${proc.id}.bpmn`, xml, 'utf8');
     writeFileSync(`${OUT}/${proc.id}.svg`, dibujo, 'utf8');
-    await page.setViewport({ width: Math.ceil(L.ancho), height: Math.ceil(L.alto), deviceScaleFactor: 2 });
-    await page.setContent(`<!doctype html><html><body style="margin:0">${dibujo}</body></html>`);
-    await page.screenshot({ path: `${OUT}/${proc.id}.png`, clip: { x: 0, y: 0, width: L.ancho, height: L.alto } });
-    console.log(`✓ ${OUT}/${proc.id} (.bpmn .svg .png) · ${L.nodos.length} elementos, ${L.flujos.length} flujos`);
+    const png = async (contenido, ancho, alto, ruta) => {
+      await page.setViewport({ width: Math.ceil(ancho), height: Math.ceil(alto), deviceScaleFactor: ESCALA });
+      await page.setContent(`<!doctype html><html><body style="margin:0">${contenido}</body></html>`);
+      await page.screenshot({ path: ruta, clip: { x: 0, y: 0, width: ancho, height: alto } });
+    };
+    await png(dibujo, L.ancho, L.alto, `${OUT}/${proc.id}.png`);
+    await png(svg(L, { conTitulo: false }), L.ancho, L.poolAlto + 16, `${OUT}/diapositiva/${proc.id}.png`);
+    console.log(`✓ ${OUT}/${proc.id} (.bpmn .svg .png, diapositiva) · ${L.nodos.length} elementos, ${L.flujos.length} flujos`);
   }
 } finally {
   await browser.close();

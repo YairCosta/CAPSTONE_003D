@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_alta-crm-e-invitaciones" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
   <bpmn:collaboration id="Colaboracion_alta-crm-e-invitaciones">
-    <bpmn:documentation>Alta de un CRM e invitación de su equipo</bpmn:documentation>
+    <bpmn:documentation>Proceso 4 · Una empresa contrata Revela: se crea su CRM y entra su equipo</bpmn:documentation>
     <bpmn:participant id="Participante_alta-crm-e-invitaciones" name="Plataforma Revela" processRef="Proceso_alta-crm-e-invitaciones" />
   </bpmn:collaboration>
-  <bpmn:process id="Proceso_alta-crm-e-invitaciones" name="Alta de un CRM e invitación de su equipo" isExecutable="false">
+  <bpmn:process id="Proceso_alta-crm-e-invitaciones" name="Proceso 4 · Una empresa contrata Revela: se crea su CRM y entra su equipo" isExecutable="false">
     <bpmn:laneSet id="Carriles_alta-crm-e-invitaciones">
       <bpmn:lane id="Carril_admin" name="Administrador de la plataforma">
         <bpmn:flowNodeRef>Nodo_contrata</bpmn:flowNodeRef>
