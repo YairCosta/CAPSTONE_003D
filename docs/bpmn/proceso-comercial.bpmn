@@ -123,30 +123,30 @@
         <bpmndi:BPMNLabel><dc:Bounds x="142" y="204" width="128" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_capturar_di" bpmnElement="Nodo_capturar">
-        <dc:Bounds x="313" y="136" width="138" height="86" />
+        <dc:Bounds x="313" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_validar_di" bpmnElement="Nodo_validar">
-        <dc:Bounds x="489" y="306" width="138" height="86" />
+        <dc:Bounds x="489" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gValido_di" bpmnElement="Nodo_gValido" isMarkerVisible="true">
         <dc:Bounds x="708" y="323" width="52" height="52" />
         <bpmndi:BPMNLabel><dc:Bounds x="623" y="303" width="101" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
-        <dc:Bounds x="841" y="306" width="138" height="86" />
+        <dc:Bounds x="841" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gZona_di" bpmnElement="Nodo_gZona" isMarkerVisible="true">
         <dc:Bounds x="1060" y="323" width="52" height="52" />
         <bpmndi:BPMNLabel><dc:Bounds x="995" y="381" width="81" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_ubicar_di" bpmnElement="Nodo_ubicar">
-        <dc:Bounds x="1193" y="476" width="138" height="86" />
+        <dc:Bounds x="1193" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_contactar_di" bpmnElement="Nodo_contactar">
-        <dc:Bounds x="1369" y="136" width="138" height="86" />
+        <dc:Bounds x="1369" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_avanzar_di" bpmnElement="Nodo_avanzar">
-        <dc:Bounds x="1545" y="136" width="138" height="86" />
+        <dc:Bounds x="1545" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gResultado_di" bpmnElement="Nodo_gResultado" isMarkerVisible="true">
         <dc:Bounds x="1764" y="153" width="52" height="52" />
@@ -157,10 +157,10 @@
         <bpmndi:BPMNLabel><dc:Bounds x="1916" y="204" width="101" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_kpi_di" bpmnElement="Nodo_kpi">
-        <dc:Bounds x="1897" y="306" width="138" height="86" />
+        <dc:Bounds x="1897" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_revisar_di" bpmnElement="Nodo_revisar">
-        <dc:Bounds x="2073" y="476" width="138" height="86" />
+        <dc:Bounds x="2073" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_ganado_di" bpmnElement="Nodo_ganado">
         <dc:Bounds x="2299" y="500" width="38" height="38" />
@@ -184,7 +184,7 @@
         <di:waypoint x="734" y="323" />
         <di:waypoint x="734" y="110" />
         <di:waypoint x="382" y="110" />
-        <di:waypoint x="382" y="136" />
+        <di:waypoint x="382" y="131" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
         <di:waypoint x="760" y="349" />
@@ -222,7 +222,7 @@
         <di:waypoint x="1790" y="153" />
         <di:waypoint x="1790" y="110" />
         <di:waypoint x="1438" y="110" />
-        <di:waypoint x="1438" y="136" />
+        <di:waypoint x="1438" y="131" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flujo_13_di" bpmnElement="Flujo_13">
         <di:waypoint x="1816" y="179" />

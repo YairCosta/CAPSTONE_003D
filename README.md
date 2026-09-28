@@ -45,14 +45,12 @@ npm run dev
 La aplicación queda en `http://localhost:5173`. Por defecto los datos son de ejemplo y viven en
 memoria: se reinician al recargar la página. Con `VITE_DATA_SOURCE=supabase` en `.env.local`, el
 login y la administración de la plataforma usan la base real de Supabase (ver `docs/USUARIOS.md`);
-en desarrollo, `?demo` en la URL vuelve a la demo.
+con `?demo` en la URL se abre la demo pública.
 
-Cuentas de demostración (solo local):
-
-| Perfil | Email | Contraseña |
-|---|---|---|
-| Gerente | gerente@demo.revelacrm.com | demo1234 |
-| Usuario base | vendedor@demo.revelacrm.com | demo1234 |
+**Demo pública:** `https://revela-henna.vercel.app/?demo` (o `http://localhost:5173/?demo`) entra sin
+contraseña al CRM "Revela Demo", como gerente o como usuario base. Los datos son ficticios, viven solo
+en esa pestaña (se borran al recargar) y no hay asistente de IA. En desarrollo, el login también
+ofrece la cuenta demo con contraseña, para las pruebas automáticas.
 
 La cuenta de administrador de plataforma solo existe en desarrollo y no viaja en la aplicación
 publicada: en producción vive en Supabase Auth.
@@ -84,5 +82,5 @@ diagramas de arquitectura, componentes y estados, y los procesos en BPMN 2.0 ([`
 
 Publicada en Vercel (`https://revela-henna.vercel.app`) y conectada a Supabase (PostgreSQL con PostGIS),
 en piloto con una empresa real. Pasó una revisión de seguridad por casos de uso el 27-09-2026
-([`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) §5). La cuenta demo sigue disponible en desarrollo, con datos
+([`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) §5). La demo pública se abre sin contraseña con `?demo`, con datos
 ficticios en memoria.

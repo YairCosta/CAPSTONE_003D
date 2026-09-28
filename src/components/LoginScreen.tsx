@@ -16,6 +16,8 @@ interface LoginScreenProps {
   /** Solo con Supabase: envía el enlace para elegir una contraseña nueva */
   onForgotPassword?: (email: string) => Promise<string | null>;
   demoAccounts: DemoAccount[];
+  /** Enlace a la demo pública, para quien solo quiere mirar */
+  demoHref?: string;
   notice?: string | null;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
@@ -43,6 +45,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLogin,
   onForgotPassword,
   demoAccounts,
+  demoHref,
   notice,
   theme,
   onToggleTheme,
@@ -196,7 +199,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             )}
           </form>
 
-          {/* Cuentas de demostración */}
+          {demoHref && (
+            <p className="mt-6 text-center text-[15px] text-slate-400">
+              ¿Solo quieres mirar?{' '}
+              <a href={demoHref} className="font-semibold text-indigo-300 hover:text-indigo-200">
+                Prueba la demo
+              </a>{' '}
+              con datos ficticios, sin crear cuenta.
+            </p>
+          )}
+
+          {/* Cuentas de demostración (solo desarrollo) */}
           {demoAccounts.length > 0 && (
           <div className="mt-7 border-t border-slate-700 pt-5">
             <p className="text-sm font-bold uppercase tracking-wider text-slate-400">Cuentas de demostración</p>

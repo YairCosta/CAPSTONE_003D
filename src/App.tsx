@@ -11,7 +11,8 @@ import { ManagerModule, type NewClientAccount } from './components/ManagerModule
 import { AdminModule } from './components/AdminModule';
 import { LoginScreen } from './components/LoginScreen';
 import { SetPasswordScreen } from './components/SetPasswordScreen';
-import { usingSupabase } from './lib/dataSource';
+import { publicDemo, usingSupabase } from './lib/dataSource';
+import { DemoBanner } from './components/DemoBanner';
 import { supabase, initialAuthLinkError, initialAuthLinkType } from './lib/supabaseClient';
 import { changeOwnPassword, loadSessionProfile, requestPasswordReset, setPasswordFromLink, signIn, signOut } from './lib/db/auth';
 import {
@@ -108,13 +109,14 @@ import { CHANNEL_LABEL } from './lib/agenda';
 import {
   mockTerritories,
   defaultStageConfigs,
-  demoAccounts,
+  DEMO_AGENT_ID,
+  DEMO_MANAGER_ID,
   platformAdminAccount,
   platformAdminUser,
   demoDataFor,
   type DemoData,
 } from './data/mockGeoData';
-import { allMockData } from './data/testTenants';
+import { allMockData, conClaveDeDemo, cuentasDemoDesarrollo } from './data/testTenants';
 import type {
   AppUser,
   AuditEntry,
@@ -163,12 +165,17 @@ const THEME_KEY = 'revela-theme';
 // publicados (lo revisa npm run test:bundle). En producción todo vive en Supabase.
 // Con Supabase (VITE_DATA_SOURCE=supabase) no se carga nada de ejemplo: los datos llegan de la base
 // después de iniciar sesión, filtrados por RLS.
+// La demo pública (?demo) carga solo la cuenta demo, sin contraseñas ni administrador, igual que publicada.
 const initialData: DemoData = usingSupabase
   ? { companies: [], users: [], accounts: [], leads: [], activities: [], catalog: [] }
-  : demoDataFor({
-      replaceWith: import.meta.env.DEV && new URLSearchParams(window.location.search).has('pruebas') ? allMockData() : undefined,
-      extraUsers: import.meta.env.DEV ? [platformAdminUser] : [],
-    });
+  : import.meta.env.DEV && !publicDemo
+    ? conClaveDeDemo(
+        demoDataFor({
+          replaceWith: new URLSearchParams(window.location.search).has('pruebas') ? allMockData() : undefined,
+          extraUsers: [platformAdminUser],
+        })
+      )
+    : demoDataFor();
 const db = usingSupabase ? supabase : null;
 
 
@@ -241,7 +248,10 @@ export function App() {
 
   // Sesión y navegación
   // En la demo la sesión se recuerda en localStorage; con Supabase la guarda Supabase Auth
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => (db ? null : readStorage(SESSION_KEY)));
+  // La demo pública entra directo como gerente y no recuerda la sesión: cada visita parte de cero
+  const [sessionUserId, setSessionUserId] = useState<string | null>(() =>
+    publicDemo ? DEMO_MANAGER_ID : db ? null : readStorage(SESSION_KEY)
+  );
   // Con Supabase no se muestra el login hasta saber si ya había una sesión abierta
   const [authReady, setAuthReady] = useState(!db);
   // Enlace de invitación o recuperación: la persona elige su contraseña antes de entrar
@@ -590,6 +600,11 @@ export function App() {
   }, []);
 
   const handleLogout = () => {
+    // Salir de la demo pública lleva al login real; lo que se hizo en la demo se pierde
+    if (publicDemo) {
+      window.location.assign('/');
+      return;
+    }
     if (db) {
       void signOut(db);
       // Lo cargado de la base no queda en memoria para la siguiente persona de este navegador
@@ -1674,6 +1689,8 @@ export function App() {
       const error = await changeOwnPassword(db, stored.email, { current, next, confirm });
       if (error) return error;
     } else {
+      // La demo pública no tiene contraseñas: no hay nada que cambiar
+      if (!stored.password) return 'Esta cuenta de demostración no tiene contraseña.';
       const invalid = validatePasswordChange(stored.password, { current, next, confirm });
       if (invalid) return invalid;
       setUsers((prev) => prev.map((u) => (u.id === stored.id ? { ...u, password: next } : u)));
@@ -1707,7 +1724,8 @@ export function App() {
       <LoginScreen
         onLogin={handleLogin}
         onForgotPassword={db ? (email) => requestPasswordReset(db, email) : undefined}
-        demoAccounts={db ? [] : import.meta.env.DEV ? [...demoAccounts, platformAdminAccount] : demoAccounts}
+        demoAccounts={db ? [] : import.meta.env.DEV ? [...cuentasDemoDesarrollo, platformAdminAccount] : []}
+        demoHref="/?demo"
         notice={authNotice ?? (sessionUserId ? 'Tu sesión se cerró porque el usuario o su CRM fue desactivado.' : null)}
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -1825,6 +1843,16 @@ export function App() {
   return (
     <MoneyContext.Provider value={money}>
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-[#fff]">
+      {publicDemo && (
+        <DemoBanner
+          role={currentUser.role === 'agent' ? 'agent' : 'manager'}
+          onViewAs={(rol) => {
+            const usuario = users.find((u) => u.id === (rol === 'manager' ? DEMO_MANAGER_ID : DEMO_AGENT_ID));
+            if (usuario) openSession(usuario);
+          }}
+          onExit={handleLogout}
+        />
+      )}
       <Navbar
         user={currentUser}
         company={currentCompany}
@@ -1836,7 +1864,7 @@ export function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onLogout={handleLogout}
-        onChangePassword={() => setIsPasswordModalOpen(true)}
+        onChangePassword={publicDemo ? undefined : () => setIsPasswordModalOpen(true)}
         displayCurrency={currentUser.role === 'superadmin' ? undefined : displayCurrency}
         onDisplayCurrencyChange={changeDisplayCurrency}
         viewCurrencies={viewCurrencies}
@@ -2093,7 +2121,8 @@ export function App() {
         />
       )}
 
-      {canCapture && (
+      {/* En la demo pública no hay asistente: es lo único que enviaría texto fuera del navegador */}
+      {canCapture && !publicDemo && (
         <AiChatWidget
           key={currentUser.id}
           userId={currentUser.id}

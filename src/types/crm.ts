@@ -259,7 +259,8 @@ export interface AppUser {
   companyId: string | null; // null solo para superadmin
   fullName: string;
   email: string;
-  password: string; // Solo demo local: en producción la autenticación la resuelve Supabase Auth
+  // Solo desarrollo y pruebas: la demo pública entra sin contraseña y en producción la resuelve Supabase Auth
+  password?: string;
   role: UserRole;
   isActive: boolean;
   createdAt: string;

@@ -5,7 +5,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { platformAdminUser } from '../src/data/mockGeoData.ts';
-import { testTenantsData } from '../src/data/testTenants.ts';
+import { CLAVE_DEMO_DESARROLLO, testTenantsData } from '../src/data/testTenants.ts';
 
 execSync('npx vite build', { stdio: 'ignore' });
 
@@ -72,8 +72,9 @@ check(
   `aparecen: ${filtrados.join(', ')}`
 );
 
-// La demo pública sí debe estar: es la que se abre desde la landing
+// La demo pública sí debe estar (se abre desde la landing con ?demo), pero sin contraseñas: entra sin login
 check('La cuenta demo sí está (es pública)', bundle.includes('Revela Demo') && bundle.includes('gerente@demo.revelacrm.com'));
+check('La cuenta demo no trae contraseñas: se abre sin login (?demo)', !bundle.includes(CLAVE_DEMO_DESARROLLO));
 
 console.log(`\n${ok}/${total} revisiones de la app publicada OK`);
 if (ok !== total) process.exit(1);

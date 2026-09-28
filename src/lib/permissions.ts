@@ -36,7 +36,7 @@ export function authenticate(
 ): AuthResult {
   const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
 
-  if (!user || user.password !== password) {
+  if (!user || !user.password || user.password !== password) {
     return { ok: false, error: 'Email o contraseña incorrectos.' };
   }
   if (!user.isActive) {

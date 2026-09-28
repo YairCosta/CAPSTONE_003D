@@ -25,18 +25,15 @@ export const mockCompanies: Company[] = [
   }
 ];
 
-// Credenciales solo para la demo local. En producción la autenticación la resuelve Supabase Auth.
+// Usuarios de la demo, sin contraseña: la demo pública (?demo) se abre sin login, como gerente o
+// como usuario base. Para entrar por el login en desarrollo y en las pruebas, testTenants.ts les
+// agrega una contraseña que no viaja en la app publicada.
+export const DEMO_MANAGER_ID = 'user-gerente-demo';
+export const DEMO_AGENT_ID = 'user-base-demo-cl';
 export const mockUsers: AppUser[] = [
-  { id: 'user-gerente-demo', companyId: TENANT_DEMO_ID, fullName: 'Andrés Vega', email: 'gerente@demo.revelacrm.com', password: 'demo1234', role: 'manager', isActive: true, createdAt: '2026-02-05T12:30:00Z' },
-  { id: 'user-base-demo-cl', companyId: TENANT_DEMO_ID, fullName: 'Marcela Ortiz', email: 'vendedor@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-06T09:00:00Z' },
-  { id: 'user-base-demo-pe', companyId: TENANT_DEMO_ID, fullName: 'Diego Fuentes', email: 'vendedor2@demo.revelacrm.com', password: 'demo1234', role: 'agent', isActive: true, createdAt: '2026-02-20T09:00:00Z' },
-];
-
-// Accesos rápidos de la pantalla de login (solo demo)
-// Accesos que ofrece la pantalla de login: solo la cuenta de demostración.
-export const demoAccounts = [
-  { label: 'Gerente', company: 'Revela Demo', email: 'gerente@demo.revelacrm.com', password: 'demo1234' },
-  { label: 'Usuario base', company: 'Revela Demo', email: 'vendedor@demo.revelacrm.com', password: 'demo1234' },
+  { id: DEMO_MANAGER_ID, companyId: TENANT_DEMO_ID, fullName: 'Andrés Vega', email: 'gerente@demo.revelacrm.com', role: 'manager', isActive: true, createdAt: '2026-02-05T12:30:00Z' },
+  { id: DEMO_AGENT_ID, companyId: TENANT_DEMO_ID, fullName: 'Marcela Ortiz', email: 'vendedor@demo.revelacrm.com', role: 'agent', isActive: true, createdAt: '2026-02-06T09:00:00Z' },
+  { id: 'user-base-demo-pe', companyId: TENANT_DEMO_ID, fullName: 'Diego Fuentes', email: 'vendedor2@demo.revelacrm.com', role: 'agent', isActive: true, createdAt: '2026-02-20T09:00:00Z' },
 ];
 
 // El administrador de plataforma no se ofrece en el login y solo existe en desarrollo: se agrega

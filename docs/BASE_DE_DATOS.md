@@ -146,7 +146,7 @@ Las reglas de la app (`src/lib/tenantGuards.ts`) son una **segunda capa**: dan b
 La app elige de dónde salen los datos con `VITE_DATA_SOURCE` en `.env.local` (`src/lib/dataSource.ts`):
 
 - `demo` (por defecto): datos de ejemplo en memoria, como siempre.
-- `supabase`: la base real. En desarrollo, `?demo` o `?pruebas` en la URL fuerzan la demo, así `npm run test:e2e` nunca toca la base.
+- `supabase`: la base real. `?demo` en la URL abre la demo pública (también publicada, sin contraseña y sin base) y, en desarrollo, `?pruebas` carga los CRMs de prueba: así `npm run test:e2e` nunca toca la base.
 
 | Etapa | Qué usa la base | Estado |
 |---|---|---|

@@ -283,3 +283,22 @@ Se agrega; lo anterior no se modifica.
 Estado: desplegado en piloto. Esta evidencia de runtime no cambia por sí sola el estado de ningún control
 de la matriz: eso corresponde a una revisión formal del expediente.
 
+## Actualización 27-09-2026 (noche) · H-13: la demo ya no tiene contraseñas
+
+Se agrega; lo anterior no se modifica.
+
+- **Se cierra H-13**: la cuenta demo dejó de tener contraseñas en el código publicado. La demo pública se
+  abre con `?demo` (el botón "Probar la demo" de la landing), entra sin login como gerente o usuario base, y
+  sus datos ficticios viven solo en la pestaña del visitante: no van a Supabase y se borran al recargar.
+- **Minimización en la demo**: un aviso pide no ingresar datos reales, y el asistente de IA no existe en la
+  demo (era lo único que habría enviado texto fuera del navegador).
+- **Desarrollo y pruebas**: la contraseña de la demo solo existe en `src/data/testTenants.ts`, que no llega a la
+  app compilada.
+- **Evidencia**: `npm run test:bundle` ("La cuenta demo no trae contraseñas: se abre sin login (?demo)", 7/7) y
+  `npm run test:e2e` (la demo entra sin contraseña, avisa, no trae asistente ni CRMs de prueba y permite ver
+  como usuario base; 127/127).
+
+Resumen al corte: de los 14 hallazgos, 6 resueltos (H-01, H-03, H-04, H-08, H-12 y H-13), 3 mitigados en
+curso (H-06, H-09 y H-10) y 5 que esperan asesoría legal (H-02, H-05, H-07, H-11 y H-14). El resumen del
+inicio indica 6 de severidad alta; la lista detallada tiene 7 (H-01 a H-07), que es la que vale.
+

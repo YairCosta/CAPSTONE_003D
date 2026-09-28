@@ -113,16 +113,16 @@
         <bpmndi:BPMNLabel><dc:Bounds x="139" y="204" width="134" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_crear_di" bpmnElement="Nodo_crear">
-        <dc:Bounds x="313" y="136" width="138" height="86" />
+        <dc:Bounds x="313" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_sembrar_di" bpmnElement="Nodo_sembrar">
-        <dc:Bounds x="489" y="306" width="138" height="86" />
+        <dc:Bounds x="489" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_invitarGerente_di" bpmnElement="Nodo_invitarGerente">
-        <dc:Bounds x="665" y="136" width="138" height="86" />
+        <dc:Bounds x="665" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_verificar_di" bpmnElement="Nodo_verificar">
-        <dc:Bounds x="841" y="306" width="138" height="86" />
+        <dc:Bounds x="841" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gPuede_di" bpmnElement="Nodo_gPuede" isMarkerVisible="true">
         <dc:Bounds x="1060" y="323" width="52" height="52" />
@@ -133,19 +133,19 @@
         <bpmndi:BPMNLabel><dc:Bounds x="1195" y="204" width="134" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_enviar_di" bpmnElement="Nodo_enviar">
-        <dc:Bounds x="1193" y="306" width="138" height="86" />
+        <dc:Bounds x="1193" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_contrasena_di" bpmnElement="Nodo_contrasena">
-        <dc:Bounds x="1369" y="476" width="138" height="86" />
+        <dc:Bounds x="1369" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_invitarEquipo_di" bpmnElement="Nodo_invitarEquipo">
-        <dc:Bounds x="1545" y="476" width="138" height="86" />
+        <dc:Bounds x="1545" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_enviarEquipo_di" bpmnElement="Nodo_enviarEquipo">
-        <dc:Bounds x="1721" y="306" width="138" height="86" />
+        <dc:Bounds x="1721" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_entrar_di" bpmnElement="Nodo_entrar">
-        <dc:Bounds x="1897" y="646" width="138" height="86" />
+        <dc:Bounds x="1897" y="641" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_operando_di" bpmnElement="Nodo_operando">
         <dc:Bounds x="2123" y="670" width="38" height="38" />

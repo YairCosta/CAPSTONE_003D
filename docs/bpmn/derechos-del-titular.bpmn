@@ -99,29 +99,29 @@
         <bpmndi:BPMNLabel><dc:Bounds x="139" y="204" width="134" height="47" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_registrar_di" bpmnElement="Nodo_registrar">
-        <dc:Bounds x="313" y="306" width="138" height="86" />
+        <dc:Bounds x="313" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_bloquear_di" bpmnElement="Nodo_bloquear">
-        <dc:Bounds x="489" y="646" width="138" height="86" />
+        <dc:Bounds x="489" y="641" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_revisar_di" bpmnElement="Nodo_revisar">
-        <dc:Bounds x="665" y="476" width="138" height="86" />
+        <dc:Bounds x="665" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gAprueba_di" bpmnElement="Nodo_gAprueba" isMarkerVisible="true">
         <dc:Bounds x="884" y="493" width="52" height="52" />
         <bpmndi:BPMNLabel><dc:Bounds x="819" y="551" width="81" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_motivo_di" bpmnElement="Nodo_motivo">
-        <dc:Bounds x="1017" y="476" width="138" height="86" />
+        <dc:Bounds x="1017" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_anonimizar_di" bpmnElement="Nodo_anonimizar">
-        <dc:Bounds x="1017" y="646" width="138" height="86" />
+        <dc:Bounds x="1017" y="641" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_cerrar_di" bpmnElement="Nodo_cerrar">
-        <dc:Bounds x="1193" y="646" width="138" height="86" />
+        <dc:Bounds x="1193" y="641" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_responder_di" bpmnElement="Nodo_responder">
-        <dc:Bounds x="1369" y="476" width="138" height="86" />
+        <dc:Bounds x="1369" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_recibe_di" bpmnElement="Nodo_recibe">
         <dc:Bounds x="1595" y="160" width="38" height="38" />

@@ -223,7 +223,7 @@ const M = {
   colAncho: 176,
   colInicio: 26,
   tareaAncho: 138,
-  tareaAlto: 86,
+  tareaAlto: 96,
   evento: 38,
   compuerta: 52,
 };
@@ -585,7 +585,8 @@ function dibujarNodo(L, n) {
       return (
         `<rect x="${x}" y="${y}" width="${n.w}" height="${n.h}" rx="10" fill="${C.tarea}" stroke="${C.tareaBorde}" stroke-width="1.6"/>` +
         icono +
-        lineasCentradas(n.cx, n.cy + 5, lineas, 12.5)
+        // Con cuatro líneas, el texto baja un poco para no tocar el ícono de la esquina
+        lineasCentradas(n.cx, n.cy + (lineas.length >= 4 ? 9 : 5), lineas, 12.5)
       );
     }
   }

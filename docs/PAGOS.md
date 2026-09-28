@@ -13,7 +13,8 @@ datos de su tarjeta.** Las dos cosas las maneja un tercero especializado.
 ```
 Landing (revelacrm.com)
    │
-   ├── "Probar la demo"  ──►  cuenta demo compartida, datos ficticios, sin registro
+   ├── "Probar la demo"  ──►  revela-henna.vercel.app/?demo: datos ficticios, sin registro ni contraseña,
+   │                           nada sale del navegador y se borra al recargar
    │
    └── "Contratar"
          │

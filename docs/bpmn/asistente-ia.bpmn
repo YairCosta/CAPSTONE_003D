@@ -99,7 +99,7 @@
         <bpmndi:BPMNLabel><dc:Bounds x="149" y="204" width="114" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_verificar_di" bpmnElement="Nodo_verificar">
-        <dc:Bounds x="313" y="306" width="138" height="86" />
+        <dc:Bounds x="313" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gSesion_di" bpmnElement="Nodo_gSesion" isMarkerVisible="true">
         <dc:Bounds x="532" y="323" width="52" height="52" />
@@ -110,23 +110,23 @@
         <bpmndi:BPMNLabel><dc:Bounds x="674" y="204" width="121" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_buscar_di" bpmnElement="Nodo_buscar">
-        <dc:Bounds x="665" y="306" width="138" height="86" />
+        <dc:Bounds x="665" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_elegir_di" bpmnElement="Nodo_elegir">
-        <dc:Bounds x="841" y="136" width="138" height="86" />
+        <dc:Bounds x="841" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_duplicados_di" bpmnElement="Nodo_duplicados">
-        <dc:Bounds x="1017" y="476" width="138" height="86" />
+        <dc:Bounds x="1017" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gParecidos_di" bpmnElement="Nodo_gParecidos" isMarkerVisible="true">
         <dc:Bounds x="1236" y="493" width="52" height="52" />
         <bpmndi:BPMNLabel><dc:Bounds x="1272" y="551" width="101" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_confirmar_di" bpmnElement="Nodo_confirmar">
-        <dc:Bounds x="1369" y="136" width="138" height="86" />
+        <dc:Bounds x="1369" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
-        <dc:Bounds x="1545" y="476" width="138" height="86" />
+        <dc:Bounds x="1545" y="471" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_registrado_di" bpmnElement="Nodo_registrado">
         <dc:Bounds x="1771" y="500" width="38" height="38" />

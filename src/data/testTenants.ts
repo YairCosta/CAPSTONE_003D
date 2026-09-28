@@ -4,7 +4,22 @@
 // dentro de funciones: si la app compilada no las llama, este archivo no queda en lo publicado
 // (ni sus usuarios ni sus contraseñas de prueba).
 import type { AppUser, CatalogItem, ClientAccount, Company, Lead, LeadActivity } from '../types/crm';
-import { account, catalogItem, demoDataFor, leadWithItems, type DemoData } from './mockGeoData.ts';
+import { TENANT_DEMO_ID, account, catalogItem, demoDataFor, leadWithItems, type DemoData } from './mockGeoData.ts';
+
+// Contraseña de la cuenta demo, solo para entrar por el login en desarrollo y en las pruebas
+// (npm run test:e2e). La app publicada no la trae: ahí la demo se abre sin contraseña con ?demo.
+export const CLAVE_DEMO_DESARROLLO = 'demo1234';
+
+export const conClaveDeDemo = (data: DemoData): DemoData => ({
+  ...data,
+  users: data.users.map((u) => (u.companyId === TENANT_DEMO_ID && !u.password ? { ...u, password: CLAVE_DEMO_DESARROLLO } : u)),
+});
+
+// Accesos rápidos del login en desarrollo
+export const cuentasDemoDesarrollo = [
+  { label: 'Gerente', company: 'Revela Demo', email: 'gerente@demo.revelacrm.com', password: CLAVE_DEMO_DESARROLLO },
+  { label: 'Usuario base', company: 'Revela Demo', email: 'vendedor@demo.revelacrm.com', password: CLAVE_DEMO_DESARROLLO },
+];
 
 export const TENANT_GEODEMO_ID = 'c1111111-2222-3333-4444-555555555555';
 export const TENANT_NORTE_ID = 'c2222222-3333-4444-5555-666666666666';
@@ -678,7 +693,7 @@ export function testTenantsData(): { geodemo: DemoData; otros: DemoData } {
 
 /** Los 4 CRMs de ejemplo juntos (demo + prueba), en el orden de siempre: GeoDemo, demo, Norte y Sur. */
 export function allMockData(): DemoData {
-  const demo = demoDataFor();
+  const demo = conClaveDeDemo(demoDataFor());
   const { geodemo, otros } = testTenantsData();
   const juntar = <K extends keyof DemoData>(clave: K) => [...geodemo[clave], ...demo[clave], ...otros[clave]] as DemoData[K];
   return {

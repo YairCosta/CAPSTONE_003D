@@ -101,7 +101,7 @@
         <bpmndi:BPMNLabel><dc:Bounds x="159" y="204" width="94" height="62" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
-        <dc:Bounds x="313" y="306" width="138" height="86" />
+        <dc:Bounds x="313" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gEvento_di" bpmnElement="Nodo_gEvento">
         <dc:Bounds x="532" y="323" width="52" height="52" />
@@ -112,7 +112,7 @@
         <bpmndi:BPMNLabel><dc:Bounds x="670" y="204" width="128" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_informar_di" bpmnElement="Nodo_informar">
-        <dc:Bounds x="841" y="136" width="138" height="86" />
+        <dc:Bounds x="841" y="131" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gAutoriza_di" bpmnElement="Nodo_gAutoriza" isMarkerVisible="true">
         <dc:Bounds x="1236" y="153" width="52" height="52" />
@@ -123,7 +123,7 @@
         <bpmndi:BPMNLabel><dc:Bounds x="1388" y="204" width="101" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_noContactar_di" bpmnElement="Nodo_noContactar">
-        <dc:Bounds x="1369" y="306" width="138" height="86" />
+        <dc:Bounds x="1369" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_finNo_di" bpmnElement="Nodo_finNo">
         <dc:Bounds x="1595" y="330" width="38" height="38" />
@@ -134,7 +134,7 @@
         <bpmndi:BPMNLabel><dc:Bounds x="677" y="374" width="114" height="32" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_anonimizar_di" bpmnElement="Nodo_anonimizar">
-        <dc:Bounds x="841" y="306" width="138" height="86" />
+        <dc:Bounds x="841" y="301" width="138" height="96" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_finAnon_di" bpmnElement="Nodo_finAnon">
         <dc:Bounds x="1067" y="330" width="38" height="38" />

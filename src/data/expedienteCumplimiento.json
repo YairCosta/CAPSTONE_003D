@@ -1364,8 +1364,8 @@
     },
     {
       "archivo": "hallazgos.md",
-      "bytes": 17381,
-      "sha256": "0ddd175de089e1c9ba57ae89f3dfe801001d7bb4cab9296b6b6143513931b340"
+      "bytes": 18701,
+      "sha256": "bdedb3c033ad8741bf1470fce7ed91eefcf0e2b60d5a67ef8cb6d05871625b98"
     },
     {
       "archivo": "legal-status.md",
@@ -1433,5 +1433,5 @@
       "sha256": "75d41ef44f7d8d8604b971ce89593b27d0569e5f8d1b455725c94268d49849a0"
     }
   ],
-  "generadoUtc": "2026-09-27T16:55:45.025Z"
+  "generadoUtc": "2026-09-28T01:44:14.148Z"
 }

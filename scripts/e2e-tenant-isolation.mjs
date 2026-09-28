@@ -266,18 +266,41 @@ const collectTenantText = async ({ manager, skipAudit = false }) => {
 const noneOf = (text, words) => words.filter((w) => text.includes(w));
 
 try {
-  // Sin ?pruebas la app es la pública: solo la cuenta de demostración (?demo: aunque .env.local apunte a Supabase)
+  // Demo pública (?demo, también en la app publicada): entra sin contraseña, solo a la cuenta demo
   await page.goto(`${APP_URL}/?demo`, { waitUntil: 'networkidle2' });
-  await page.evaluate(() => sessionStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('revela-theme', 'light');
+  });
   await page.reload({ waitUntil: 'networkidle2' });
-  const loginTexto = await page.evaluate(() => document.body.innerText);
+  await sleep(600);
+  const demoTexto = await page.evaluate(() => document.body.innerText);
   check(
-    'El login normal solo ofrece la cuenta de demostración',
-    loginTexto.includes('Revela Demo') && noneOf(loginTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).length === 0,
-    noneOf(loginTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).join(', ')
+    'La demo pública entra sin contraseña, como gerente de Revela Demo',
+    (await page.$('#login-email')) === null && demoTexto.includes('Revela Demo') && demoTexto.includes('Gerencia'),
+    demoTexto.slice(0, 160).replace(/\s+/g, ' ')
   );
-  const sinPruebas = await login(GEO.manager);
-  check('Los CRMs de prueba no existen en la app normal', !sinPruebas.ok, sinPruebas.alert.slice(0, 120));
+  check('La demo avisa que los datos son ficticios y pide no ingresar datos reales', demoTexto.includes('No ingreses datos reales'));
+  check(
+    'La demo no trae los CRMs de prueba',
+    noneOf(demoTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).length === 0,
+    noneOf(demoTexto, ['GeoDemo', 'Constructora Norte', 'Logística Sur']).join(', ')
+  );
+  check(
+    'En la demo no hay asistente de IA ni cambio de contraseña',
+    (await page.$('[aria-label="Asistente de prospección"]')) === null && (await page.$('button[aria-label="Cambiar mi contraseña"]')) === null
+  );
+  await clickText('[aria-label="Ver la demo como"] button', 'Usuario base');
+  await sleep(600);
+  const pestanasDemo = await page.evaluate(() => [...document.querySelectorAll('nav button')].map((b) => b.textContent.trim()).join(' | '));
+  check('En la demo se puede ver como usuario base, sin Gerencia', !pestanasDemo.includes('Gerencia') && pestanasDemo.includes('Pipeline'), pestanasDemo);
+  await clickText('button', 'Salir de la demo');
+  await page.waitForSelector('#login-email', { visible: true, timeout: 10000 }).catch(() => {});
+  check(
+    'Salir de la demo lleva al login, que ofrece volver a la demo',
+    (await page.$('#login-email')) !== null && (await page.$('a[href="/?demo"]')) !== null && !page.url().includes('demo')
+  );
 
   // ?pruebas carga los CRMs de prueba (GeoDemo y Norte), que la app normal no muestra
   await page.goto(`${APP_URL}/?pruebas`, { waitUntil: 'networkidle2' });
