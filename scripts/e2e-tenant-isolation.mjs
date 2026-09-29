@@ -1442,6 +1442,164 @@ try {
     (await botonesMoneda()) === 'CLP* USD',
     await botonesMoneda()
   );
+
+  // ================================================================ 11. Uso y soporte: encuesta, reporte de errores y panel del administrador
+  // Los datos viven en memoria: se parte de una página nueva y todo pasa sin recargarla. ?encuesta muestra
+  // la encuesta al entrar (publicada, sale después de la primera semana y cada 30 días).
+  await page.goto(`${APP_URL}/?pruebas&encuesta`, { waitUntil: 'networkidle2' });
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('revela-theme', 'light');
+  });
+  await page.reload({ waitUntil: 'networkidle2' });
+  await sleep(500);
+  await mustLogin(GEO.manager);
+
+  await page.waitForSelector('[role=dialog][aria-label="Encuesta de satisfacción"]', { timeout: 5000 }).catch(() => {});
+  check('La encuesta de satisfacción aparece al entrar', (await page.$('[role=dialog][aria-label="Encuesta de satisfacción"]')) !== null);
+  await domClick('[role=radiogroup][aria-label="Nota de 0 a 10"] [role=radio][aria-label="9"]');
+  await sleep(200);
+  await typeInto('#encuesta-comentario', 'Muy útil el mapa');
+  await clickText('[role=dialog][aria-label="Encuesta de satisfacción"] button', 'Enviar');
+  await sleep(400);
+  check(
+    'La persona responde la encuesta con una nota y un comentario, y recibe las gracias',
+    (await page.evaluate(() => document.querySelector('[role=dialog][aria-label="Encuesta de satisfacción"]')?.innerText ?? '')).includes('Gracias')
+  );
+  await sleep(2800);
+  check('La encuesta se cierra sola después de agradecer', (await page.$('[role=dialog][aria-label="Encuesta de satisfacción"]')) === null);
+
+  // Reporte de un error desde el botón del encabezado
+  await domClick('button[aria-label="Reportar un error"]');
+  await sleep(300);
+  await typeInto('#bug-description', 'corto');
+  await clickText('[role=dialog] button', 'Enviar reporte');
+  await sleep(200);
+  check(
+    'Un reporte demasiado corto pide contar más, sin enviarse',
+    (await page.evaluate(() => document.querySelector('[role=dialog]')?.innerText ?? '')).includes('al menos 10')
+  );
+  await typeInto('#bug-description', 'Al guardar un lead en el pipeline se queda cargando y no aparece');
+  await clickText('[role=dialog] button', 'Enviar reporte');
+  await sleep(400);
+  check(
+    'La persona envía el reporte del error y recibe las gracias',
+    (await page.evaluate(() => document.querySelector('[role=dialog]')?.innerText ?? '')).includes('Recibimos tu reporte')
+  );
+  await clickText('[role=dialog] button', 'Cerrar');
+  await sleep(200);
+
+  // El usuario base también reporta y entra; el administrador de la plataforma no tiene el botón
+  await logout();
+  await mustLogin(GEO.agent);
+  check('El usuario base también tiene el botón para reportar un error', (await page.$('button[aria-label="Reportar un error"]')) !== null);
+  await logout();
+  await mustLogin(ADMIN);
+  check('El administrador de la plataforma no tiene el botón de reportar (recibe los reportes)', (await page.$('button[aria-label="Reportar un error"]')) === null);
+  await sleep(500);
+
+  const etiquetaUso = () =>
+    page.evaluate(() => [...document.querySelectorAll('main button')].find((b) => b.textContent.includes('Uso y soporte'))?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+  check('La pestaña "Uso y soporte" avisa con un 1 que hay un error sin revisar', /Uso y soporte\s*1$/.test(await etiquetaUso()), await etiquetaUso());
+  await clickText('main button', 'Uso y soporte');
+  await sleep(600);
+
+  // Leads por CRM: solo números; el total de la tarjeta de arriba sale de los conteos
+  const resumenUso = await page.evaluate(() => {
+    const fila = document.querySelector('tr[data-crm*="GeoDemo"]');
+    const celdas = fila ? [...fila.querySelectorAll('td')].map((td) => td.innerText.replace(/\s+/g, ' ').trim()) : [];
+    const totalGeneral = document.querySelector('tfoot td:last-child')?.innerText.trim() ?? '';
+    const tarjeta = [...document.querySelectorAll('main p')].find((p) => p.textContent === 'Leads en la plataforma')?.nextElementSibling?.textContent ?? '';
+    return { celdas, totalGeneral, tarjeta };
+  });
+  check(
+    'Leads por CRM: GeoDemo muestra sus 21 leads en total y sus ganados, perdidos y estancados',
+    resumenUso.celdas.length === 7 && resumenUso.celdas[6] === '21' && Number(resumenUso.celdas[3]) >= 0,
+    JSON.stringify(resumenUso.celdas)
+  );
+  check(
+    'La tarjeta "Leads en la plataforma" suma los conteos de todos los CRMs',
+    resumenUso.tarjeta === resumenUso.totalGeneral && Number(resumenUso.totalGeneral) > 21,
+    `${resumenUso.tarjeta} vs ${resumenUso.totalGeneral}`
+  );
+
+  // Ingresos: los que ingresaron aparecen al día; los que nunca lo hicieron, en rojo y primero
+  await clickText('main button', 'Ingresos');
+  await sleep(400);
+  const ingresos = await page.evaluate((emailGerente, emailNorte) => {
+    const filas = [...document.querySelectorAll('tr[data-persona]')];
+    const de = (email) => filas.find((f) => f.dataset.persona === email);
+    const celdas = (f) => (f ? [...f.querySelectorAll('td')].map((td) => td.innerText.replace(/\s+/g, ' ').trim()) : []);
+    return {
+      gerente: { estado: de(emailGerente)?.dataset.estado, celdas: celdas(de(emailGerente)) },
+      norte: { estado: de(emailNorte)?.dataset.estado, rojo: de(emailNorte)?.className.includes('bg-rose-500/10'), celdas: celdas(de(emailNorte)) },
+      primero: filas[0]?.dataset.estado,
+      ultimo: filas[filas.length - 1]?.dataset.estado,
+    };
+  }, GEO.manager, NORTE.manager);
+  check(
+    'Ingresos: el gerente que entró aparece "Al día" con 1 ingreso',
+    ingresos.gerente.estado === 'active' && ingresos.gerente.celdas[3] === '1' && ingresos.gerente.celdas[4] === '1' && ingresos.gerente.celdas[6].includes('Al día'),
+    JSON.stringify(ingresos.gerente)
+  );
+  check(
+    'Ingresos: quien nunca ingresó se marca en rojo ("Nunca ingresó") y va primero',
+    ingresos.norte.estado === 'never' && ingresos.norte.rojo === true && ['never', 'inactive'].includes(ingresos.primero) && ingresos.ultimo !== 'never',
+    JSON.stringify({ ...ingresos.norte, primero: ingresos.primero, ultimo: ingresos.ultimo })
+  );
+  await page.evaluate(() => document.querySelector('label input[type=checkbox]')?.click());
+  await sleep(300);
+  check(
+    'El filtro "solo los que están en rojo" deja únicamente a quienes dejaron de ingresar o nunca lo hicieron',
+    await page.evaluate(() => {
+      const filas = [...document.querySelectorAll('tr[data-persona]')];
+      return filas.length > 0 && filas.every((f) => ['never', 'inactive'].includes(f.dataset.estado));
+    })
+  );
+
+  // Satisfacción: la respuesta llega con su nota y su comentario
+  await clickText('main button', 'Satisfacción');
+  await sleep(400);
+  const satisfaccion = await page.evaluate(() => ({
+    nps: document.querySelector('[data-metrica="NPS"]')?.textContent ?? '',
+    promedio: document.querySelector('[data-metrica="Promedio"]')?.textContent ?? '',
+    texto: document.querySelector('main')?.innerText ?? '',
+  }));
+  check(
+    'Satisfacción: la respuesta aparece con NPS 100, promedio 9 y su comentario',
+    satisfaccion.nps === '100' && satisfaccion.promedio === '9' && satisfaccion.texto.includes('Muy útil el mapa'),
+    `${satisfaccion.nps} · ${satisfaccion.promedio}`
+  );
+
+  // Errores reportados: se marca como visto y después como resuelto
+  await clickText('main button', 'Errores reportados');
+  await sleep(400);
+  check(
+    'Errores reportados: llega el reporte con quién lo envió y en qué pestaña estaba',
+    await page.evaluate(() => {
+      const t = document.querySelector('ul[aria-label="Errores reportados"]')?.innerText ?? '';
+      return t.includes('se queda cargando') && t.includes('Nuevo') && t.includes('en KPI y mapa');
+    })
+  );
+  await clickText('ul[aria-label="Errores reportados"] button', 'Marcar como visto');
+  await sleep(300);
+  check('El administrador marca el reporte como visto', await page.evaluate(() => document.querySelector('ul[aria-label="Errores reportados"] li')?.dataset.estado === 'seen'));
+  await clickText('ul[aria-label="Errores reportados"] button', 'Resuelto');
+  await sleep(300);
+  check(
+    'Al resolverlo, el reporte sale de la lista de pendientes y el aviso de la pestaña desaparece',
+    (await page.$('ul[aria-label="Errores reportados"] li')) === null && (await etiquetaUso()) === 'Uso y soporte'
+  );
+  await page.evaluate(() => [...document.querySelectorAll('label')].find((l) => l.textContent.includes('Mostrar también los resueltos'))?.querySelector('input')?.click());
+  await sleep(300);
+  check(
+    'Los reportes resueltos se pueden volver a ver y reabrir',
+    await page.evaluate(() => {
+      const li = document.querySelector('ul[aria-label="Errores reportados"] li');
+      return li?.dataset.estado === 'resolved' && li.innerText.includes('Reabrir');
+    })
+  );
 } catch (error) {
   const shot = `e2e-fallo-${Date.now()}.png`;
   await page.screenshot({ path: shot }).catch(() => {});

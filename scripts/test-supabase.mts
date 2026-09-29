@@ -35,6 +35,19 @@ import { loadZonePolygons } from '../src/lib/db/crm.ts';
 import { setCompanyCountry, setCompanyViewCurrency } from '../src/lib/db/platform.ts';
 import { enabledCountriesOf } from '../src/lib/tenantGuards.ts';
 import { conTildes } from './tildes-zonas.mjs';
+import {
+  bugFromRow,
+  companyUsageFromRow,
+  loadBugReports,
+  loadMyLastSurveyAt,
+  loadUsageSnapshot,
+  recordLogin,
+  submitBugReport,
+  submitSurvey,
+  surveyFromRow,
+  updateBugStatus,
+  userActivityFromRow,
+} from '../src/lib/db/usage.ts';
 import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
 import { findZonesByName, groupZonesForSelect, regionsOf } from '../src/lib/zones.ts';
 import { readFileSync } from 'node:fs';
@@ -526,6 +539,103 @@ test('Zonas: sin región, la lista va agrupada por región; con región, por pro
   const lima = groupZonesForSelect(distritos, 'PE-15');
   const miraflores = lima.filter((g) => g.zones.some((z) => z.territoryName === 'Miraflores')).map((g) => g.label);
   assert.deepEqual(miraflores.sort(), ['Provincia de Lima', 'Provincia de Yauyos']);
+});
+
+// ------------------------------------------------------------------ uso, encuestas y reportes (0030)
+const personaUso = { id: 'u-1', companyId: CRM_A, role: 'agent', isActive: true, fullName: 'Vendedor', email: 'v@x.cl', createdAt: '2026-01-01T00:00:00Z' } as const;
+
+test('Uso: los conteos de la base se leen como números aunque lleguen como texto', () => {
+  assert.deepEqual(
+    companyUsageFromRow({ crm_id: CRM_A, leads_total: '12', leads_created: 3, leads_active: '7', leads_won: 4, leads_lost: '1', leads_stagnant: 2 }),
+    { companyId: CRM_A, leadsTotal: 12, leadsCreated: 3, leadsActive: 7, leadsWon: 4, leadsLost: 1, leadsStagnant: 2 }
+  );
+  assert.deepEqual(userActivityFromRow({ person_id: 'u-1', logins_period: '2', logins_total: 9, last_login_at: '2026-10-01T10:00:00Z' }), {
+    userId: 'u-1',
+    loginsPeriod: 2,
+    loginsTotal: 9,
+    lastLoginAt: '2026-10-01T10:00:00Z',
+  });
+  assert.equal(userActivityFromRow({ person_id: 'u-2', logins_period: 0, logins_total: 0, last_login_at: null }).lastLoginAt, null);
+});
+
+test('Encuestas y reportes: las filas se traducen y un estado desconocido se muestra como nuevo', () => {
+  assert.deepEqual(surveyFromRow({ id: 's1', company_id: CRM_A, user_id: 'u-1', score: 9, comment: '  Muy útil  ', created_at: 'c' }), {
+    id: 's1',
+    companyId: CRM_A,
+    userId: 'u-1',
+    score: 9,
+    comment: 'Muy útil',
+    createdAt: 'c',
+  });
+  assert.equal(surveyFromRow({ id: 's2', company_id: CRM_A, user_id: 'u-1', score: 3, comment: '   ', created_at: 'c' }).comment, undefined);
+  const bug = bugFromRow({ id: 'b1', company_id: CRM_A, user_id: 'u-1', description: 'Se queda cargando', page: 'kanban', user_agent: null, status: 'resolved', created_at: 'c', resolved_at: 'r' });
+  assert.deepEqual([bug.status, bug.page, bug.userAgent, bug.resolvedAt], ['resolved', 'kanban', undefined, 'r']);
+  assert.equal(bugFromRow({ id: 'b2', company_id: CRM_A, user_id: 'u-1', description: 'x', page: null, user_agent: null, status: 'raro', created_at: 'c', resolved_at: null }).status, 'new');
+});
+
+test('Uso: el administrador pide los conteos con el período y el plazo elegidos, y un error no muestra el texto de la base', async () => {
+  const llamadas: [string, unknown][] = [];
+  const fake = {
+    rpc: async (nombre: string, args: unknown) => {
+      llamadas.push([nombre, args]);
+      return nombre === 'admin_usage_by_company'
+        ? { data: [{ crm_id: CRM_A, leads_total: 5, leads_created: 2, leads_active: 3, leads_won: 1, leads_lost: 1, leads_stagnant: 1 }], error: null }
+        : { data: [{ person_id: 'u-1', logins_period: 1, logins_total: 1, last_login_at: null }], error: null };
+    },
+  } as unknown as SupabaseClient;
+  const uso = await loadUsageSnapshot(fake, { days: 90, stagnantDays: 7, inactiveDays: 14 });
+  assert.ok(uso.ok && uso.data.companies[0].leadsStagnant === 1 && uso.data.users[0].userId === 'u-1');
+  assert.deepEqual(llamadas, [
+    ['admin_usage_by_company', { p_days: 90, p_stagnant_days: 7 }],
+    ['admin_user_activity', { p_days: 90 }],
+  ]);
+  const caida = { rpc: async () => ({ data: null, error: { message: 'permission denied for table leads', code: '42501' } }) } as unknown as SupabaseClient;
+  const error = await loadUsageSnapshot(caida, { days: 30, stagnantDays: 14, inactiveDays: 7 });
+  assert.ok(!error.ok && !/permission denied|leads/.test(error.error));
+});
+
+test('Ingresos: anotar el ingreso nunca estorba, ni sin conexión', async () => {
+  let llamado = '';
+  await recordLogin({ rpc: async (n: string) => ((llamado = n), { error: null }) } as unknown as SupabaseClient);
+  assert.equal(llamado, 'record_login');
+  await recordLogin({ rpc: async () => { throw new Error('sin conexión'); } } as unknown as SupabaseClient);
+});
+
+test('Encuestas y reportes: cada persona envía lo suyo, recortado, y el mensaje de la base llega tal cual', async () => {
+  const insertados: [string, Record<string, unknown>][] = [];
+  const fake = (error: { message: string; code: string } | null) =>
+    ({ from: (tabla: string) => ({ insert: async (fila: Record<string, unknown>) => (insertados.push([tabla, fila]), { error }) }) }) as unknown as SupabaseClient;
+  const ok = await submitSurvey(fake(null), personaUso, 9, '  ' + 'a'.repeat(1200));
+  assert.ok(ok.ok);
+  assert.equal(insertados[0][0], 'satisfaction_surveys');
+  assert.deepEqual([insertados[0][1].company_id, insertados[0][1].user_id, insertados[0][1].score], [CRM_A, 'u-1', 9]);
+  assert.equal(String(insertados[0][1].comment).length, 1000, 'el comentario se recorta a 1.000');
+  assert.equal((await submitSurvey(fake(null), personaUso, 4, '   ')).ok && insertados[1][1].comment, null, 'sin comentario va como vacío');
+
+  const reporte = await submitBugReport(fake(null), personaUso, { description: '  Se queda cargando al guardar  ', page: 'kanban', userAgent: 'x'.repeat(400) });
+  assert.ok(reporte.ok);
+  assert.equal(insertados[2][0], 'bug_reports');
+  assert.equal(insertados[2][1].description, 'Se queda cargando al guardar');
+  assert.equal(String(insertados[2][1].user_agent).length, 300);
+
+  const repetida = await submitSurvey(fake({ message: 'Ya respondiste la encuesta hoy. ¡Gracias!', code: 'P0001' }), personaUso, 8, '');
+  assert.ok(!repetida.ok && repetida.error === 'Ya respondiste la encuesta hoy. ¡Gracias!');
+  const tecnico = await submitBugReport(fake({ message: 'new row violates row-level security policy for table "bug_reports"', code: '42501' }), personaUso, { description: 'Descripción larga de prueba' });
+  assert.ok(!tecnico.ok && !/row-level|bug_reports/.test(tecnico.error));
+  assert.ok(!(await submitSurvey(fake(null), { ...personaUso, companyId: null }, 5, '')).ok, 'el administrador de la plataforma no responde encuestas');
+});
+
+test('Reportes: el administrador cambia el estado y avisa si el reporte no existe', async () => {
+  const cliente = (filas: unknown[]) =>
+    ({ from: () => ({ update: (cambio: unknown) => ({ eq: (campo: string, valor: string) => ({ select: async () => ({ data: campo === 'id' && valor === 'b1' ? filas : [], error: null, cambio }) }) }) }) }) as unknown as SupabaseClient;
+  assert.equal(await updateBugStatus(cliente([{ id: 'b1' }]), 'b1', 'resolved'), null);
+  assert.match((await updateBugStatus(cliente([{ id: 'b1' }]), 'otro', 'seen')) ?? '', /No se encontró/);
+  const lectura = {
+    from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: [{ id: 'b1', company_id: CRM_A, user_id: 'u-1', description: 'd', page: null, user_agent: null, status: 'new', created_at: 'c', resolved_at: null }], error: null }) }) }) }),
+  } as unknown as SupabaseClient;
+  const lista = await loadBugReports(lectura);
+  assert.ok(lista.ok && lista.data.length === 1 && lista.data[0].status === 'new');
+  assert.equal(await loadMyLastSurveyAt({ from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: [] }) }) }) }) }) } as unknown as SupabaseClient, 'u-1'), null);
 });
 
 test('Zonas: las tildes que faltan en la fuente se corrigen solo donde no hay duda', () => {

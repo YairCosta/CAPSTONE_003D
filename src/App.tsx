@@ -1,4 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { BugReportModal } from './components/BugReportModal';
+import { SurveyPrompt } from './components/SurveyPrompt';
+import { createDbUsageApi, loadMyLastSurveyAt, recordLogin, submitBugReport, submitSurvey } from './lib/db/usage';
+import { createMemoryUsageApi, shouldAskSurvey, type LoginRecord } from './lib/usage';
 import { Navbar } from './components/Navbar';
 import { RankingSidebar } from './components/RankingSidebar';
 import { LeadsTable } from './components/LeadsTable';
@@ -128,6 +132,8 @@ import { allMockData, conClaveDeDemo, cuentasDemoDesarrollo } from './data/testT
 import type {
   AppUser,
   AuditEntry,
+  BugReport,
+  SurveyResponse,
   CatalogItem,
   ClientAccount,
   CommercialStatus,
@@ -164,6 +170,9 @@ import { applyLeadValue } from './lib/catalog';
 import { SectionTabs } from './components/ui';
 
 const SESSION_KEY = 'revela-session';
+const SURVEY_SNOOZE_KEY = 'revela-encuesta';
+// En desarrollo, ?encuesta muestra la encuesta al entrar (para las pruebas); publicada solo sale con Supabase
+const forzarEncuesta = import.meta.env.DEV && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('encuesta');
 const THEME_KEY = 'revela-theme';
 // Los CRMs de prueba (GeoDemo, Norte, Sur) solo se cargan para npm run test:e2e, que abre la app con
 // ?pruebas en el servidor de desarrollo. Igual que el administrador de plataforma, solo existen en
@@ -279,6 +288,12 @@ export function App() {
   const [selectedLeadIdForContact, setSelectedLeadIdForContact] = useState<string | null>(null);
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  // Uso de la plataforma: en memoria solo cuando no hay Supabase (demo y pruebas); con Supabase lo guarda la base
+  const [loginLog, setLoginLog] = useState<LoginRecord[]>([]);
+  const [surveys, setSurveys] = useState<SurveyResponse[]>([]);
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   // Portal fiscalizador: quién vio o descargó el expediente. En producción es una tabla que solo se agrega.
   const [complianceAccessLog, setComplianceAccessLog] = useState<{ at: string; who: string; what: string }[]>([]);
   const [kpiFilters, setKpiFilters] = useState<KpiFilters>(emptyKpiFilters);
@@ -525,6 +540,50 @@ export function App() {
     setSelectedLeadIdForContact(null);
   };
 
+  // Panel de uso del administrador: con Supabase, conteos de la base; sin ella, los mismos cálculos en memoria
+  const usageSource = useRef({ companies, users, leads: allLeads, activities: allActivities, logins: loginLog, surveys, bugs: bugReports });
+  usageSource.current = { companies, users, leads: allLeads, activities: allActivities, logins: loginLog, surveys, bugs: bugReports };
+  const usageApi = useMemo(
+    () =>
+      db
+        ? createDbUsageApi(db)
+        : createMemoryUsageApi(
+            () => usageSource.current,
+            (id, status) =>
+              setBugReports((prev) =>
+                prev.map((b) => (b.id === id ? { ...b, status, resolvedAt: status === 'resolved' ? new Date().toISOString() : undefined } : b))
+              )
+          ),
+    []
+  );
+
+  // Encuesta de satisfacción: después de la primera semana y cada 30 días; "Ahora no" espera 7
+  const personaEnSesion = currentUser?.id;
+  const sesionDeCrm = Boolean(currentUser && isSessionValid && currentUser.role !== 'superadmin');
+  useEffect(() => {
+    setIsSurveyOpen(false);
+    if (!sesionDeCrm || !currentUser || publicDemo || (!db && !forzarEncuesta)) return;
+    let vigente = true;
+    const espera = window.setTimeout(
+      async () => {
+        const ultima = db
+          ? await loadMyLastSurveyAt(db, currentUser.id)
+          : (surveys.filter((s) => s.userId === currentUser.id).map((s) => s.createdAt).sort().pop() ?? null);
+        const pospuesta = readStorage(`${SURVEY_SNOOZE_KEY}-${currentUser.id}`);
+        if (vigente && shouldAskSurvey({ now: new Date(), userCreatedAt: currentUser.createdAt, lastAnsweredAt: ultima, snoozedAt: pospuesta })) {
+          setIsSurveyOpen(true);
+        }
+      },
+      forzarEncuesta ? 300 : 8000
+    );
+    return () => {
+      vigente = false;
+      window.clearTimeout(espera);
+    };
+    // Solo al entrar una persona: lo demás se lee en ese momento
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personaEnSesion, sesionDeCrm]);
+
   // Después de entrar, los módulos del perfil se bajan en segundo plano (src/lib/modulos.ts)
   const rolEnSesion = currentUser?.role;
   useEffect(() => {
@@ -576,6 +635,8 @@ export function App() {
     setAuditLog(historial?.ok ? historial.data : []);
     setAuditWarning(historial && !historial.ok ? historial.error : null);
     openSession(user);
+    // Cuenta la visita para el panel del administrador; si falla, no molesta
+    if (user.role !== 'superadmin') void recordLogin(db);
     return null;
   };
 
@@ -591,6 +652,58 @@ export function App() {
     if (!result.ok) return result.error;
     writeStorage(SESSION_KEY, result.user.id);
     openSession(result.user);
+    if (result.user.role !== 'superadmin') {
+      // Una visita cuenta una vez: igual que en la base, no más de un ingreso cada 30 minutos
+      const ahora = Date.now();
+      const persona = result.user.id;
+      setLoginLog((prev) =>
+        prev.some((l) => l.userId === persona && ahora - new Date(l.at).getTime() < 30 * 60 * 1000)
+          ? prev
+          : [...prev, { userId: persona, at: new Date(ahora).toISOString() }]
+      );
+    }
+    return null;
+  };
+
+  // Encuesta y reporte de errores: con Supabase van a la base; sin ella, a la memoria del panel del administrador
+  const handleSubmitSurvey = async (score: number, comment: string): Promise<string | null> => {
+    if (!currentUser?.companyId) return 'La encuesta es para las personas de un CRM.';
+    if (db) {
+      const enviado = await submitSurvey(db, currentUser, score, comment);
+      return enviado.ok ? null : enviado.error;
+    }
+    setSurveys((prev) => [
+      { id: newUuid(), companyId: currentUser.companyId!, userId: currentUser.id, score, comment: comment.trim() || undefined, createdAt: new Date().toISOString() },
+      ...prev,
+    ]);
+    return null;
+  };
+
+  const dismissSurvey = () => {
+    if (currentUser) writeStorage(`${SURVEY_SNOOZE_KEY}-${currentUser.id}`, new Date().toISOString());
+    setIsSurveyOpen(false);
+  };
+
+  const handleSubmitBug = async (description: string): Promise<string | null> => {
+    if (!currentUser?.companyId) return 'El reporte es para las personas de un CRM.';
+    const reporte = { description, page: currentTab, userAgent: navigator.userAgent };
+    if (db) {
+      const enviado = await submitBugReport(db, currentUser, reporte);
+      return enviado.ok ? null : enviado.error;
+    }
+    setBugReports((prev) => [
+      {
+        id: newUuid(),
+        companyId: currentUser.companyId!,
+        userId: currentUser.id,
+        description: description.trim(),
+        page: reporte.page,
+        userAgent: reporte.userAgent.slice(0, 300),
+        status: 'new',
+        createdAt: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
     return null;
   };
 
@@ -1884,6 +1997,7 @@ export function App() {
         onToggleTheme={toggleTheme}
         onLogout={handleLogout}
         onChangePassword={publicDemo ? undefined : () => setIsPasswordModalOpen(true)}
+        onReportBug={publicDemo || currentUser.role === 'superadmin' ? undefined : () => setIsBugModalOpen(true)}
         displayCurrency={currentUser.role === 'superadmin' ? undefined : displayCurrency}
         onDisplayCurrencyChange={changeDisplayCurrency}
         viewCurrencies={viewCurrencies}
@@ -2127,6 +2241,7 @@ export function App() {
             onCreateUser={handleCreateUser}
             onUpdateUser={handleUpdateUser}
             invitations={Boolean(db)}
+            usageApi={usageApi}
           />
         )}
         </Seccion>
@@ -2171,6 +2286,16 @@ export function App() {
         />
         </Seccion>
       )}
+
+      {isBugModalOpen && (
+        <BugReportModal
+          pageLabel={{ kpi: 'KPI y mapa', kanban: 'Pipeline', contact: 'Registro de contacto', manager: 'Gerencia', audit: 'Auditoría', stages: 'Estados', admin: 'Administración' }[currentTab] ?? currentTab}
+          onSubmit={handleSubmitBug}
+          onClose={() => setIsBugModalOpen(false)}
+        />
+      )}
+
+      {isSurveyOpen && !isBugModalOpen && <SurveyPrompt onSubmit={handleSubmitSurvey} onDismiss={dismissSurvey} />}
 
       {isPasswordModalOpen && (
         <ChangePasswordModal

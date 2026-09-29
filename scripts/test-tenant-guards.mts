@@ -63,6 +63,19 @@ import { buildMoneyApi } from '../src/lib/money.ts';
 import { getRates } from '../server/exchangeRates.ts';
 import { CURRENCIES, FALLBACK_RATES } from '../src/lib/currency.ts';
 import { COUNTRIES, COUNTRY_CODES, zoneWithArticle } from '../src/data/countries.ts';
+import {
+  DEFAULT_USAGE_PARAMS,
+  computeCompanyUsage,
+  computeUserActivity,
+  createMemoryUsageApi,
+  isAlert,
+  presenceOf,
+  shouldAskSurvey,
+  summarizeSurveys,
+  unresolvedBugs,
+  validateBugDescription,
+  type MemoryUsageSource,
+} from '../src/lib/usage.ts';
 import { applyLeadValue, computeItemSales, isManualValue, leadsWithItems, suggestedCatalogPrice } from '../src/lib/catalog.ts';
 import { accountFields, buildAuditEntry, diffFields, isRevertible, leadFields, leadSummary, scopeAuditLog } from '../src/lib/audit.ts';
 import { canMoveLeadBackwards, canRevertChanges } from '../src/lib/permissions.ts';
@@ -309,6 +322,118 @@ test('Catálogo: el precio sugerido de otro país es la conversión del primero 
   assert.deepEqual(suggestedCatalogPrice({ CL: '', PE: '2000' }, ['CL', 'PE'], 'CL', tasas), { amount: 500000, from: 'PE' });
   // Nunca modifica ni agrega precios: el objeto sigue igual
   assert.deepEqual(precios, { CL: '500000', PE: '', MX: '' });
+});
+
+// ---------------------------------------------------------------- uso de la plataforma (0030)
+// Mismos casos que scripts/sql/prueba-uso-remota.sql: la app en memoria y la base cuentan igual.
+const AHORA = new Date('2026-10-09T12:00:00Z');
+const hace = (dias: number) => new Date(AHORA.getTime() - dias * 24 * 60 * 60 * 1000).toISOString();
+const crmB = { ...company('national', ['CL']), id: B, name: 'B', slug: 'b' };
+const leadsUso = [
+  lead('l1', A, { commercialStatus: 'new', createdAt: hace(0) }),
+  lead('l2', A, { commercialStatus: 'proposal', createdAt: hace(40), lastContactedAt: hace(30) }),
+  lead('l3', A, { commercialStatus: 'contacted', createdAt: hace(40) }),
+  lead('l4', A, { commercialStatus: 'won', createdAt: hace(60) }),
+  lead('l5', A, { commercialStatus: 'lost', createdAt: hace(5) }),
+  lead('l6', B, { commercialStatus: 'new', createdAt: hace(20) }),
+];
+const actividadesUso = [
+  { id: 'a1', leadId: 'l3', companyId: A, channel: 'call', outcome: 'interested', summary: 's', agentName: 'x', createdAt: hace(2) },
+] as Parameters<typeof computeCompanyUsage>[2];
+
+test('Uso: leads creados, abiertos, ganados, perdidos y estancados por CRM', () => {
+  const [usoA, usoB] = computeCompanyUsage([company('national', ['CL']), crmB], leadsUso, actividadesUso, DEFAULT_USAGE_PARAMS, AHORA);
+  assert.deepEqual(usoA, { companyId: A, leadsTotal: 5, leadsCreated: 2, leadsActive: 3, leadsWon: 1, leadsLost: 1, leadsStagnant: 1 });
+  assert.deepEqual(usoB, { companyId: B, leadsTotal: 1, leadsCreated: 1, leadsActive: 1, leadsWon: 0, leadsLost: 0, leadsStagnant: 1 });
+});
+
+test('Uso: un lead con una actividad reciente no está estancado aunque sea antiguo, y el plazo se puede cambiar', () => {
+  const lento = computeCompanyUsage([company('national', ['CL'])], leadsUso, actividadesUso, { ...DEFAULT_USAGE_PARAMS, stagnantDays: 45 }, AHORA);
+  assert.equal(lento[0].leadsStagnant, 0);
+  const sinActividad = computeCompanyUsage([company('national', ['CL'])], leadsUso, [], DEFAULT_USAGE_PARAMS, AHORA);
+  assert.equal(sinActividad[0].leadsStagnant, 2, 'sin la actividad de hace 2 días, l3 también está estancado');
+  // Un CRM sin leads aparece igual, con ceros
+  const vacio = computeCompanyUsage([crmB], [], [], DEFAULT_USAGE_PARAMS, AHORA);
+  assert.deepEqual(vacio[0], { companyId: B, leadsTotal: 0, leadsCreated: 0, leadsActive: 0, leadsWon: 0, leadsLost: 0, leadsStagnant: 0 });
+});
+
+test('Uso: los ingresos se cuentan por persona, sin el administrador, y quien nunca ingresó queda sin fecha', () => {
+  const personas = [user('u1', 'agent', A), user('u2', 'agent', A), user('admin', 'superadmin', null)];
+  const ingresos = [
+    { userId: 'u1', at: hace(1) },
+    { userId: 'u1', at: hace(3) },
+    { userId: 'u1', at: hace(50) },
+  ];
+  const actividad = computeUserActivity(personas, ingresos, DEFAULT_USAGE_PARAMS, AHORA);
+  assert.equal(actividad.length, 2, 'el administrador de la plataforma no cuenta');
+  assert.deepEqual(actividad[0], { userId: 'u1', loginsPeriod: 2, loginsTotal: 3, lastLoginAt: hace(1) });
+  assert.deepEqual(actividad[1], { userId: 'u2', loginsPeriod: 0, loginsTotal: 0, lastLoginAt: null });
+});
+
+test('Uso: en rojo quien dejó de ingresar y quien nunca lo hizo; la persona recién invitada o desactivada no', () => {
+  const antigua = { isActive: true, createdAt: hace(60) };
+  assert.deepEqual(presenceOf(antigua, hace(2), 7, AHORA), { status: 'active', daysSince: 2 });
+  assert.deepEqual(presenceOf(antigua, hace(7), 7, AHORA), { status: 'inactive', daysSince: 7 });
+  assert.deepEqual(presenceOf(antigua, hace(40), 7, AHORA), { status: 'inactive', daysSince: 40 });
+  assert.deepEqual(presenceOf(antigua, hace(40), 60, AHORA), { status: 'active', daysSince: 40 }, 'con otro plazo cambia el resultado');
+  assert.deepEqual(presenceOf(antigua, null, 7, AHORA), { status: 'never', daysSince: null });
+  assert.deepEqual(presenceOf({ isActive: true, createdAt: hace(2) }, null, 7, AHORA), { status: 'new', daysSince: null });
+  assert.deepEqual(presenceOf({ isActive: false, createdAt: hace(60) }, hace(40), 7, AHORA), { status: 'disabled', daysSince: null });
+  assert.deepEqual(['active', 'inactive', 'never', 'new', 'disabled'].map((e) => isAlert(e as never)), [false, true, true, false, false]);
+});
+
+test('Encuestas: el NPS es el % de 9 y 10 menos el % de 0 a 6, y sin respuestas no hay número', () => {
+  assert.deepEqual(summarizeSurveys([]), { count: 0, average: null, nps: null, promoters: 0, passives: 0, detractors: 0 });
+  const resumen = summarizeSurveys([{ score: 10 }, { score: 9 }, { score: 8 }, { score: 6 }, { score: 0 }]);
+  assert.deepEqual(resumen, { count: 5, average: 6.6, nps: 0, promoters: 2, passives: 1, detractors: 2 });
+  assert.equal(summarizeSurveys([{ score: 9 }, { score: 10 }]).nps, 100);
+  assert.equal(summarizeSurveys([{ score: 3 }]).nps, -100);
+});
+
+test('Encuestas: se pregunta después de la primera semana, cada 30 días, y "Ahora no" espera 7', () => {
+  const nueva = hace(3);
+  const vieja = hace(60);
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: nueva }), false, 'recién entró');
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: vieja }), true);
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: vieja, lastAnsweredAt: hace(10) }), false, 'respondió hace poco');
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: vieja, lastAnsweredAt: hace(31) }), true);
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: vieja, snoozedAt: hace(2) }), false, 'dijo "ahora no" hace poco');
+  assert.equal(shouldAskSurvey({ now: AHORA, userCreatedAt: vieja, snoozedAt: hace(8) }), true);
+});
+
+test('Reportes de errores: pide contar qué pasó, y cuenta los que siguen sin revisar', () => {
+  assert.match(validateBugDescription('corto') ?? '', /al menos 10/);
+  assert.match(validateBugDescription('   corto   ') ?? '', /al menos 10/);
+  assert.equal(validateBugDescription('Al guardar un lead se queda cargando'), null);
+  assert.match(validateBugDescription('x'.repeat(2001)) ?? '', /máximo 2000/);
+  assert.equal(unresolvedBugs([{ status: 'new' }, { status: 'seen' }, { status: 'resolved' }, { status: 'new' }]), 2);
+});
+
+test('Uso: el panel en memoria da lo mismo que las funciones, y cambiar el estado de un reporte lo refleja', async () => {
+  const bugs = [
+    { id: 'b1', companyId: A, userId: 'u1', description: 'Un error viejo de prueba', status: 'new' as const, createdAt: hace(3) },
+    { id: 'b2', companyId: A, userId: 'u1', description: 'Un error nuevo de prueba', status: 'new' as const, createdAt: hace(1) },
+  ];
+  const estado: MemoryUsageSource = {
+    companies: [company('national', ['CL'])],
+    users: [user('u1', 'agent', A)],
+    leads: leadsUso,
+    activities: actividadesUso,
+    logins: [{ userId: 'u1', at: hace(1) }],
+    surveys: [],
+    bugs,
+  };
+  const api = createMemoryUsageApi(() => estado, (id, status) => {
+    estado.bugs = estado.bugs.map((b) => (b.id === id ? { ...b, status } : b));
+  }, () => AHORA);
+  const uso = await api.loadUsage(DEFAULT_USAGE_PARAMS);
+  assert.ok(uso.ok && uso.data.companies[0].leadsStagnant === 1 && uso.data.users[0].loginsTotal === 1);
+  const antes = await api.loadBugs();
+  assert.ok(antes.ok && antes.data.map((b) => b.id).join() === 'b2,b1', 'los más nuevos primero');
+  assert.equal(await api.setBugStatus('b1', 'resolved'), null);
+  const despues = await api.loadBugs();
+  assert.ok(despues.ok && despues.data.find((b) => b.id === 'b1')?.status === 'resolved');
+  assert.match((await api.setBugStatus('no-existe', 'seen')) ?? '', /No se encontró/);
 });
 
 test('Monedas: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos', () => {

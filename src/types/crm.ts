@@ -48,6 +48,30 @@ export interface LeadActivity {
   createdAt: string;
 }
 
+// Respuesta a la encuesta de satisfacción: qué tan probable es que la persona recomiende Revela (0 a 10)
+export interface SurveyResponse {
+  id: string;
+  companyId: string;
+  userId: string;
+  score: number;
+  comment?: string;
+  createdAt: string;
+}
+
+// Error que una persona reporta desde el botón del encabezado. Nunca lleva datos de leads.
+export type BugStatus = 'new' | 'seen' | 'resolved';
+export interface BugReport {
+  id: string;
+  companyId: string;
+  userId: string;
+  description: string;
+  page?: string; // pestaña en que estaba (kpi, kanban…), nunca la dirección completa
+  userAgent?: string;
+  status: BugStatus;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
 export interface StageConfig {
   id: CommercialStatus;
   label: string;

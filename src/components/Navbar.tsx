@@ -8,6 +8,7 @@ import {
   Settings,
   Sun,
   Moon,
+  Bug,
   Briefcase,
   ShieldCheck,
   History,
@@ -44,6 +45,8 @@ interface NavbarProps {
   onToggleTheme: () => void;
   onLogout: () => void;
   onChangePassword?: () => void;
+  /** Botón del bicho: reportar un error al administrador de la plataforma (no en la demo pública) */
+  onReportBug?: () => void;
   // Moneda con la que se ve todo el CRM (solo para mostrar: los montos se guardan en su moneda)
   displayCurrency?: CurrencyCode;
   onDisplayCurrencyChange?: (currency: CurrencyCode) => void;
@@ -96,6 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleTheme,
   onLogout,
   onChangePassword,
+  onReportBug,
   displayCurrency,
   onDisplayCurrencyChange,
   viewCurrencies = ['CLP', 'USD'],
@@ -205,6 +209,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
             </div>
+          )}
+
+          {onReportBug && (
+            <button
+              type="button"
+              onClick={onReportBug}
+              title="Reportar un error"
+              aria-label="Reportar un error"
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-slate-600 bg-slate-900 text-slate-300 transition hover:bg-slate-800"
+            >
+              <Bug className="h-5 w-5" />
+            </button>
           )}
 
           <button

@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { AppUser, Company, Lead, NewAppUser, NewCompany, UserRole } from '../types/crm';
-import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale, Send } from 'lucide-react';
+import { ShieldCheck, Building2, Users, Plus, Pencil, Search, Globe2, Download, FileSpreadsheet, AlertTriangle, Loader2, CheckCircle2, Scale, Send, Activity } from 'lucide-react';
 import type { TenantExport } from '../lib/tenantExport';
 import { ROLE_LABEL } from '../lib/permissions';
 import { COUNTRIES, COUNTRY_CODES, type CountryCode } from '../data/countries';
 import { enabledCountriesOf } from '../lib/tenantGuards';
 import { CountryFlag } from './CountryFlag';
 import { ComplianceModule } from './ComplianceModule';
+import { UsageModule } from './UsageModule';
+import { useUsageData } from '../lib/useUsageData';
+import { DEFAULT_USAGE_PARAMS, unresolvedBugs, type AdminUsageApi, type UsageParams } from '../lib/usage';
 import {
   cardClass,
   formatDate,
@@ -19,7 +22,7 @@ import {
 } from '../lib/styles';
 import { ActiveSwitch, Modal, PageHeader, Pill, SectionTabs, type PillTone } from './ui';
 
-type Section = 'tenants' | 'users' | 'compliance';
+type Section = 'tenants' | 'users' | 'usage' | 'compliance';
 
 /** Mensaje de error, o null si se guardó. Con Supabase la respuesta llega después (promesa). */
 type SaveResult = string | null;
@@ -54,16 +57,23 @@ interface AdminModuleProps {
   currentUserName: string;
   complianceAccessLog: { at: string; who: string; what: string }[];
   onComplianceAccess: (what: string) => void;
+  // Uso de la plataforma: leads por CRM, ingresos, encuestas de satisfacción y errores reportados
+  usageApi: AdminUsageApi;
 }
 
 export const AdminModule: React.FC<AdminModuleProps> = (props) => {
   const [section, setSection] = useState<Section>('tenants');
   const { companies, users, leads } = props;
+  const [usageParams, setUsageParams] = useState<UsageParams>(DEFAULT_USAGE_PARAMS);
+  const usageData = useUsageData(props.usageApi, usageParams);
+  const sinResolver = unresolvedBugs(usageData.bugs);
+  // Con Supabase el administrador no lee los leads (RLS): el total sale de los conteos de la base
+  const totalLeads = usageData.usage ? usageData.usage.companies.reduce((suma, c) => suma + c.leadsTotal, 0) : leads.length;
 
   const stats = [
     { label: 'CRMs activos', value: `${companies.filter((c) => c.isActive).length} / ${companies.length}` },
     { label: 'Usuarios activos', value: `${users.filter((u) => u.isActive).length} / ${users.length}` },
-    { label: 'Leads en la plataforma', value: String(leads.length) },
+    { label: 'Leads en la plataforma', value: String(totalLeads) },
   ];
 
   return (
@@ -90,12 +100,17 @@ export const AdminModule: React.FC<AdminModuleProps> = (props) => {
         tabs={[
           { id: 'tenants', label: 'CRMs por empresa', icon: Building2, count: companies.length },
           { id: 'users', label: 'Usuarios', icon: Users, count: users.length },
+          // El número avisa cuántos errores reportados siguen sin revisar
+          { id: 'usage', label: 'Uso y soporte', icon: Activity, count: sinResolver > 0 ? sinResolver : undefined },
           { id: 'compliance', label: 'Portal fiscalizador', icon: Scale },
         ]}
       />
 
       {section === 'tenants' && <TenantsSection {...props} />}
       {section === 'users' && <UsersSection {...props} />}
+      {section === 'usage' && (
+        <UsageModule companies={companies} users={users} data={usageData} params={usageParams} onParamsChange={setUsageParams} />
+      )}
       {section === 'compliance' && (
         <ComplianceModule
           viewerName={props.currentUserName}

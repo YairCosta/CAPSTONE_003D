@@ -13,6 +13,7 @@ const ARCHIVOS = [
   { archivo: 'scripts/sql/prueba-crm-remota.sql', titulo: 'Trabajo diario del CRM (etapa 3)' },
   { archivo: 'scripts/sql/prueba-ataques-remota.sql', titulo: 'Ataques desde dentro (CRM Revela Pruebas)' },
   { archivo: 'scripts/sql/prueba-paises-remota.sql', titulo: 'Países de América Latina elegidos por la gerencia' },
+  { archivo: 'scripts/sql/prueba-uso-remota.sql', titulo: 'Uso de la plataforma, encuestas y reportes de errores' },
 ];
 
 const fallar = (motivo, salida) => {
