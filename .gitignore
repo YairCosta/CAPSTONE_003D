@@ -43,3 +43,6 @@ datos/zonas/sql/
 datos/zonas/zonas-*.geojson
 !datos/zonas/zonas-cl.geojson
 !datos/zonas/zonas-pe.geojson
+
+# Las presentaciones de la tesis son entregas personales: no se versionan
+docs/*.pptx
