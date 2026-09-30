@@ -205,18 +205,32 @@ export async function callOpenAi(options: {
   return paso;
 }
 
-export function describeOpenAiError(error: unknown, model: string): { status: number; message: string } {
+export function describeOpenAiError(
+  error: unknown,
+  model: string,
+  /** De quién es la clave: la de un CRM (la gerencia la cambia desde el chat) o la del servidor (.env.local, solo desarrollo) */
+  keyFrom: 'crm' | 'server' | null = 'server'
+): { status: number; message: string } {
+  const deCrm = keyFrom === 'crm';
   if (error instanceof OpenAiError) {
     if (error.status === 401) {
-      return { status: 401, message: 'La API key de OpenAI no es válida. Revisa OPENAI_API_KEY en .env.local.' };
+      // 502 y no 401: que la clave del CRM falle no es un problema de sesión de quien escribe
+      return deCrm
+        ? { status: 502, message: 'OpenAI rechazó la clave de este CRM (es inválida o la revocaron). La gerencia debe cargar una nueva en la configuración del asistente (el ícono de la llave, arriba en el chat).' }
+        : { status: 401, message: 'La API key de OpenAI no es válida. Revisa OPENAI_API_KEY en .env.local.' };
     }
     if (error.status === 429) {
-      return error.code === 'insufficient_quota'
-        ? { status: 429, message: 'La cuenta de OpenAI no tiene saldo. Agrega créditos en platform.openai.com (la suscripción de ChatGPT no sirve).' }
-        : { status: 429, message: 'Se alcanzó el límite de solicitudes de OpenAI. Espera un momento e inténtalo de nuevo.' };
+      if (error.code === 'insufficient_quota') {
+        return deCrm
+          ? { status: 429, message: 'La cuenta de OpenAI de este CRM no tiene saldo. La gerencia debe agregar créditos en platform.openai.com (la suscripción de ChatGPT no sirve).' }
+          : { status: 429, message: 'La cuenta de OpenAI no tiene saldo. Agrega créditos en platform.openai.com (la suscripción de ChatGPT no sirve).' };
+      }
+      return { status: 429, message: 'Se alcanzó el límite de solicitudes de OpenAI. Espera un momento e inténtalo de nuevo.' };
     }
     if (error.status === 404 || error.code === 'model_not_found') {
-      return { status: 502, message: `El modelo "${model}" no está disponible para esta cuenta de OpenAI. Revisa OPENAI_MODEL en .env.local.` };
+      return deCrm
+        ? { status: 502, message: `El modelo "${model}" no está disponible para la cuenta de OpenAI de este CRM. Avisa a quien administra Revela.` }
+        : { status: 502, message: `El modelo "${model}" no está disponible para esta cuenta de OpenAI. Revisa OPENAI_MODEL en .env.local.` };
     }
     if (error.status >= 500) return { status: 503, message: 'OpenAI no está disponible en este momento. Inténtalo de nuevo en unos segundos.' };
     return { status: 502, message: `OpenAI respondió con un error (${error.status}). Inténtalo de nuevo.` };

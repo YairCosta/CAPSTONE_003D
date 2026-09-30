@@ -9,6 +9,9 @@
 // Con GPT, además, cada CRM tiene un presupuesto mensual en dólares (server/aiBudget.ts): el servidor
 // calcula lo que cuesta cada llamada con los tokens que informa OpenAI, lo suma y deja de responder
 // cuando se alcanza. La gerencia lo ajusta desde el chat; la IA no tiene cómo tocarlo.
+//
+// La clave de OpenAI es de cada CRM (server/aiKeys.ts): la gerencia pega la de su empresa en la configuración del
+// chat y el servidor la usa solo para ese CRM. La clave del entorno (OPENAI_API_KEY) solo sirve en desarrollo local.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
@@ -18,6 +21,7 @@ import { callOpenAi, describeOpenAiError, toOpenAiMessages, toOpenAiTools, type 
 import { bearerToken, createRateLimiter, type SessionCaller } from './session.ts';
 import { costOf, priceFor, type ModelUsage } from './aiPricing.ts';
 import { isExhausted, publicBudget, validateBudget, type AiBudgetStatus, type AiBudgetStore } from './aiBudget.ts';
+import { AiKeyError, redactSecrets, validateOpenAiKey, verifyOpenAiKey, type AiKeyStore } from './aiKeys.ts';
 
 export type AiProvider = 'gemini' | 'openai';
 
@@ -39,6 +43,11 @@ export interface AiServerConfig {
   rateLimit?: { max: number; windowMs: number };
   /** Presupuesto mensual por CRM (solo con GPT). Sin él, el gasto no se limita. */
   budget?: AiBudgetStore;
+  /**
+   * Claves de OpenAI por CRM (solo con GPT). Con ellas, cada CRM usa únicamente la suya y la de OPENAI_API_KEY
+   * solo sirve en desarrollo local. Sin ellas (pruebas), la única clave es la de OPENAI_API_KEY.
+   */
+  keys?: AiKeyStore;
   /** Cuánto razona GPT-5 antes de responder ("minimal" es lo más barato) */
   openaiReasoningEffort?: string;
 }
@@ -428,6 +437,20 @@ const budgetScope = (config: AiServerConfig, caller: SessionCaller | null): stri
   return !config.requireSession && !caller ? 'local' : null;
 };
 
+/**
+ * La clave de OpenAI con que se atiende a quien llama. Con claves por CRM, la de su CRM y de nadie más; la del
+ * entorno (OPENAI_API_KEY) solo en desarrollo local, para probar sin cargar una. Sin claves por CRM, la del entorno.
+ */
+async function resolveOpenAiKey(config: AiServerConfig, scope: string | null): Promise<{ key: string | null; source: 'crm' | 'server' | null }> {
+  if (!config.keys) return config.openaiApiKey ? { key: config.openaiApiKey, source: 'server' } : { key: null, source: null };
+  if (scope && scope !== 'local') {
+    const propia = await config.keys.get(scope);
+    if (propia) return { key: propia, source: 'crm' };
+  }
+  if (!config.requireSession && config.openaiApiKey) return { key: config.openaiApiKey, source: 'server' };
+  return { key: null, source: null };
+}
+
 const usd = (monto: number) => `US$ ${monto.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const exhaustedMessage = (status: AiBudgetStatus): string =>
@@ -438,6 +461,8 @@ export const exhaustedMessage = (status: AiBudgetStatus): string =>
 // ------------------------------------------------------------------ middleware
 export function createAiMiddleware(config: AiServerConfig) {
   const dentroDelLimite = createRateLimiter(config.rateLimit ?? { max: 60, windowMs: 10 * 60 * 1000 });
+  // Cargar una clave llama a OpenAI para comprobarla: un tope por persona evita usar el servidor como comprobador de claves
+  const dentroDelLimiteDeClaves = createRateLimiter({ max: 20, windowMs: 10 * 60 * 1000 });
 
   return async (req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => {
     const path = (req.url ?? '').split('?')[0];
@@ -451,7 +476,97 @@ export function createAiMiddleware(config: AiServerConfig) {
         model: openai ? config.openaiModel : config.geminiModel,
         leadSource: config.placesApiKey ? 'google_places' : 'demo',
         budgetEnforced: Boolean(openai && config.budget),
+        keyPerCrm: Boolean(openai && config.keys),
       });
+      return;
+    }
+
+    // Clave de OpenAI del CRM de quien llama: cualquier persona del CRM ve si está cargada; solo la gerencia la cambia.
+    // Nunca se devuelve la clave: solo si existe, sus últimos 4 caracteres y de quién es.
+    if (path === '/key') {
+      if (config.provider !== 'openai' || !config.keys) {
+        sendJson(res, 200, { applies: false });
+        return;
+      }
+      const metodo = req.method ?? '';
+      if (metodo !== 'GET' && metodo !== 'POST' && metodo !== 'DELETE') {
+        sendJson(res, 405, { type: 'error', error: 'Método no permitido.' });
+        return;
+      }
+      try {
+        const token = bearerToken(req);
+        const caller = token && config.identify ? await config.identify(token).catch(() => null) : null;
+        const scope = budgetScope(config, caller);
+        if (!scope) {
+          sendJson(res, 401, { type: 'error', error: 'Inicia sesión en tu CRM para ver la clave de OpenAI del asistente.' });
+          return;
+        }
+        const enDesarrolloSinSesion = scope === 'local';
+        const canEdit = Boolean(caller && !enDesarrolloSinSesion && caller.role === 'manager');
+        const usaClaveDelEntorno = !config.requireSession && Boolean(config.openaiApiKey);
+
+        if (metodo !== 'GET') {
+          if (enDesarrolloSinSesion) {
+            sendJson(res, 400, { type: 'error', error: 'En desarrollo, sin iniciar sesión, la clave se toma de OPENAI_API_KEY en .env.local.' });
+            return;
+          }
+          if (!canEdit || !caller) {
+            sendJson(res, 403, { type: 'error', error: 'Solo la gerencia del CRM puede cambiar la clave de OpenAI del asistente.' });
+            return;
+          }
+        }
+
+        let verified: boolean | undefined;
+        if (metodo === 'POST') {
+          if (!dentroDelLimiteDeClaves(caller!.userId)) {
+            sendJson(res, 429, { type: 'error', error: 'Demasiados intentos de cargar la clave. Espera unos minutos.' });
+            return;
+          }
+          const body = await readJsonBody(req);
+          const valida = validateOpenAiKey(isRecord(body) ? body.apiKey : undefined);
+          if (!valida.ok) {
+            sendJson(res, 400, { type: 'error', error: valida.error });
+            return;
+          }
+          const revision = await verifyOpenAiKey(valida.value);
+          if (revision === 'invalid') {
+            sendJson(res, 400, { type: 'error', error: 'OpenAI no reconoce esa clave. Revisa que esté completa y vigente, y que sea de una cuenta con saldo.' });
+            return;
+          }
+          verified = revision === 'valid';
+          await config.keys.set(scope, caller!.userId, valida.value);
+        } else if (metodo === 'DELETE' && caller) {
+          await config.keys.clear(scope, caller.userId);
+        }
+
+        const propia = enDesarrolloSinSesion ? { configured: false, last4: null, updatedAt: null } : await config.keys.info(scope);
+        const source = propia.configured ? 'crm' : usaClaveDelEntorno ? 'server' : null;
+        sendJson(res, 200, {
+          applies: true,
+          configured: source !== null,
+          source,
+          last4: propia.last4,
+          updatedAt: propia.updatedAt,
+          canEdit,
+          ...(verified === undefined ? {} : { verified }),
+        });
+      } catch (error) {
+        if (error instanceof HttpError) {
+          sendJson(res, error.status, { type: 'error', error: error.message });
+          return;
+        }
+        if (error instanceof AiKeyError && error.code === 'forbidden') {
+          sendJson(res, 403, { type: 'error', error: 'Solo la gerencia del CRM puede cambiar la clave de OpenAI del asistente.' });
+          return;
+        }
+        if (error instanceof AiKeyError && error.code === 'invalid') {
+          sendJson(res, 400, { type: 'error', error: 'La clave de OpenAI no tiene el formato esperado (empieza con sk-).' });
+          return;
+        }
+        // Solo el código: el texto de un error de la base o de la red podría traer la clave
+        console.error('[ai/key]', error instanceof AiKeyError ? error.code : 'error inesperado');
+        sendJson(res, 503, { type: 'error', error: 'No se pudo leer o guardar la clave de OpenAI. Inténtalo de nuevo en un momento.' });
+      }
       return;
     }
 
@@ -513,6 +628,7 @@ export function createAiMiddleware(config: AiServerConfig) {
 
     let model = config.geminiModel;
     let provider: AiProvider = config.provider;
+    let keySource: 'crm' | 'server' | null = null;
     try {
       // Una API key personal (ingresada en el chat) es de Gemini: solo cuenta si Gemini está encendido a propósito.
       // Con GPT se ignora, así nadie esquiva la sesión ni el presupuesto mandando una clave propia.
@@ -546,13 +662,27 @@ export function createAiMiddleware(config: AiServerConfig) {
       const context = parseContext(payload.context);
 
       if (personalKey) provider = 'gemini';
-      const apiKey = provider === 'openai' ? config.openaiApiKey : personalKey || config.geminiApiKey;
+      let apiKey: string | undefined;
+      if (provider === 'openai') {
+        try {
+          const encontrada = await resolveOpenAiKey(config, budgetScope(config, caller));
+          apiKey = encontrada.key ?? undefined;
+          keySource = encontrada.source;
+        } catch (error) {
+          console.error('[ai/key]', error instanceof AiKeyError ? error.code : 'error inesperado');
+          throw new HttpError(503, 'No se pudo leer la clave de OpenAI de este CRM. Inténtalo de nuevo en un momento.');
+        }
+      } else {
+        apiKey = personalKey || config.geminiApiKey;
+      }
       if (!apiKey) {
         sendJson(res, 400, {
           type: 'error',
           error:
             provider === 'openai'
-              ? 'Falta la API key de OpenAI. Agrégala en .env.local (OPENAI_API_KEY).'
+              ? config.keys
+                ? 'Este CRM todavía no tiene la clave de OpenAI del asistente. La gerencia puede agregarla en la configuración del asistente (el ícono de la llave, arriba en el chat).'
+                : 'Falta la API key de OpenAI. Agrégala en .env.local (OPENAI_API_KEY).'
               : 'Falta la API key de Gemini. Agrégala en .env.local (GEMINI_API_KEY) o en la configuración del chat.',
         });
         return;
@@ -725,8 +855,9 @@ export function createAiMiddleware(config: AiServerConfig) {
         sendJson(res, error.status, { type: 'error', error: error.message });
         return;
       }
-      const { status, message } = provider === 'openai' ? describeOpenAiError(error, model) : describeGeminiError(error, model);
-      const detail = String((error as Error)?.message ?? error).slice(0, 300);
+      const { status, message } = provider === 'openai' ? describeOpenAiError(error, model, keySource) : describeGeminiError(error, model);
+      // OpenAI repite su clave (enmascarada) en algunos errores: no debe quedar en el registro
+      const detail = redactSecrets(String((error as Error)?.message ?? error).slice(0, 300));
       console.error('[ai/chat]', provider === 'openai' ? `OpenAI: ${detail}` : error instanceof ApiError ? `Gemini ${error.status}: ${detail}` : detail);
       sendJson(res, status, { type: 'error', error: message });
     }

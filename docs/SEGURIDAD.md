@@ -254,7 +254,38 @@ total. Se agregó un **tope mensual por CRM en dólares** (`docs/ASISTENTE_IA.md
 | Mezcla entre CRMs | El gasto se anota y se lee con el CRM de la sesión verificada, nunca uno que mande el navegador; cada CRM tiene su fila |
 | Rastro | El cambio queda en la auditoría del CRM y en `change_log` con su autor, sin valores personales (el presupuesto no es un dato personal) |
 
-**Riesgos aceptados:** una sola clave de OpenAI sirve a todos los CRMs del servidor (el tope es por CRM, la factura
-es una); el gasto de Google Places no cuenta en el presupuesto; y el precio de
+**Riesgos aceptados:** el gasto de Google Places no cuenta en el presupuesto; y el precio de
 cada modelo es una tabla en el código que hay que actualizar si OpenAI lo cambia. El último resguardo es el límite de
 gasto de la cuenta en platform.openai.com, que está fuera de Revela.
+
+## 7. Clave de OpenAI de cada CRM (30-09-2026)
+
+Con una sola clave de la plataforma, la gerencia de **cualquier CRM** podía subir su presupuesto y gastar la cuenta de otro, y
+quien administra Revela guardaba una clave ajena. Ahora **cada CRM trae la suya** (`docs/ASISTENTE_IA.md`, migración 0032).
+Esto cambia a propósito la regla 7 de `CLAUDE.md` ("las claves solo viven en variables de entorno"): la clave de cada cliente
+es suya, no de la plataforma, y vive **cifrada en Supabase Vault**.
+
+| Riesgo | Cómo se cubre |
+|---|---|
+| Que un CRM gaste la cuenta de otro | Cada CRM usa únicamente su clave (`resolveOpenAiKey`, probado con dos CRMs); sin clave propia no hay asistente, ni siquiera si hay una `OPENAI_API_KEY` en el servidor publicado |
+| Que la clave se lea en claro en la base, en copias de seguridad o en una consulta | Vive en `vault.secrets` cifrada; `company_ai_keys` solo guarda el puntero y 4 caracteres. La prueba de la base verifica que el texto de la clave no aparece en `vault.secrets` |
+| Que alguien con sesión la lea o la cambie | La tabla y Vault no tienen permisos para `authenticated` ni `anon` (probado, incluido el administrador de la plataforma); las funciones `set/clear/get_company_ai_key` solo las ejecuta la clave secreta del servidor |
+| Que cualquiera del CRM, o de otro CRM, la cambie | `set_company_ai_key` y `clear_company_ai_key` exigen un **gerente activo de ese CRM** (la base lo verifica aunque el servidor ya lo haya hecho; probado con usuario base, gerente de otro CRM, gerente desactivado, administrador y persona inexistente) |
+| Que la clave vuelva al navegador | Ninguna respuesta la trae: solo si existe y sus últimos 4 caracteres (probado que ni `/api/ai/key` ni los errores la repiten). El campo de la pantalla se vacía al guardar |
+| Que quede en un registro | Mensajes de error fijos; lo que se registra pasa por `redactSecrets`; el registro de cambios y la auditoría dicen *que* cambió, no *cuál* es. Probado con una clave que OpenAI "devuelve" en un error |
+| Claves mal formadas o inyección | Se valida `sk-[A-Za-z0-9_-]{20,250}` en el servidor y otra vez en la base; los mensajes no repiten lo escrito |
+| Usar el servidor para comprobar claves ajenas | Tope de 20 intentos de carga cada 10 minutos por persona, y solo la gerencia puede cargar |
+| Claves huérfanas | Un trigger borra el secreto de Vault al quitar la clave o al borrar el CRM (probado) |
+| Claves en un entorno que no es el suyo | La de `.env.local` solo sirve con `requireSession: false` (desarrollo local); publicado se ignora |
+
+**Pruebas:** `npm run test:ai` (con pruebas de mutación hechas a mano: quitar el ocultamiento de la clave en el registro,
+devolver la clave en la respuesta o dejar que cualquiera la cambie hace fallar las pruebas) y `npm run test:db` (34 pruebas
+de la 0032 sobre la base real).
+
+**Riesgos aceptados:**
+- Quien administra el proyecto de Supabase puede leer los secretos descifrados con SQL desde el panel. La app no lo permite
+  y la clave no viaja a ningún otro lado, pero la base es de quien la administra. Se acota pidiendo al cliente una **clave de
+  proyecto de OpenAI con límite de gasto mensual y permisos mínimos**, y se le puede quitar el acceso revocándola en OpenAI.
+- Si la clave de servicio de Supabase se filtra, se filtran también las claves descifrables con ella; por eso vive solo en
+  el servidor (Vercel, Sensitive) y nunca en el navegador.
+- Un fallo de la base al leer la clave corta el asistente (falla cerrado) en vez de usar otra.

@@ -7,6 +7,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createClient } from '@supabase/supabase-js';
 import { createAiMiddleware, resolveProvider, type AiServerConfig } from './aiChat.ts';
 import { DEFAULT_MONTHLY_BUDGET_USD, createMemoryBudgetStore, createSupabaseBudgetStore, type AiBudgetStore } from './aiBudget.ts';
+import { createMemoryKeyStore, createSupabaseKeyStore, type AiKeyStore } from './aiKeys.ts';
 import { createRatesMiddleware } from './exchangeRates.ts';
 import { createAdminMiddleware, type AdminServerConfig } from './adminUsers.ts';
 import { identifyCaller, type SessionCaller } from './session.ts';
@@ -30,7 +31,18 @@ export const aiConfigFrom = (env: ServerEnv, { requireSession = true }: { requir
   requireSession,
   identify: sessionIdentifierFrom(env),
   budget: budgetStoreFrom(env),
+  keys: keyStoreFrom(env),
 });
+
+/**
+ * Dónde viven las claves de OpenAI de los CRMs: cifradas en Supabase Vault (con la clave secreta del servidor) o,
+ * sin Supabase, en la memoria (solo pruebas: sin Supabase tampoco hay sesiones de CRM que las usen).
+ */
+export function keyStoreFrom(env: ServerEnv): AiKeyStore {
+  const { supabaseUrl, serviceKey } = adminConfigFrom(env);
+  if (!supabaseUrl || !serviceKey) return createMemoryKeyStore();
+  return createSupabaseKeyStore(createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } }));
+}
 
 /**
  * Dónde se lleva el gasto del asistente: en Supabase (con la clave secreta del servidor) o, sin ella,

@@ -67,6 +67,17 @@ interface AiStatus {
   requiresSession?: boolean;
   model: string;
   leadSource: 'google_places' | 'demo';
+  /** Cada CRM usa la clave de OpenAI de su empresa, que la gerencia carga desde este chat */
+  keyPerCrm?: boolean;
+}
+
+/** La clave de OpenAI del CRM: nunca se recibe la clave, solo si existe y sus últimos 4 caracteres */
+interface AiKeyInfo {
+  configured: boolean;
+  /** crm: la de la empresa; server: la de desarrollo (.env.local); null: ninguna */
+  source: 'crm' | 'server' | null;
+  last4: string | null;
+  canEdit: boolean;
 }
 
 // ------------------------------------------------------------------ mensajes visibles
@@ -91,6 +102,8 @@ interface AiChatWidgetProps {
   getAccessToken?: () => Promise<string | null>;
   /** La gerencia cambió el presupuesto mensual de IA: queda en la auditoría del CRM */
   onBudgetChange?: (change: { before: number; after: number }) => void;
+  /** La gerencia cargó, cambió o quitó la clave de OpenAI del CRM: queda en la auditoría (sin la clave) */
+  onKeyChange?: (action: 'set' | 'replace' | 'clear') => void;
 }
 
 const KEY_STORAGE = 'revela-gemini-key';
@@ -207,6 +220,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   onUpdateLeadStage,
   getAccessToken,
   onBudgetChange,
+  onKeyChange,
 }) => {
   const keyStorage = `${KEY_STORAGE}:${userId}`;
   const [isOpen, setIsOpen] = useState(false);
@@ -226,6 +240,11 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   const [budgetSaving, setBudgetSaving] = useState(false);
   const [budgetNote, setBudgetNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [budgetTick, setBudgetTick] = useState(0);
+  // Clave de OpenAI de la empresa: se pega una vez, se guarda cifrada en el servidor y no se vuelve a mostrar
+  const [keyInfo, setKeyInfo] = useState<AiKeyInfo | null>(null);
+  const [apiKeyDraft, setApiKeyDraft] = useState('');
+  const [apiKeySaving, setApiKeySaving] = useState(false);
+  const [apiKeyNote, setApiKeyNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -311,7 +330,9 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
 
   const isLoading = loadingLabel !== null;
   // La clave del servidor sirve si no exige sesión o si hay una sesión de CRM (con Supabase)
-  const serverKeyUsable = Boolean(status?.serverKeyConfigured && (!status.requiresSession || getAccessToken));
+  const serverKeyUsable = status?.keyPerCrm
+    ? Boolean(keyInfo?.configured)
+    : Boolean(status?.serverKeyConfigured && (!status?.requiresSession || getAccessToken));
   // Gemini está apagado: la clave personal solo existe si el servidor se encendió con AI_PROVIDER=gemini
   const geminiMode = status?.provider === 'gemini';
   const activeKey = geminiMode ? personalKey : '';
@@ -330,6 +351,27 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
       })
       .catch(() => setStatusError(true));
   }, [isOpen, status]);
+
+  // La clave de OpenAI del CRM: se lee al abrir el chat y la configuración (solo si está cargada, no su valor)
+  useEffect(() => {
+    if (!isOpen || !status?.keyPerCrm || (status.requiresSession && !getAccessToken)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
+        const response = await fetch('/api/ai/key', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const data = (await response.json().catch(() => null)) as ({ applies?: boolean } & Partial<AiKeyInfo>) | null;
+        if (!cancelled) setKeyInfo(response.ok && data?.applies ? (data as AiKeyInfo) : null);
+      } catch {
+        if (!cancelled) setKeyInfo(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // getAccessToken cambia en cada render de App pero siempre lee la misma sesión
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, status, showSettings, budgetTick]);
 
   // Se lee al abrir el chat, al abrir la configuración y cuando una consulta falla (por si se agotó)
   useEffect(() => {
@@ -482,6 +524,63 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
     }
   };
 
+  // La clave viaja una sola vez, por HTTPS, al servidor; el campo se vacía en cuanto se guarda y nunca se vuelve a mostrar
+  const saveApiKey = async () => {
+    if (!keyInfo || !apiKeyDraft.trim() || apiKeySaving) return;
+    setApiKeySaving(true);
+    setApiKeyNote(null);
+    try {
+      const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
+      const response = await fetch('/api/ai/key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ apiKey: apiKeyDraft }),
+      });
+      const data = (await response.json().catch(() => null)) as (Partial<AiKeyInfo> & { applies?: boolean; verified?: boolean; error?: string }) | null;
+      if (!response.ok || !data?.applies) {
+        setApiKeyNote({ ok: false, text: data?.error ?? `No se pudo guardar la clave (${response.status}).` });
+        return;
+      }
+      onKeyChange?.(keyInfo.source === 'crm' ? 'replace' : 'set');
+      setKeyInfo(data as AiKeyInfo);
+      setApiKeyDraft('');
+      setApiKeyNote({
+        ok: true,
+        text:
+          data.verified === false
+            ? 'Clave guardada. OpenAI no pudo comprobarla ahora; si el asistente falla, revisa que sea de una cuenta con saldo.'
+            : 'Clave guardada y comprobada con OpenAI. El asistente ya está activo.',
+      });
+      setBudgetTick((tick) => tick + 1);
+    } catch {
+      setApiKeyNote({ ok: false, text: 'No se pudo conectar con el servidor del asistente.' });
+    } finally {
+      setApiKeySaving(false);
+    }
+  };
+
+  const removeApiKey = async () => {
+    if (!keyInfo || apiKeySaving) return;
+    setApiKeySaving(true);
+    setApiKeyNote(null);
+    try {
+      const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
+      const response = await fetch('/api/ai/key', { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const data = (await response.json().catch(() => null)) as (Partial<AiKeyInfo> & { applies?: boolean; error?: string }) | null;
+      if (!response.ok || !data?.applies) {
+        setApiKeyNote({ ok: false, text: data?.error ?? `No se pudo quitar la clave (${response.status}).` });
+        return;
+      }
+      if (keyInfo.source === 'crm') onKeyChange?.('clear');
+      setKeyInfo(data as AiKeyInfo);
+      setApiKeyNote({ ok: true, text: 'Clave quitada: el asistente queda apagado hasta que se cargue otra.' });
+    } catch {
+      setApiKeyNote({ ok: false, text: 'No se pudo conectar con el servidor del asistente.' });
+    } finally {
+      setApiKeySaving(false);
+    }
+  };
+
   const removeKey = () => {
     try {
       sessionStorage.removeItem(keyStorage);
@@ -619,19 +718,91 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 <p className="mt-1 text-slate-400">
                   Proveedor: {geminiMode ? 'Google (Gemini)' : 'OpenAI (GPT)'}
                 </p>
-                <p className="text-slate-400">
-                  API key del servidor:{' '}
-                  {!status?.serverKeyConfigured
-                    ? 'no configurada'
-                    : serverKeyUsable
-                      ? 'configurada ✓'
-                      : 'solo con sesión en un CRM (en la demo, usa tu propia clave)'}
-                </p>
+                {status?.keyPerCrm ? (
+                  <p className="text-slate-400">Clave de OpenAI de este CRM: {keyInfo?.configured ? 'cargada ✓' : 'sin cargar'}</p>
+                ) : (
+                  <p className="text-slate-400">
+                    API key del servidor:{' '}
+                    {!status?.serverKeyConfigured
+                      ? 'no configurada'
+                      : serverKeyUsable
+                        ? 'configurada ✓'
+                        : 'solo con sesión en un CRM (en la demo, usa tu propia clave)'}
+                  </p>
+                )}
                 {geminiMode && <p className="text-slate-400">API key personal: {activeKey ? 'en uso ✓' : 'no ingresada'}</p>}
                 <p className="text-slate-400">
                   Búsqueda de empresas: {status?.leadSource === 'google_places' ? 'Google Places (real)' : 'datos de demostración'}
                 </p>
               </div>
+
+              {status?.keyPerCrm && keyInfo && (
+                <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4" aria-labelledby="ai-key-title">
+                  <p id="ai-key-title" className="flex items-center gap-2 font-semibold text-slate-200">
+                    <KeyRound className="h-4 w-4 text-indigo-400" /> Clave de OpenAI de tu empresa
+                  </p>
+                  <p className={`mt-1 ${keyInfo.configured ? 'text-emerald-300' : 'text-amber-300'}`}>
+                    {keyInfo.source === 'crm'
+                      ? `Cargada ✓ (termina en ${keyInfo.last4 ?? '····'})`
+                      : keyInfo.source === 'server'
+                        ? 'Usando la clave de desarrollo del servidor (.env.local).'
+                        : 'Todavía no hay una clave cargada: el asistente está apagado.'}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    El asistente usa la cuenta de OpenAI de tu empresa: el gasto se cobra ahí, no a Revela. La clave se guarda cifrada, solo
+                    el servidor la usa y no se vuelve a mostrar.
+                  </p>
+                  {keyInfo.canEdit ? (
+                    <div className="mt-3">
+                      <label htmlFor="ai-api-key" className={labelClass}>
+                        {keyInfo.source === 'crm' ? 'Reemplazar la clave de OpenAI' : 'Clave de OpenAI (empieza con sk-)'}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="ai-api-key"
+                          type="password"
+                          autoComplete="off"
+                          spellCheck={false}
+                          value={apiKeyDraft}
+                          onChange={(e) => setApiKeyDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void saveApiKey();
+                            }
+                          }}
+                          placeholder="sk-…"
+                          aria-describedby="ai-api-key-help"
+                          className={inputClass}
+                        />
+                        <button type="button" onClick={() => void saveApiKey()} disabled={!apiKeyDraft.trim() || apiKeySaving} className={`${primaryButton} shrink-0`}>
+                          {apiKeySaving ? 'Guardando…' : 'Guardar'}
+                        </button>
+                      </div>
+                      <p id="ai-api-key-help" className="mt-1.5 text-sm text-slate-400">
+                        Créala en{' '}
+                        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="font-semibold text-indigo-300 underline">
+                          platform.openai.com/api-keys
+                        </a>
+                        . Conviene una clave de <strong>proyecto</strong> con un límite de gasto mensual (Settings → Limits) y la cuenta con saldo: la
+                        suscripción de ChatGPT no sirve.
+                      </p>
+                      {keyInfo.source === 'crm' && (
+                        <button type="button" onClick={() => void removeApiKey()} disabled={apiKeySaving} className={`${secondaryButton} mt-3`}>
+                          Quitar la clave
+                        </button>
+                      )}
+                      {apiKeyNote && (
+                        <p role={apiKeyNote.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${apiKeyNote.ok ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          {apiKeyNote.text}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-400">Solo la gerencia del CRM puede cargar o cambiar la clave.</p>
+                  )}
+                </div>
+              )}
 
               {budget && (
                 <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4" aria-labelledby="ai-budget-title">
@@ -783,16 +954,25 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                         {budget.canEdit ? 'Pulsa aquí para ajustarlo.' : 'La gerencia puede subirlo.'}
                       </button>
                     )}
-                    {!hasKey && status && (
+                    {!hasKey && status && (status.keyPerCrm && keyInfo && !keyInfo.canEdit ? (
+                      <p className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                        <KeyRound className="h-4 w-4 shrink-0" />
+                        El asistente todavía no está activado: la gerencia debe cargar la clave de OpenAI de la empresa.
+                      </p>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => setShowSettings(true)}
                         className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-300"
                       >
                         <KeyRound className="h-4 w-4 shrink-0" />
-                        {geminiMode ? 'Falta la API key del asistente. Pulsa aquí para configurarla.' : 'El asistente todavía no está activado: falta la clave de OpenAI en el servidor.'}
+                        {geminiMode
+                          ? 'Falta la API key del asistente. Pulsa aquí para configurarla.'
+                          : status.keyPerCrm
+                            ? 'Falta la clave de OpenAI de tu empresa. Pulsa aquí para agregarla.'
+                            : 'El asistente todavía no está activado: falta la clave de OpenAI en el servidor.'}
                       </button>
-                    )}
+                    ))}
                     <p className="text-sm font-semibold text-slate-400">Prueba con:</p>
                     {SUGGESTIONS.map((suggestion) => (
                       <button
@@ -930,7 +1110,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                   }}
                   disabled={blocked}
                   placeholder={
-                    blocked ? 'Presupuesto mensual de IA agotado' : hasKey ? 'Escribe un mensaje…' : geminiMode ? 'Configura la API key para empezar' : 'Asistente sin activar (falta la clave de OpenAI)'
+                    blocked ? 'Presupuesto mensual de IA agotado' : hasKey ? 'Escribe un mensaje…' : geminiMode ? 'Configura la API key para empezar' : 'Asistente sin activar (falta la clave de OpenAI de la empresa)'
                   }
                   aria-label="Mensaje para el asistente"
                   className={`${inputClass} max-h-32 resize-none`}

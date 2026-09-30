@@ -14,7 +14,8 @@ import {
 import { buildToolDeclarations, createAiMiddleware, exhaustedMessage, resolveProvider } from '../server/aiChat.ts';
 import { OPENAI_PRICES, UNKNOWN_MODEL_PRICE, costOf, priceFor } from '../server/aiPricing.ts';
 import { createMemoryBudgetStore, createSupabaseBudgetStore, validateBudget, type AiBudgetStore } from '../server/aiBudget.ts';
-import { budgetStoreFrom } from '../server/api.ts';
+import { budgetStoreFrom, keyStoreFrom } from '../server/api.ts';
+import { AiKeyError, createMemoryKeyStore, createSupabaseKeyStore, redactSecrets, validateOpenAiKey, type AiKeyStore } from '../server/aiKeys.ts';
 import { budgetLevel, budgetPercent, formatSpentUsd, formatUsd, monthLabel } from '../src/lib/aiBudget.ts';
 
 const results: { name: string; ok: boolean; error?: string }[] = [];
@@ -137,10 +138,10 @@ test('Errores: cada falla de OpenAI se explica en español', async () => {
 });
 
 // ------------------------------------------------------------------ servidor completo con OpenAI simulado
-const pedir = (middleware: ReturnType<typeof createAiMiddleware>, url: string, body?: object, headers: Record<string, string> = {}) =>
+const pedir = (middleware: ReturnType<typeof createAiMiddleware>, url: string, body?: object, headers: Record<string, string> = {}, method?: string) =>
   new Promise<{ status: number; json: Record<string, unknown> }>((resolve) => {
     const req = Readable.from(body ? [Buffer.from(JSON.stringify(body))] : []) as unknown as IncomingMessage;
-    Object.assign(req, { method: body ? 'POST' : 'GET', url, headers });
+    Object.assign(req, { method: method ?? (body ? 'POST' : 'GET'), url, headers });
     let status = 200;
     const res = {
       set statusCode(v: number) { status = v; },
@@ -310,8 +311,9 @@ const serie = async (name: string, fn: () => void | Promise<void>) => {
 async function conOpenAi(guion: Response[], fn: (llamadas: Record<string, unknown>[]) => Promise<void>) {
   const original = globalThis.fetch;
   const llamadas: Record<string, unknown>[] = [];
-  globalThis.fetch = (async (_url: string, init: RequestInit) => {
-    llamadas.push(JSON.parse(String(init.body)));
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    const auth = (init?.headers as Record<string, string> | undefined)?.Authorization;
+    llamadas.push({ ...(init?.body ? JSON.parse(String(init.body)) : {}), __url: String(url), __auth: auth });
     const siguiente = guion.shift();
     if (!siguiente) throw new Error('OpenAI se llamó más veces de lo previsto');
     return siguiente;
@@ -632,6 +634,278 @@ await serie('Configuración: el presupuesto predeterminado es US$30 y se puede c
 });
 
 await Promise.all(pending);
+// ------------------------------------------------------------------ clave de OpenAI de cada CRM (0032)
+const CLAVE_1 = 'sk-proj-UNO1111111111111111111111111111111111abcd';
+const CLAVE_2 = 'sk-proj-DOS2222222222222222222222222222222222wxyz';
+const CLAVE_ENTORNO = 'sk-entorno-NUNCA-EN-PRODUCCION-0000000000';
+const conClaves = (keys: AiKeyStore, extra: object = {}) =>
+  createAiMiddleware({
+    provider: 'openai',
+    openaiApiKey: CLAVE_ENTORNO,
+    openaiModel: 'gpt-5-nano',
+    openaiReasoningEffort: 'minimal',
+    geminiModel: 'g',
+    requireSession: true,
+    identify: async (token: string) => (PERSONAS[token] as never) ?? null,
+    budget: createMemoryBudgetStore(30),
+    keys,
+    ...extra,
+  });
+const modelosOk = () => new Response(JSON.stringify({ data: [] }), { status: 200 });
+const errorOpenAi = (status: number, message: string, code?: string) => new Response(JSON.stringify({ error: { message, code } }), { status });
+
+/** Junta lo que se escribe en el registro mientras corre fn: una clave nunca debe aparecer ahí */
+async function capturandoRegistro(fn: () => Promise<void>): Promise<string> {
+  const originales = { error: console.error, warn: console.warn, log: console.log };
+  const lineas: string[] = [];
+  const tomar = (...args: unknown[]) => void lineas.push(args.map(String).join(' '));
+  console.error = tomar;
+  console.warn = tomar;
+  console.log = tomar;
+  try {
+    await fn();
+  } finally {
+    Object.assign(console, originales);
+  }
+  return lineas.join('\n');
+}
+
+await serie('Clave por CRM: cada CRM usa la suya; nunca la de otro CRM ni la del entorno', async () => {
+  const keys = createMemoryKeyStore();
+  await keys.set('crm-1', 'u-gerente', CLAVE_1);
+  await keys.set('crm-2', 'u-otro', CLAVE_2);
+  const mw = conClaves(keys);
+  await conOpenAi([conUso({ content: 'a' }, 10, 5), conUso({ content: 'b' }, 10, 5)], async (llamadas) => {
+    assert.equal((await pedir(mw, '/chat', HOLA_CRM, como('tk-gerente'))).status, 200);
+    assert.equal((await pedir(mw, '/chat', HOLA_CRM, como('tk-otro'))).status, 200);
+    assert.deepEqual(llamadas.map((l) => l.__auth), [`Bearer ${CLAVE_1}`, `Bearer ${CLAVE_2}`]);
+  });
+});
+
+await serie('Clave por CRM: un CRM sin clave no tiene asistente, ni siquiera con una clave del entorno en el servidor publicado', async () => {
+  const mw = conClaves(createMemoryKeyStore());
+  await conOpenAi([], async (llamadas) => {
+    const r = await pedir(mw, '/chat', HOLA_CRM, como('tk-gerente'));
+    assert.equal(r.status, 400);
+    assert.match(String(r.json.error), /todavía no tiene la clave de OpenAI/);
+    assert.match(String(r.json.error), /gerencia/);
+    assert.equal(llamadas.length, 0, 'no se llamó a OpenAI con la clave del entorno');
+  });
+});
+
+await serie('Clave por CRM: en desarrollo local la clave del entorno sirve a quien no tiene una propia', async () => {
+  const mw = conClaves(createMemoryKeyStore(), { requireSession: false });
+  await conOpenAi([conUso({ content: 'a' }, 10, 5), conUso({ content: 'b' }, 10, 5)], async (llamadas) => {
+    assert.equal((await pedir(mw, '/chat', HOLA_CRM, como('tk-gerente'))).status, 200, 'con sesión y sin clave propia');
+    assert.equal((await pedir(mw, '/chat', HOLA_CRM)).status, 200, 'sin sesión');
+    assert.deepEqual(llamadas.map((l) => l.__auth), [`Bearer ${CLAVE_ENTORNO}`, `Bearer ${CLAVE_ENTORNO}`]);
+  });
+});
+
+await serie('Clave por CRM: si falla leer la clave, no se llama a OpenAI (falla cerrado) y el error no la repite', async () => {
+  const roto: AiKeyStore = { ...createMemoryKeyStore(), get: async () => { throw new Error(`Supabase dijo: ${CLAVE_1}`); } };
+  await conOpenAi([], async (llamadas) => {
+    const registro = await capturandoRegistro(async () => {
+      const r = await pedir(conClaves(roto), '/chat', HOLA_CRM, como('tk-gerente'));
+      assert.equal(r.status, 503);
+      assert.match(String(r.json.error), /No se pudo leer la clave/);
+      assert.ok(!JSON.stringify(r.json).includes('UNO1111'));
+    });
+    assert.equal(llamadas.length, 0);
+    assert.ok(!registro.includes('UNO1111'), 'la clave no quedó en el registro');
+  });
+});
+
+await serie('Endpoint /key: todo el CRM ve si hay clave; solo la gerencia la carga y la quita; nunca se devuelve', async () => {
+  const keys = createMemoryKeyStore();
+  const mw = conClaves(keys);
+  const vista = await pedir(mw, '/key', undefined, como('tk-vendedor'));
+  assert.deepEqual([vista.status, vista.json.applies, vista.json.configured, vista.json.canEdit, vista.json.source], [200, true, false, false, null]);
+
+  assert.equal((await pedir(mw, '/key', { apiKey: CLAVE_1 }, como('tk-vendedor'))).status, 403, 'el usuario base no la carga');
+  assert.equal((await keys.info('crm-1')).configured, false);
+
+  await conOpenAi([modelosOk()], async (llamadas) => {
+    // Al pegar suelen venir espacios y un salto de línea
+    const guardada = await pedir(mw, '/key', { apiKey: `  ${CLAVE_1}\n` }, como('tk-gerente'));
+    assert.equal(guardada.status, 200);
+    assert.deepEqual([guardada.json.configured, guardada.json.source, guardada.json.last4, guardada.json.canEdit, guardada.json.verified], [true, 'crm', 'abcd', true, true]);
+    assert.ok(!JSON.stringify(guardada.json).includes('UNO1111'), 'la respuesta no trae la clave');
+    // Antes de guardarla se comprobó con OpenAI (listar modelos no cuesta)
+    assert.equal(llamadas[0].__url, 'https://api.openai.com/v1/models');
+    assert.equal(llamadas[0].__auth, `Bearer ${CLAVE_1}`);
+  });
+  assert.equal(await keys.get('crm-1'), CLAVE_1);
+
+  const paraVendedor = await pedir(mw, '/key', undefined, como('tk-vendedor'));
+  assert.deepEqual([paraVendedor.json.configured, paraVendedor.json.last4, paraVendedor.json.canEdit], [true, 'abcd', false]);
+  assert.ok(!JSON.stringify(paraVendedor.json).includes('UNO1111'));
+
+  const otroCrm = await pedir(mw, '/key', undefined, como('tk-otro'));
+  assert.deepEqual([otroCrm.json.configured, otroCrm.json.last4], [false, null], 'el otro CRM no ve la clave de este');
+  await pedir(mw, '/key', undefined, como('tk-otro'), 'DELETE');
+  assert.equal(await keys.get('crm-1'), CLAVE_1, 'la gerencia de otro CRM no quita la clave de este');
+
+  assert.equal((await pedir(mw, '/key', undefined, como('tk-vendedor'), 'DELETE')).status, 403, 'el usuario base no la quita');
+  const quitada = await pedir(mw, '/key', undefined, como('tk-gerente'), 'DELETE');
+  assert.deepEqual([quitada.status, quitada.json.configured], [200, false]);
+  assert.equal(await keys.get('crm-1'), null);
+});
+
+await serie('Endpoint /key: rechaza lo que no es una clave de OpenAI sin repetirlo ni llamar a OpenAI', async () => {
+  const keys = createMemoryKeyStore();
+  const mw = conClaves(keys);
+  const malas: unknown[] = [undefined, '', '   ', 'hola-mundo-secreto', 'sk-corta', `pk-${'a'.repeat(40)}`, CLAVE_1.replace('abcd', 'ab cd'), `${CLAVE_1};DROP`, 12345, null, {}, [CLAVE_1]];
+  await conOpenAi([], async (llamadas) => {
+    for (const mala of malas) {
+      const r = await pedir(mw, '/key', { apiKey: mala }, como('tk-gerente'));
+      assert.equal(r.status, 400, JSON.stringify(mala));
+      assert.ok(!String(r.json.error).includes('secreto'), 'el error no repite lo escrito');
+    }
+    assert.equal(llamadas.length, 0, 'no se llamó a OpenAI con claves mal formadas');
+  });
+  assert.equal((await keys.info('crm-1')).configured, false);
+});
+
+await serie('Endpoint /key: si OpenAI no reconoce la clave (401) no se guarda; si no se puede comprobar, sí', async () => {
+  const keys = createMemoryKeyStore();
+  const mw = conClaves(keys);
+  await conOpenAi([errorOpenAi(401, `Incorrect API key provided: ${CLAVE_1}`, 'invalid_api_key')], async () => {
+    const r = await pedir(mw, '/key', { apiKey: CLAVE_1 }, como('tk-gerente'));
+    assert.equal(r.status, 400);
+    assert.match(String(r.json.error), /OpenAI no reconoce esa clave/);
+    assert.ok(!JSON.stringify(r.json).includes('UNO1111'));
+  });
+  assert.equal((await keys.info('crm-1')).configured, false, 'una clave inválida no se guarda');
+
+  // Una clave restringida puede no poder listar modelos (403) y servir igual para el chat; una caída de OpenAI o de la red tampoco impide guardarla
+  for (const respuestaDeOpenAi of [[errorOpenAi(403, 'sin permiso')], [errorOpenAi(500, 'caído')], []]) {
+    const otras = createMemoryKeyStore();
+    await conOpenAi(respuestaDeOpenAi as Response[], async () => {
+      const r = await pedir(conClaves(otras), '/key', { apiKey: CLAVE_2 }, como('tk-gerente'));
+      assert.equal(r.status, 200);
+      assert.equal(r.json.verified, false, 'se guardó sin comprobar');
+    });
+    assert.equal(await otras.get('crm-1'), CLAVE_2);
+  }
+});
+
+await serie('Endpoint /key: un tope de intentos por persona para cargar claves', async () => {
+  const mw = conClaves(createMemoryKeyStore());
+  await conOpenAi([], async () => {
+    for (let i = 0; i < 20; i++) assert.equal((await pedir(mw, '/key', { apiKey: 'mala' }, como('tk-gerente'))).status, 400);
+    assert.equal((await pedir(mw, '/key', { apiKey: 'mala' }, como('tk-gerente'))).status, 429, 'el intento 21 se frena');
+    assert.equal((await pedir(mw, '/key', { apiKey: 'mala' }, como('tk-otro'))).status, 400, 'el tope es por persona');
+    assert.equal((await pedir(mw, '/key', undefined, como('tk-gerente'))).status, 200, 'consultar el estado no cuenta');
+  });
+});
+
+await serie('Endpoint /key: sin sesión, con token falso o de administrador no entra; métodos y proveedores', async () => {
+  const mw = conClaves(createMemoryKeyStore());
+  assert.equal((await pedir(mw, '/key')).status, 401);
+  assert.equal((await pedir(mw, '/key', undefined, como('tk-falso'))).status, 401);
+  assert.equal((await pedir(mw, '/key', undefined, como('tk-admin'))).status, 401);
+  assert.equal((await pedir(mw, '/key', { apiKey: CLAVE_1 }, como('tk-admin'))).status, 401);
+  assert.equal((await pedir(mw, '/key', undefined, como('tk-gerente'), 'PUT')).status, 405);
+  const conGemini = createAiMiddleware({ provider: 'gemini', geminiModel: 'g', requireSession: true, identify: async (t) => (PERSONAS[t] as never) ?? null, keys: createMemoryKeyStore() });
+  assert.deepEqual((await pedir(conGemini, '/key', undefined, como('tk-gerente'))).json, { applies: false });
+  const sinClaves = createAiMiddleware({ provider: 'openai', openaiModel: 'm', geminiModel: 'g', requireSession: true, identify: async (t) => (PERSONAS[t] as never) ?? null });
+  assert.deepEqual((await pedir(sinClaves, '/key', undefined, como('tk-gerente'))).json, { applies: false });
+});
+
+await serie('Endpoint /key: en desarrollo la clave del entorno se ve pero no se cambia desde la pantalla; publicado, se ignora', async () => {
+  const dev = conClaves(createMemoryKeyStore(), { requireSession: false });
+  const sinSesion = await pedir(dev, '/key');
+  assert.deepEqual([sinSesion.status, sinSesion.json.configured, sinSesion.json.source, sinSesion.json.canEdit], [200, true, 'server', false]);
+  const intento = await pedir(dev, '/key', { apiKey: CLAVE_1 });
+  assert.equal(intento.status, 400);
+  assert.match(String(intento.json.error), /OPENAI_API_KEY/);
+  const conSesionDev = await pedir(dev, '/key', undefined, como('tk-gerente'));
+  assert.deepEqual([conSesionDev.json.configured, conSesionDev.json.source, conSesionDev.json.canEdit], [true, 'server', true]);
+
+  const publicado = await pedir(conClaves(createMemoryKeyStore()), '/key', undefined, como('tk-gerente'));
+  assert.deepEqual([publicado.json.configured, publicado.json.source], [false, null], 'la del entorno no vale publicado');
+  assert.equal((await pedir(conClaves(createMemoryKeyStore()), '/status')).json.keyPerCrm, true);
+  assert.equal((await pedir(createAiMiddleware({ provider: 'openai', openaiModel: 'm', geminiModel: 'g', requireSession: false }), '/status')).json.keyPerCrm, false);
+});
+
+await serie('Errores de OpenAI con la clave de un CRM: se le explica a la gerencia y la clave no queda en el registro', async () => {
+  const keys = createMemoryKeyStore();
+  await keys.set('crm-1', 'u-gerente', CLAVE_1);
+  const mw = conClaves(keys);
+  const registro = await capturandoRegistro(async () => {
+    await conOpenAi([errorOpenAi(401, `Incorrect API key provided: ${CLAVE_1}. You can find your API key at platform.openai.com`, 'invalid_api_key')], async () => {
+      const r = await pedir(mw, '/chat', HOLA_CRM, como('tk-gerente'));
+      assert.equal(r.status, 502, 'una clave rechazada no es un problema de sesión');
+      assert.match(String(r.json.error), /rechazó la clave de este CRM/);
+      assert.match(String(r.json.error), /gerencia/);
+      assert.ok(!JSON.stringify(r.json).includes('UNO1111'));
+    });
+    await conOpenAi([errorOpenAi(429, 'You exceeded your current quota', 'insufficient_quota')], async () => {
+      const r = await pedir(mw, '/chat', HOLA_CRM, como('tk-gerente'));
+      assert.equal(r.status, 429);
+      assert.match(String(r.json.error), /cuenta de OpenAI de este CRM no tiene saldo/);
+    });
+  });
+  assert.ok(!registro.includes('UNO1111'), `la clave quedó en el registro: ${registro}`);
+  assert.match(registro, /sk-\*\*\*/, 'el registro conserva que hubo un error, con la clave tapada');
+});
+
+await serie('Claves: el formato, lo que se oculta en los registros y los mensajes de error de la base', async () => {
+  for (const buena of [CLAVE_1, CLAVE_2, `sk-${'a'.repeat(20)}`, `sk-svcacct-${'Ab_-'.repeat(20)}`, `  ${CLAVE_1}\n`]) assert.equal(validateOpenAiKey(buena).ok, true, buena);
+  assert.equal((validateOpenAiKey(`  ${CLAVE_1}\n`) as { value: string }).value, CLAVE_1, 'se recorta');
+  for (const mala of ['sk-', `sk-${'a'.repeat(19)}`, `sk-${'a'.repeat(251)}`, 'Bearer sk-aaaaaaaaaaaaaaaaaaaaaaaa', `sk-${'é'.repeat(25)}`]) assert.equal(validateOpenAiKey(mala).ok, false, mala);
+  assert.equal(redactSecrets('Incorrect API key provided: sk-proj-********************abcd.'), 'Incorrect API key provided: sk-***.');
+  assert.equal(redactSecrets(`falló con ${CLAVE_1} y ${CLAVE_2}`), 'falló con sk-*** y sk-***');
+  assert.equal(redactSecrets('nada que ocultar, sk-corto'), 'nada que ocultar, sk-corto');
+  assert.equal((await keyStoreFrom({}).set('c', 'u', CLAVE_1)).last4, 'abcd', 'sin Supabase, en memoria');
+});
+
+await serie('Supabase: la clave se guarda y se lee con las funciones de la base; los errores no repiten la clave', async () => {
+  const llamadas: [string, unknown][] = [];
+  let fila: { key_last4: string; updated_at: string } | null = { key_last4: 'abcd', updated_at: '2026-10-01T10:00:00Z' };
+  let rpc: { data: unknown; error: { code?: string; message: string } | null } = { data: CLAVE_1, error: null };
+  const admin = {
+    from: (tabla: string) => ({
+      select: (columnas: string) => ({
+        eq: (campo: string, valor: string) => (llamadas.push([`${tabla}.${columnas}.${campo}`, valor]), { maybeSingle: async () => ({ data: fila, error: null }) }),
+      }),
+    }),
+    rpc: async (nombre: string, args: unknown) => (llamadas.push([nombre, args]), rpc),
+  } as never;
+  const store = createSupabaseKeyStore(admin);
+
+  assert.deepEqual(await store.info('crm-1'), { configured: true, last4: 'abcd', updatedAt: '2026-10-01T10:00:00Z' });
+  assert.deepEqual(llamadas[0], ['company_ai_keys.key_last4, updated_at.company_id', 'crm-1']);
+  fila = null;
+  assert.deepEqual(await store.info('crm-2'), { configured: false, last4: null, updatedAt: null });
+
+  assert.equal(await store.get('crm-1'), CLAVE_1);
+  assert.deepEqual(llamadas.find(([k]) => k === 'get_company_ai_key')![1], { p_company_id: 'crm-1' });
+  rpc = { data: null, error: null };
+  assert.equal(await store.get('crm-2'), null);
+
+  fila = { key_last4: 'abcd', updated_at: '2026-10-01T10:00:00Z' };
+  rpc = { data: 'abcd', error: null };
+  assert.equal((await store.set('crm-1', 'u-gerente', CLAVE_1)).last4, 'abcd');
+  assert.deepEqual(llamadas.find(([k]) => k === 'set_company_ai_key')![1], { p_company_id: 'crm-1', p_user_id: 'u-gerente', p_api_key: CLAVE_1 });
+  rpc = { data: true, error: null };
+  assert.equal(await store.clear('crm-1', 'u-gerente'), true);
+  assert.deepEqual(llamadas.find(([k]) => k === 'clear_company_ai_key')![1], { p_company_id: 'crm-1', p_user_id: 'u-gerente' });
+  rpc = { data: false, error: null };
+  assert.equal(await store.clear('crm-1', 'u-gerente'), false);
+
+  // El texto de un error de la base podría traer la clave: se descarta y solo queda un código
+  for (const [codigo, esperado] of [['42501', 'forbidden'], ['22023', 'invalid'], ['XX000', 'unavailable'], [undefined, 'unavailable']] as const) {
+    rpc = { data: null, error: { code: codigo, message: `detalle con ${CLAVE_1}` } };
+    await assert.rejects(
+      () => store.set('crm-1', 'u-gerente', CLAVE_1),
+      (error: unknown) => error instanceof AiKeyError && error.code === esperado && !error.message.includes('UNO1111')
+    );
+  }
+  await assert.rejects(() => store.get('crm-1'), (error: unknown) => error instanceof AiKeyError && error.code === 'unavailable');
+});
+
 for (const r of results) console.log(`${r.ok ? '✓' : '✗'} ${r.name}${r.error ? `\n    ${r.error}` : ''}`);
 const failed = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - failed}/${results.length} pruebas del asistente OK`);

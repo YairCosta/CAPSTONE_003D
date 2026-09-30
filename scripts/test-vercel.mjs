@@ -124,6 +124,10 @@ try {
   const presupuestoJson = await presupuesto.json().catch(() => ({}));
   check('El asistente usa GPT por defecto (Gemini apagado) y el presupuesto de IA se aplica', iaJson.provider === 'openai' && iaJson.budgetEnforced === true, JSON.stringify(iaJson));
   check('El presupuesto de IA exige sesión en un CRM', presupuesto.status === 401, `${presupuesto.status} ${JSON.stringify(presupuestoJson)}`);
+  const claveIa = await pedir('/api/ai/key');
+  check('La clave de OpenAI del CRM exige sesión, y cada CRM trae la suya (keyPerCrm)', claveIa.status === 401 && iaJson.keyPerCrm === true, `${claveIa.status} ${JSON.stringify(iaJson)}`);
+  const cargarClave = await pedir('/api/ai/key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apiKey: 'sk-proj-SinSesion00000000000000000000000000' }) });
+  check('Cargar una clave de OpenAI sin iniciar sesión se rechaza', cargarClave.status === 401, String(cargarClave.status));
 
   const admin = await pedir('/api/admin/status');
   check('La API de invitaciones responde', admin.status === 200, String(admin.status));

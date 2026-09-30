@@ -2284,6 +2284,26 @@ export function App() {
           onFindLeads={handleAiFindLeads}
           onUpdateLeadStage={handleAiUpdateLeadStage}
           getAccessToken={db ? async () => (await db.auth.getSession()).data.session?.access_token ?? null : undefined}
+          onKeyChange={(action) => {
+            if (!currentCompany) return;
+            // Se registra que la clave cambió, nunca la clave
+            record({
+              companyId: currentCompany.id,
+              action: 'update',
+              entity: 'company',
+              entityId: currentCompany.id,
+              entityLabel: currentCompany.name,
+              summary: `${action === 'clear' ? 'Quitó' : action === 'set' ? 'Cargó' : 'Cambió'} la clave de OpenAI del asistente de IA`,
+              changes: [
+                {
+                  field: 'aiOpenAiKey',
+                  label: 'Clave de OpenAI del asistente',
+                  before: action === 'set' ? 'Sin clave' : 'Cargada',
+                  after: action === 'clear' ? 'Sin clave' : 'Cargada',
+                },
+              ],
+            });
+          }}
           onBudgetChange={({ before, after }) => {
             if (!currentCompany) return;
             record({

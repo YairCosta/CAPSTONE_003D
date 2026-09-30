@@ -3,8 +3,9 @@
 Widget flotante (abajo a la derecha) para buscar empresas por rubro y zona y registrarlas como leads con lenguaje natural.
 Disponible para los perfiles **Usuario base** y **Gerente**.
 
-> **Desde el 30-09-2026 el asistente usa solo GPT (OpenAI).** Para usarlo basta `OPENAI_API_KEY` (ver la sección
-> "GPT (OpenAI)" más abajo). **Gemini está apagado**: solo se enciende escribiendo `AI_PROVIDER=gemini` a propósito;
+> **Desde el 30-09-2026 el asistente usa solo GPT (OpenAI) y la clave de OpenAI es de cada CRM**: la gerencia de
+> cada empresa pega la suya en la configuración del chat (ver "La clave de OpenAI es de cada CRM", más abajo); en
+> desarrollo local basta `OPENAI_API_KEY` en `.env.local`. **Gemini está apagado**: solo se enciende escribiendo `AI_PROVIDER=gemini` a propósito;
 > tener una `GEMINI_API_KEY` en el entorno no lo activa, y la clave personal del chat se ignora y ya no se ofrece.
 > Las secciones 1 y 2 explican cómo encender Gemini, por si algún día se quiere volver a él.
 
@@ -150,7 +151,11 @@ Las herramientas, las reglas y los límites son los mismos que tenía con Gemini
 con saldo cargado. **La suscripción de ChatGPT no sirve**: es una cuenta distinta que no da acceso a
 la API.
 
-**Cómo activarlo**, en `.env.local` (nunca en el chat ni en el código):
+**Cómo activarlo, publicado:** la gerencia de cada CRM pega la clave de su empresa en el chat (ícono de la llave →
+"Clave de OpenAI de tu empresa"). No se carga nada en Vercel: ver la sección siguiente.
+
+**Cómo activarlo, en desarrollo local**, en `.env.local` (nunca en el chat ni en el código). Sirve a quien no tiene una
+clave de CRM cargada, solo en tu computador:
 
 ```
 OPENAI_API_KEY=la-clave
@@ -161,8 +166,36 @@ OPENAI_API_KEY=la-clave
 # AI_DEFAULT_MONTHLY_BUDGET_USD=30
 ```
 
-y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-nano". Publicada, las mismas variables
-van en Vercel (ver `docs/DESPLIEGUE.md`).
+y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-nano". Publicada, `OPENAI_API_KEY` se ignora
+(ver `docs/DESPLIEGUE.md`); las demás variables opcionales sí valen.
+
+### La clave de OpenAI es de cada CRM
+
+La clave de OpenAI es de quien paga el uso: el cliente. Por eso **cada CRM trae la suya** y Revela nunca usa la de otro
+CRM ni una propia de la plataforma (migración 0032, `server/aiKeys.ts`).
+
+| Qué | Cómo |
+|---|---|
+| Quién la carga | Solo la gerencia de ese CRM, pegándola en el chat (llave → "Clave de OpenAI de tu empresa"). Se comprueba con OpenAI antes de guardarla (listar modelos no cuesta): si OpenAI no la reconoce (401) no se guarda. Si no se puede comprobar (clave restringida, OpenAI caído) se guarda avisándolo |
+| Dónde vive | **Cifrada en Supabase Vault** (`vault.secrets`). La tabla `company_ai_keys` guarda solo el puntero y los últimos 4 caracteres. La clave no está en claro en ninguna tabla ni copia de seguridad de Revela |
+| Quién la lee | Solo el servidor, con la clave secreta de Supabase (`get_company_ai_key`), en el momento de llamar a OpenAI a nombre de ese CRM. Ninguna persona con sesión lee la tabla ni Vault (probado), ni el administrador de la plataforma desde la app |
+| Qué ve la pantalla | Si hay clave y sus últimos 4 caracteres. **La clave nunca se vuelve a mostrar ni viaja al navegador**; para cambiarla se pega otra |
+| Sin clave | El CRM no tiene asistente: el chat avisa a la gerencia que la cargue y al resto que la gerencia debe hacerlo |
+| Quién puede llamar con ella | Quien tiene sesión activa de ese CRM (usuario base o gerente), dentro del presupuesto mensual y del tope de 60 consultas cada 10 minutos |
+| Si la revocan o se queda sin saldo | El chat lo dice con claridad: la gerencia debe cargar una nueva o agregar créditos (`describeOpenAiError`). No se cae a otra clave |
+| Quitarla | La gerencia puede quitarla: se borra también de Vault. Borrar el CRM la borra en cascada |
+| Registro | Cada carga, cambio o retiro queda en la auditoría del CRM y en `change_log` con su autor, **sin la clave** |
+| Desarrollo local | La clave de `.env.local` sirve a quien no tiene una de CRM cargada, solo con `requireSession: false` (tu computador). Publicada se ignora |
+
+**Que la clave no se filtre:** todo error que devuelve o registra el servidor es un texto fijo; el texto de un error de
+la base o de OpenAI (que a veces repite la clave, enmascarada) pasa por `redactSecrets` antes de llegar al registro. El
+formato se valida (`sk-…` sin espacios ni símbolos) y el mensaje nunca repite lo escrito. Cargar claves tiene un tope de
+20 intentos cada 10 minutos por persona.
+
+**Lo que esto no impide (honestidad):** quien administra el proyecto de Supabase puede leer los secretos descifrados
+con SQL desde el panel (Vault los descifra para esa cuenta). Es la misma confianza que ya se da al dueño de la plataforma
+sobre los datos de los leads, y se acota pidiendo al cliente una **clave de proyecto de OpenAI con límite de gasto
+mensual y permisos mínimos**: lo peor que podría pasar con ella es gastar ese límite.
 
 **Modelo:** `gpt-5-nano`, el más barato de la tabla de abajo y suficiente para buscar, crear y mover leads.
 Los modelos GPT-5 razonan antes de responder y ese razonamiento se cobra como salida, así que se pide el
@@ -215,10 +248,9 @@ cambia, se actualizan en `server/aiPricing.ts`):
 Un modelo que no está en la tabla se cobra como uno caro (US$ 2,50 / 10,00): el tope protege de más, nunca de menos.
 
 **Lo que el presupuesto NO cubre:**
-- **Una sola clave de OpenAI sirve a todos los CRMs** del servidor. El tope es por CRM, pero la factura es una:
-  si hay varios CRMs activos (por ejemplo, de prueba), todos gastan de la misma cuenta. Para un cliente real conviene
-  su propia clave y su propio despliegue, o un tope de la cuenta en platform.openai.com (Limits), que es el último
-  resguardo y está fuera de Revela.
+- **El tope de la cuenta de OpenAI** (platform.openai.com → Limits) es el último resguardo y está fuera de Revela: conviene
+  ponerlo en la clave de proyecto que carga cada cliente. Desde el 30-09-2026 cada CRM paga con su propia clave, así que
+  el gasto de un CRM ya no sale de la cuenta de otro.
 - **Google Places** (búsqueda real de empresas) tiene su propio cobro y no se cuenta aquí.
 - **Gemini** está apagado: como la clave personal del chat se ignora, no hay gasto de IA que escape del presupuesto por ahí.
 
@@ -233,6 +265,6 @@ quién lee, el registro de cambios).
 precios. Falta probar el tope agotándolo con la clave real; el corte está cubierto por `npm run test:ai`.
 
 **Ley 21.719:** con Gemini apagado, OpenAI es el único subencargado de IA que recibe datos del CRM (Google ya no
-recibe nada por este camino). Recibe lo mismo que recibía Gemini: la ficha mínima del lead, sin correo, teléfono ni
+recibe nada por este camino), y lo hace con la cuenta de OpenAI del propio cliente. Recibe lo mismo que recibía Gemini: la ficha mínima del lead, sin correo, teléfono ni
 monto. Figura en el registro de tratamientos (`docs/cumplimiento/revela-2026-09/rat.csv`, que lista "Gemini (Google) u
 OpenAI" porque es de antes de esta decisión) y requiere el análisis de transferencia internacional.

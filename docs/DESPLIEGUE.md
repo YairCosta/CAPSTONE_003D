@@ -29,12 +29,12 @@ entorno (`server/api.ts`): lo que se prueba en local es lo que se publica.
 | `VITE_DATA_SOURCE` | `supabase` | App |
 | `SUPABASE_SERVICE_ROLE_KEY` | La clave secreta de Supabase, marcada **Sensitive** | Solo la función de invitaciones |
 | `APP_URL` | La dirección publicada, ej. `https://revela.vercel.app` | Enlace de los correos de invitación |
-| `OPENAI_API_KEY` | La clave de OpenAI, marcada **Sensitive**, solo en **Production**. Es lo único que hace falta para el asistente (GPT es el proveedor por defecto) | Asistente IA |
+| `OPENAI_API_KEY` | **No se carga en Vercel.** Cada CRM trae su clave de OpenAI: la gerencia la pega en el chat y queda cifrada en Supabase Vault (ver `docs/ASISTENTE_IA.md`). Si se cargara, publicado se ignora. Solo sirve en `.env.local`, para desarrollo | Asistente IA |
 | `GOOGLE_PLACES_API_KEY` | Opcional: sin ella la búsqueda de empresas devuelve datos de demostración | Asistente IA |
 | `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`, `AI_DEFAULT_MONTHLY_BUDGET_USD` | Opcionales (`gpt-5-nano`, `minimal`, `30`) | Modelo de GPT y presupuesto mensual de IA de cada CRM (ver `docs/ASISTENTE_IA.md`) |
 
-Gemini está apagado: no hace falta ninguna variable `GEMINI_*` ni `AI_PROVIDER`. El presupuesto mensual de IA se guarda en Supabase, así que el asistente con GPT
-también necesita `SUPABASE_SERVICE_ROLE_KEY` en la función.
+Gemini está apagado: no hace falta ninguna variable `GEMINI_*` ni `AI_PROVIDER`. El presupuesto mensual de IA y las claves de
+OpenAI de los CRMs se guardan en Supabase, así que el asistente con GPT necesita `SUPABASE_SERVICE_ROLE_KEY` en la función.
 
 Las `VITE_` se meten en la app al compilar: si se cambian, hay que volver a publicar (**Redeploy**).
 Las demás solo existen en la función. Ninguna clave se escribe en el código ni se pega en el chat.

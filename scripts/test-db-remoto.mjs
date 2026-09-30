@@ -15,6 +15,7 @@ const ARCHIVOS = [
   { archivo: 'scripts/sql/prueba-paises-remota.sql', titulo: 'Países de América Latina elegidos por la gerencia' },
   { archivo: 'scripts/sql/prueba-uso-remota.sql', titulo: 'Uso de la plataforma, encuestas y reportes de errores' },
   { archivo: 'scripts/sql/prueba-presupuesto-ia-remota.sql', titulo: 'Presupuesto mensual del asistente de IA' },
+  { archivo: 'scripts/sql/prueba-clave-ia-remota.sql', titulo: 'Clave de OpenAI de cada CRM (Vault)' },
 ];
 
 const fallar = (motivo, salida) => {
