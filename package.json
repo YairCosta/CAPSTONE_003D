@@ -18,6 +18,7 @@
     "test:sql": "node scripts/test-migrations.mjs",
     "test:db": "node scripts/test-db-remoto.mjs",
     "test:supabase": "node --experimental-strip-types --no-warnings scripts/test-supabase.mts",
+    "test:rendimiento": "node scripts/test-rendimiento.mjs",
     "test:bundle": "node --experimental-strip-types --no-warnings scripts/test-bundle.mts",
     "test:vercel": "node scripts/test-vercel.mjs",
     "diagramas": "node scripts/generar-diagramas.mjs",

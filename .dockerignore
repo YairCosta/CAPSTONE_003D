@@ -1,0 +1,16 @@
+# Lo que no hace falta para compilar ni correr la imagen (la hace más liviana y evita meter secretos)
+.git
+node_modules
+dist
+.vercel
+.env
+.env.*
+!.env.example
+.claude
+docs
+supabase
+scripts
+Fase 1
+Fase 2
+datos/zonas/fuentes
+*.log

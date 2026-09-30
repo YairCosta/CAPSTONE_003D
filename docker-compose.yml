@@ -1,0 +1,27 @@
+# Revela en un contenedor:  docker compose up --build   →   http://localhost:8080/?demo
+#
+# Sin configurar nada arranca la DEMO: datos ficticios en memoria, sin base de datos ni claves.
+# Para conectar una base de Supabase propia, copia .env.example a .env y completa los valores:
+# el compose los toma solos. Las claves nunca se escriben en este archivo ni en la imagen.
+services:
+  revela:
+    build:
+      context: .
+      args:
+        # Se compilan dentro de la aplicación (son públicas por diseño: la base se protege con RLS)
+        VITE_DATA_SOURCE: ${VITE_DATA_SOURCE:-demo}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+    image: revela:local
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      # Solo el servidor las ve (nunca llegan al navegador)
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-nano}
+      AI_DEFAULT_MONTHLY_BUDGET_USD: ${AI_DEFAULT_MONTHLY_BUDGET_USD:-30}
+    restart: unless-stopped
