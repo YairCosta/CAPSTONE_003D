@@ -92,7 +92,7 @@ await test('Norte: el archivo NO contiene datos de GeoDemo ni zonas de Perú', (
 await test('No incluye contraseñas', () => {
   for (const id of [TENANT_GEODEMO_ID, TENANT_NORTE_ID]) {
     const text = allCells(id);
-    for (const password of ['dev-admin-solo-local', 'dev-gerente-local', 'dev-base-local']) assert.ok(!text.includes(password), `aparece "${password}"`);
+    for (const password of ['dev-admin-solo-local', 'dev-gerente-local', 'dev-base-local', 'dev-admin-solo-local', 'demo1234']) assert.ok(!text.includes(password), `aparece "${password}"`);
     assert.ok(!sheet(id, 'Usuarios').columns.some((c) => /contraseña|password/i.test(c.header)));
   }
 });

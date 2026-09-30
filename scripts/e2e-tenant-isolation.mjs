@@ -624,7 +624,7 @@ try {
       .filter(([path]) => path.endsWith('.xml'))
       .map(([, c]) => strFromU8(c))
       .join(' ');
-    const leaked = ['Rocío Aguilera', 'Lead Aislado B', 'Empresa Doble IA', 'Hormigón premezclado', 'dev-gerente-local', 'dev-admin-solo-local'].filter((w) => xml.includes(w));
+    const leaked = ['Rocío Aguilera', 'Lead Aislado B', 'Empresa Doble IA', 'Hormigón premezclado', 'dev-gerente-local', 'dev-admin-solo-local', 'dev-admin-solo-local', 'demo1234'].filter((w) => xml.includes(w));
     check('El Excel trae los datos de GeoDemo (incluidos los creados en la prueba)', ['Antonia Morales Valdés', 'Lead Aislado A', 'Producto Aislado A', 'Lucía Fernández'].every((w) => xml.includes(w)));
     check('El Excel NO trae datos de otros CRMs ni contraseñas', leaked.length === 0, `Filtrado: ${leaked}`);
   }
