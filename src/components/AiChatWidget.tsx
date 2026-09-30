@@ -312,9 +312,12 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   const isLoading = loadingLabel !== null;
   // La clave del servidor sirve si no exige sesión o si hay una sesión de CRM (con Supabase)
   const serverKeyUsable = Boolean(status?.serverKeyConfigured && (!status.requiresSession || getAccessToken));
-  const hasKey = Boolean(personalKey || serverKeyUsable);
+  // Gemini está apagado: la clave personal solo existe si el servidor se encendió con AI_PROVIDER=gemini
+  const geminiMode = status?.provider === 'gemini';
+  const activeKey = geminiMode ? personalKey : '';
+  const hasKey = Boolean(activeKey || serverKeyUsable);
   // Con la clave personal de Gemini el gasto no sale del presupuesto del CRM
-  const level = budget && !personalKey ? budgetLevel(budget) : 'ok';
+  const level = budget && !activeKey ? budgetLevel(budget) : 'ok';
   const blocked = level === 'exhausted';
 
   useEffect(() => {
@@ -367,7 +370,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(personalKey ? { 'X-Gemini-Api-Key': personalKey } : {}),
+          ...(activeKey ? { 'X-Gemini-Api-Key': activeKey } : {}),
         },
         body: JSON.stringify({ contents: history, context: { userName, tenantName, countries } }),
       });
@@ -552,7 +555,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 {statusError
                   ? 'Servidor del asistente no disponible'
                   : status
-                    ? `${personalKey || status.provider !== 'openai' ? 'Gemini' : 'GPT'} · ${activeModel ?? status.model}${hasKey ? '' : ' · falta API key'}`
+                    ? `${geminiMode ? 'Gemini' : 'GPT'} · ${activeModel ?? status.model}${hasKey ? '' : ' · falta API key'}`
                     : 'Conectando…'}
               </p>
             </div>
@@ -614,7 +617,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
               <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
                 <p className="font-semibold text-slate-200">Estado</p>
                 <p className="mt-1 text-slate-400">
-                  Proveedor: {status?.provider === 'openai' ? 'OpenAI (GPT)' : 'Google (Gemini)'}
+                  Proveedor: {geminiMode ? 'Google (Gemini)' : 'OpenAI (GPT)'}
                 </p>
                 <p className="text-slate-400">
                   API key del servidor:{' '}
@@ -624,7 +627,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                       ? 'configurada ✓'
                       : 'solo con sesión en un CRM (en la demo, usa tu propia clave)'}
                 </p>
-                <p className="text-slate-400">API key personal: {personalKey ? 'en uso ✓' : 'no ingresada'}</p>
+                {geminiMode && <p className="text-slate-400">API key personal: {activeKey ? 'en uso ✓' : 'no ingresada'}</p>}
                 <p className="text-slate-400">
                   Búsqueda de empresas: {status?.leadSource === 'google_places' ? 'Google Places (real)' : 'datos de demostración'}
                 </p>
@@ -656,7 +659,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                   <p className="mt-2 text-sm text-slate-400">
                     {budget.requests} llamada{budget.requests === 1 ? '' : 's'} al modelo ({budget.model}). El gasto se reinicia el día 1 de cada mes y,
                     al llegar al tope, el asistente deja de responder hasta entonces o hasta que la gerencia lo suba.
-                    {personalKey && ' Con tu clave personal de Gemini el gasto no cuenta aquí.'}
+                    {activeKey && ' Con tu clave personal de Gemini el gasto no cuenta aquí.'}
                   </p>
                   {budget.canEdit ? (
                     <div className="mt-3">
@@ -700,6 +703,8 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 </div>
               )}
 
+              {geminiMode && (
+              <>
               <div>
                 <label htmlFor="gemini-key" className={labelClass}>
                   API key personal de Gemini
@@ -744,6 +749,8 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                   <li>Pégala en .env.local como GEMINI_API_KEY y reinicia «npm run dev», o pégala aquí arriba.</li>
                 </ol>
               </div>
+              </>
+              )}
             </div>
           ) : (
             <>
@@ -783,7 +790,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                         className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-300"
                       >
                         <KeyRound className="h-4 w-4 shrink-0" />
-                        Falta la API key del asistente. Pulsa aquí para configurarla.
+                        {geminiMode ? 'Falta la API key del asistente. Pulsa aquí para configurarla.' : 'El asistente todavía no está activado: falta la clave de OpenAI en el servidor.'}
                       </button>
                     )}
                     <p className="text-sm font-semibold text-slate-400">Prueba con:</p>
@@ -922,7 +929,9 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                     }
                   }}
                   disabled={blocked}
-                  placeholder={blocked ? 'Presupuesto mensual de IA agotado' : hasKey ? 'Escribe un mensaje…' : 'Configura la API key para empezar'}
+                  placeholder={
+                    blocked ? 'Presupuesto mensual de IA agotado' : hasKey ? 'Escribe un mensaje…' : geminiMode ? 'Configura la API key para empezar' : 'Asistente sin activar (falta la clave de OpenAI)'
+                  }
                   aria-label="Mensaje para el asistente"
                   className={`${inputClass} max-h-32 resize-none`}
                 />

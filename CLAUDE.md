@@ -38,7 +38,7 @@ No se pueden debilitar sin decirlo explícitamente:
 | `src/components/` | Módulos de la interfaz (KPI y mapa, Pipeline, Contacto, Gerencia, Auditoría, Admin; `StageAdminModule` existe pero su pestaña está oculta, ver `src/lib/permissions.ts`) |
 | `src/lib/` | Lógica pura y reutilizable: guards, monedas, catálogo, métricas, exportación. La capa de datos de Supabase va en `src/lib/db/` |
 | `src/data/` | Registro de países (`countries.ts`), cuenta demo (`mockGeoData.ts`) y CRMs de prueba, solo en desarrollo (`testTenants.ts`) |
-| `server/` | Proxy del asistente IA (Gemini u OpenAI según `AI_PROVIDER`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase). En desarrollo corre dentro de Vite; publicada, en una función de Vercel (`server/vercel.ts`). Las dos se arman igual desde `server/api.ts`. Ver `docs/DESPLIEGUE.md` |
+| `server/` | Proxy del asistente IA (GPT; Gemini apagado salvo `AI_PROVIDER=gemini`), API de tipos de cambio e invitaciones de usuarios (`/api/admin`, única pieza que usa la clave secreta de Supabase). En desarrollo corre dentro de Vite; publicada, en una función de Vercel (`server/vercel.ts`). Las dos se arman igual desde `server/api.ts`. Ver `docs/DESPLIEGUE.md` |
 | `supabase/migrations/` | Esquema de la base de datos |
 | `docs/` | Procesos BPMN (`PROCESOS.md`, `bpmn/`), base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación, auditoría, usuarios, uso y soporte (`USO_Y_SOPORTE.md`), asistente IA, seguridad, Ley 21.719, pagos, evidencia, diagramas y el expediente de cumplimiento (`docs/cumplimiento/`) |
 | `scripts/` | Pruebas de aislamiento, exportación y punta a punta |

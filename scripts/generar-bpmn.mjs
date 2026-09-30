@@ -190,7 +190,7 @@ const PROCESOS = [
     nodos: [
       { id: 'pide', tipo: 'inicio', lane: 'usuario', col: 0, nombre: 'Pide al asistente buscar empresas' },
       { id: 'verificar', tipo: 'tareaServicio', lane: 'servidor', col: 1, nombre: 'Verificar la sesión de CRM y el límite de consultas' },
-      { id: 'gSesion', tipo: 'compuerta', lane: 'servidor', col: 2, nombre: '¿Sesión válida o clave propia?' },
+      { id: 'gSesion', tipo: 'compuerta', lane: 'servidor', col: 2, nombre: '¿Sesión válida?' },
       { id: 'sinSesion', tipo: 'fin', lane: 'usuario', col: 3, nombre: 'Se le pide iniciar sesión' },
       { id: 'buscar', tipo: 'tareaServicio', lane: 'servidor', col: 3, nombre: 'Buscar empresas con la IA (Google Places o demo)' },
       { id: 'elegir', tipo: 'tareaUsuario', lane: 'usuario', col: 4, nombre: 'Elegir una empresa y pedir que la guarde' },

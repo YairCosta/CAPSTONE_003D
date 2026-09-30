@@ -67,7 +67,7 @@
 <text x="1366" y="114" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVICIOS EXTERNOS</text>
 
 <rect x="1372" y="128" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
-<text x="1495" y="163.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gemini (Google AI)</text>
+<text x="1495" y="163.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">OpenAI (GPT)</text>
 <text x="1495" y="182.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asistente de prospección</text>
 <rect x="1372" y="222" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
 <text x="1495" y="257.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Google Places</text>

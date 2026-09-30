@@ -31,7 +31,7 @@
       <bpmn:incoming>Flujo_1</bpmn:incoming>
       <bpmn:outgoing>Flujo_2</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Nodo_gSesion" name="¿Sesión válida o clave propia?">
+    <bpmn:exclusiveGateway id="Nodo_gSesion" name="¿Sesión válida?">
       <bpmn:incoming>Flujo_2</bpmn:incoming>
       <bpmn:outgoing>Flujo_3</bpmn:outgoing>
       <bpmn:outgoing>Flujo_4</bpmn:outgoing>
@@ -103,7 +103,7 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_gSesion_di" bpmnElement="Nodo_gSesion" isMarkerVisible="true">
         <dc:Bounds x="532" y="323" width="52" height="52" />
-        <bpmndi:BPMNLabel><dc:Bounds x="440" y="288" width="108" height="32" /></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="447" y="303" width="101" height="17" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Nodo_sinSesion_di" bpmnElement="Nodo_sinSesion">
         <dc:Bounds x="715" y="160" width="38" height="38" />

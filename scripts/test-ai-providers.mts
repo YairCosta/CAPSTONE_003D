@@ -42,12 +42,16 @@ const respuesta = (message: object, status = 200) =>
   });
 
 // ------------------------------------------------------------------ proveedor
-test('Proveedor: por defecto sigue Gemini aunque se agregue la clave de OpenAI', () => {
-  assert.equal(resolveProvider({ GEMINI_API_KEY: 'g', OPENAI_API_KEY: 'o' }), 'gemini');
-  assert.equal(resolveProvider({ AI_PROVIDER: 'openai', GEMINI_API_KEY: 'g', OPENAI_API_KEY: 'o' }), 'openai');
+test('Proveedor: GPT por defecto; Gemini solo si se pide a propósito con AI_PROVIDER=gemini', () => {
+  assert.equal(resolveProvider({}), 'openai');
+  assert.equal(resolveProvider({ OPENAI_API_KEY: 'o' }), 'openai');
+  assert.equal(resolveProvider({ GEMINI_API_KEY: 'g' }), 'openai', 'tener una clave de Gemini no lo enciende');
+  assert.equal(resolveProvider({ GEMINI_API_KEY: 'g', OPENAI_API_KEY: 'o' }), 'openai');
+  assert.equal(resolveProvider({ AI_PROVIDER: 'openai' }), 'openai');
   assert.equal(resolveProvider({ AI_PROVIDER: 'GPT' }), 'openai');
-  assert.equal(resolveProvider({ OPENAI_API_KEY: 'o' }), 'openai'); // única clave disponible
-  assert.equal(resolveProvider({}), 'gemini');
+  assert.equal(resolveProvider({ AI_PROVIDER: 'basura' }), 'openai');
+  assert.equal(resolveProvider({ AI_PROVIDER: 'gemini' }), 'gemini');
+  assert.equal(resolveProvider({ AI_PROVIDER: ' Gemini ' }), 'gemini');
 });
 
 // ------------------------------------------------------------------ traducción
@@ -215,6 +219,24 @@ test('Sesión: sin iniciar sesión ni clave propia, el asistente no usa las clav
   assert.equal(tokenFalso.status, 401);
   const estado = await pedir(mw, '/status');
   assert.equal(estado.json.requiresSession, true);
+});
+
+test('Gemini apagado: una clave personal de Gemini no esquiva la sesión ni el presupuesto', async () => {
+  const original = globalThis.fetch;
+  let llamadas = 0;
+  globalThis.fetch = (async () => {
+    llamadas += 1;
+    throw new Error('no debería llamar a ningún modelo');
+  }) as unknown as typeof fetch;
+  try {
+    const mw = createAiMiddleware({ ...conSesion(vendedor), openaiApiKey: 'sk-servidor' });
+    const r = await pedir(mw, '/chat', HOLA, { 'x-gemini-api-key': 'AIzaClavePropia' });
+    assert.equal(r.status, 401, 'sin sesión no entra, aunque traiga una clave de Gemini');
+    assert.doesNotMatch(String(r.json.error), /Gemini/, 'ya no se invita a usar una clave de Gemini');
+    assert.equal(llamadas, 0);
+  } finally {
+    globalThis.fetch = original;
+  }
 });
 
 test('Sesión: el administrador de plataforma y los usuarios desactivados tampoco las usan', async () => {

@@ -108,6 +108,10 @@ cabecera hacia el proxy, nunca al bundle. Es legible por cualquier script que ll
 página. Riesgo acotado: es la clave del propio usuario y lo peor es consumo de su cuota. Conviene usar
 claves con límite de gasto. Desde el 27-09-2026 la CSP impide que un script ajeno la mande a otro sitio.
 
+**Actualización (30-09-2026): ya no aplica mientras Gemini siga apagado.** El chat no ofrece la clave personal y el
+servidor ignora la cabecera `X-Gemini-Api-Key` cuando el proveedor es GPT. Solo se borra, por si quedó una de antes,
+al cerrar sesión (probado en la e2e).
+
 ### A7 · Los scripts de prueba no pasan por el compilador — **anotado**
 
 **Severidad: baja.** `tsconfig` cubre `src` y `server`, pero no `scripts/`. Al cambiar la firma de
@@ -174,7 +178,8 @@ la base, así que **quien sepa usar la consola del navegador puede saltarse la i
 **Asistente de IA (B1, B10).** Publicada, las claves del servidor solo se usan con una sesión de CRM
 (usuario base o gerente, activo, con su CRM activo): el servidor verifica el token con Supabase Auth y lee
 el perfil con la clave secreta (`server/session.ts`), nunca confía en el navegador. Sin sesión (la cuenta
-demo) el asistente funciona solo con una clave propia de Gemini y **sin Google Places**. Cada persona tiene
+demo) el asistente funciona solo con una clave propia de Gemini y **sin Google Places** (hasta el 30-09-2026; con
+Gemini apagado, sin sesión en un CRM no se entra y la demo pública no tiene asistente). Cada persona tiene
 un tope de 60 consultas cada 10 minutos (en la memoria de cada instancia: frena el abuso de una sesión, no
 es un límite global). Si verificar la sesión falla, se trata como sin sesión (falla cerrado). En
 `npm run dev` la demo local sigue usando las claves del servidor (`requireSession: false`).
@@ -250,6 +255,6 @@ total. Se agregó un **tope mensual por CRM en dólares** (`docs/ASISTENTE_IA.md
 | Rastro | El cambio queda en la auditoría del CRM y en `change_log` con su autor, sin valores personales (el presupuesto no es un dato personal) |
 
 **Riesgos aceptados:** una sola clave de OpenAI sirve a todos los CRMs del servidor (el tope es por CRM, la factura
-es una); el gasto de Google Places y el de la clave personal de Gemini no cuentan en el presupuesto; y el precio de
+es una); el gasto de Google Places no cuenta en el presupuesto; y el precio de
 cada modelo es una tabla en el código que hay que actualizar si OpenAI lo cambia. El último resguardo es el límite de
 gasto de la cuenta en platform.openai.com, que está fuera de Revela.

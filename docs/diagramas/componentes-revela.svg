@@ -166,7 +166,7 @@
 <text x="1232" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ExchangeRate-API</text>
 <text x="1232" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">resto de monedas</text>
 <rect x="1374" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
-<text x="1494" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gemini (Google AI)</text>
+<text x="1494" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">OpenAI (GPT)</text>
 <text x="1494" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">modelo del asistente</text>
 <path d="M 1622 347 L 1662 347 L 1662 792 L 1622 792" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
 <rect x="1584.6" y="686" width="154.8" height="18" rx="5" fill="#F8FAFC" opacity="0.97"/>

@@ -33,7 +33,7 @@ aplicación y, en producción, con RLS y triggers en la base de datos.
 | Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
 | Mapa | Leaflet, mapas base de Esri; límites de BCN (Chile), INEI (Perú) y geoBoundaries (resto de América Latina) |
 | Base de datos | PostgreSQL 17 + PostGIS en Supabase (toda la app conectada con `VITE_DATA_SOURCE=supabase`; la demo sigue en memoria) |
-| Servicios | Gemini u OpenAI (asistente), Google Places, Banco Central de Chile (tipo de cambio) |
+| Servicios | OpenAI GPT (asistente; Gemini apagado), Google Places, Banco Central de Chile (tipo de cambio) |
 
 ## Cómo ejecutarlo
 
@@ -55,7 +55,7 @@ ofrece la cuenta demo con contraseña, para las pruebas automáticas.
 La cuenta de administrador de plataforma solo existe en desarrollo y no viaja en la aplicación
 publicada: en producción vive en Supabase Auth.
 
-Para el asistente de IA hace falta un archivo `.env.local` con `GEMINI_API_KEY`
+Para el asistente de IA hace falta un archivo `.env.local` con `OPENAI_API_KEY`
 (ver `.env.example`). Ese archivo nunca se sube al repositorio.
 
 ## Pruebas

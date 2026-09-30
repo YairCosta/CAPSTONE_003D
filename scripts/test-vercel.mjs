@@ -122,7 +122,8 @@ try {
 
   const presupuesto = await pedir('/api/ai/budget');
   const presupuestoJson = await presupuesto.json().catch(() => ({}));
-  check('La ruta del presupuesto de IA existe y, sin GPT configurado, dice que no aplica', presupuesto.status === 200 && presupuestoJson.applies === false && iaJson.budgetEnforced === false, JSON.stringify(presupuestoJson));
+  check('El asistente usa GPT por defecto (Gemini apagado) y el presupuesto de IA se aplica', iaJson.provider === 'openai' && iaJson.budgetEnforced === true, JSON.stringify(iaJson));
+  check('El presupuesto de IA exige sesión en un CRM', presupuesto.status === 401, `${presupuesto.status} ${JSON.stringify(presupuestoJson)}`);
 
   const admin = await pedir('/api/admin/status');
   check('La API de invitaciones responde', admin.status === 200, String(admin.status));

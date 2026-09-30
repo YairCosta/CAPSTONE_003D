@@ -44,14 +44,11 @@ export interface AiServerConfig {
 }
 
 /**
- * Proveedor a usar: el que diga AI_PROVIDER; si no se indica, OpenAI solo cuando es la única clave
- * configurada. Así agregar la clave de OpenAI no cambia nada hasta decidirlo explícitamente.
+ * Proveedor a usar: GPT. Gemini quedó apagado (30-09-2026): solo se usa con AI_PROVIDER=gemini escrito
+ * a propósito, nunca por tener una clave de Gemini en el entorno ni por una clave personal del chat.
  */
 export function resolveProvider(env: { AI_PROVIDER?: string; OPENAI_API_KEY?: string; GEMINI_API_KEY?: string }): AiProvider {
-  const pedido = (env.AI_PROVIDER ?? '').trim().toLowerCase();
-  if (pedido === 'openai' || pedido === 'gpt') return 'openai';
-  if (pedido === 'gemini') return 'gemini';
-  return env.OPENAI_API_KEY && !env.GEMINI_API_KEY ? 'openai' : 'gemini';
+  return (env.AI_PROVIDER ?? '').trim().toLowerCase() === 'gemini' ? 'gemini' : 'openai';
 }
 
 // País habilitado para el CRM y sus regiones. Las zonas no se envían: son cientos por país (345
@@ -517,9 +514,10 @@ export function createAiMiddleware(config: AiServerConfig) {
     let model = config.geminiModel;
     let provider: AiProvider = config.provider;
     try {
-      // Una API key personal (ingresada en el chat) es de Gemini y tiene prioridad sobre el servidor
+      // Una API key personal (ingresada en el chat) es de Gemini: solo cuenta si Gemini está encendido a propósito.
+      // Con GPT se ignora, así nadie esquiva la sesión ni el presupuesto mandando una clave propia.
       const headerKey = req.headers['x-gemini-api-key'];
-      const personalKey = typeof headerKey === 'string' ? headerKey.trim() : '';
+      const personalKey = config.provider === 'gemini' && typeof headerKey === 'string' ? headerKey.trim() : '';
 
       // Quién llama: las claves del servidor son para quien tiene sesión en un CRM
       const token = bearerToken(req);
@@ -529,7 +527,9 @@ export function createAiMiddleware(config: AiServerConfig) {
         sendJson(res, 401, {
           type: 'error',
           error:
-            'Inicia sesión en tu CRM para usar el asistente. En la cuenta demo puedes usarlo con tu propia API key de Gemini (botón de configuración del chat).',
+            config.provider === 'gemini'
+              ? 'Inicia sesión en tu CRM para usar el asistente. En la cuenta demo puedes usarlo con tu propia API key de Gemini (botón de configuración del chat).'
+              : 'Inicia sesión en tu CRM para usar el asistente.',
         });
         return;
       }

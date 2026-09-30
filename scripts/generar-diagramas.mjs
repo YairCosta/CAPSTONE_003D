@@ -180,7 +180,7 @@ function diagramaArquitectura() {
   // Servicios externos
   p.push(band({ x: 1350, y: 90, w: 290, h: 520, label: 'SERVICIOS EXTERNOS', note: '' }));
   const externos = [
-    ['Gemini (Google AI)', 'asistente de prospección'],
+    ['OpenAI (GPT)', 'asistente de prospección'],
     ['Google Places', 'empresas reales'],
     ['Banco Central de Chile', 'dólar observado'],
     ['ExchangeRate-API', 'otras monedas'],
@@ -303,7 +303,7 @@ function diagramaComponentes() {
     ['Google Places', 'empresas reales'],
     ['Banco Central de Chile', 'dólar observado (mindicador.cl)'],
     ['ExchangeRate-API', 'resto de monedas'],
-    ['Gemini (Google AI)', 'modelo del asistente'],
+    ['OpenAI (GPT)', 'modelo del asistente'],
   ];
   const ex = (i) => 64 + i * 262;
   externos.forEach(([titulo, sub], i) => {

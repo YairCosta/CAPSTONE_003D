@@ -511,15 +511,14 @@ try {
   );
   check('GeoDemo ve una sola "Empresa Aislada A" (la de Norte no se mezcla)', accountRowsA === 1, `filas: ${accountRowsA}`);
 
-  // Clave personal de Gemini de un usuario de GeoDemo
+  // Gemini está apagado: el chat no ofrece clave personal. Si quedó una guardada de antes en la pestaña, se borra al salir.
   await domClick('button[aria-label="Abrir asistente de prospección"]');
   await page.waitForSelector('section[aria-label="Asistente de prospección"] button[aria-label="Configurar el asistente"]', { visible: true, timeout: 5000 });
   await domClick('button[aria-label="Configurar el asistente"]');
-  await page.waitForSelector('#gemini-key', { visible: true, timeout: 5000 });
-  await fillInput('#gemini-key', 'AIzaCLAVE-SOLO-GEODEMO');
-  await clickText('button', 'Guardar clave');
-  await sleep(200);
+  await sleep(500);
+  check('El chat no ofrece una clave personal de Gemini (apagado)', (await page.$('#gemini-key')) === null);
   await domClick('button[aria-label="Cerrar asistente"]');
+  await page.evaluate(() => sessionStorage.setItem('revela-gemini-key:usuario-de-geodemo', 'AIzaCLAVE-SOLO-GEODEMO'));
 
   // ================================================================ 5. Usuario base de Norte + asistente IA
   await logout();
@@ -546,7 +545,7 @@ try {
   await domClick('button[aria-label="Abrir asistente de prospección"]');
   await sleep(1000);
   const subtitle = await page.evaluate(() => document.querySelector('section[aria-label="Asistente de prospección"] header p.text-sm')?.textContent ?? '');
-  check('Norte no hereda la clave de Gemini de GeoDemo', subtitle.includes('falta API key'), subtitle);
+  check('El asistente de Norte usa GPT y no hereda ninguna clave de Gemini de GeoDemo', subtitle.startsWith('GPT'), subtitle);
 
   // Simula a Gemini pidiendo guardar 2 leads en el mismo turno, uno con nombre de una empresa de GeoDemo
   await page.evaluate(() => {

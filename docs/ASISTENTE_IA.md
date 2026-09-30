@@ -1,19 +1,25 @@
-# Asistente IA de prospección (Gemini)
+# Asistente IA de prospección (GPT)
 
 Widget flotante (abajo a la derecha) para buscar empresas por rubro y zona y registrarlas como leads con lenguaje natural.
 Disponible para los perfiles **Usuario base** y **Gerente**.
 
-## 1. Obtener la API key gratuita
+> **Desde el 30-09-2026 el asistente usa solo GPT (OpenAI).** Para usarlo basta `OPENAI_API_KEY` (ver la sección
+> "GPT (OpenAI)" más abajo). **Gemini está apagado**: solo se enciende escribiendo `AI_PROVIDER=gemini` a propósito;
+> tener una `GEMINI_API_KEY` en el entorno no lo activa, y la clave personal del chat se ignora y ya no se ofrece.
+> Las secciones 1 y 2 explican cómo encender Gemini, por si algún día se quiere volver a él.
+
+## 1. (Solo Gemini) Obtener la API key gratuita
 
 1. Entra a <https://aistudio.google.com/apikey> con tu cuenta Google.
 2. Pulsa **Create API key** (elige o crea un proyecto) y copia la clave.
 3. El plan gratuito tiene límites por minuto y por día; si se superan, el chat mostrará un aviso para esperar.
 
-## 2. Configurarla
+## 2. (Solo Gemini) Configurarla
 
 Crea (o edita) el archivo `.env.local` en la raíz del proyecto:
 
 ```env
+AI_PROVIDER=gemini
 GEMINI_API_KEY=tu_clave_de_ai_studio
 # Opcional: modelo a usar (por defecto gemini-2.5-flash)
 GEMINI_MODEL=gemini-2.5-flash
@@ -26,8 +32,9 @@ Reinicia el servidor: `npm run dev`.
 > Las variables **no** llevan el prefijo `VITE_`, así que nunca se incluyen en el código que descarga el navegador.
 > `.env.local` está en `.gitignore`.
 
-Alternativa rápida para pruebas: en el chat, botón de llave → pegar una API key personal.
-Se guarda solo en esa pestaña (sessionStorage) y se envía únicamente al backend propio.
+Con Gemini encendido hay una alternativa rápida para pruebas: en el chat, botón de llave → pegar una API key personal.
+Se guarda solo en esa pestaña (sessionStorage) y se envía únicamente al backend propio. **Con GPT el chat no la ofrece
+y el servidor la ignora**: así nadie esquiva la sesión ni el presupuesto con una clave propia.
 
 ### Quién puede usar las claves del servidor
 
@@ -35,11 +42,14 @@ Publicada, la API del asistente está en internet. Las claves del servidor (IA y
 usa quien tiene **sesión en un CRM** (usuario base o gerente, activo, con su CRM activo): el navegador
 manda el token de Supabase y el servidor lo verifica con Supabase Auth y lee el perfil (`server/session.ts`).
 
-| Quién llama | Claves del servidor | Google Places | Clave propia de Gemini |
+| Quién llama | Claves del servidor | Google Places | Clave propia de Gemini (solo con Gemini encendido) |
 |---|---|---|---|
 | Usuario base o gerente con sesión | Sí, hasta 60 consultas cada 10 minutos | Sí | Sí (tiene prioridad) |
 | Sin sesión (cuenta demo), administrador de plataforma, usuario o CRM desactivado | **No** (401) | No | Sí |
 | Servidor local (`npm run dev`) | Sí, sin sesión (`requireSession: false`) | Sí | Sí |
+
+Con GPT (lo normal) la columna de la clave propia no existe: sin sesión en un CRM no se entra, y la demo pública no
+tiene asistente.
 
 Además, la conversación solo puede traer texto y llamadas a herramientas (nada de imágenes ni archivos) y
 tiene un tope de 60.000 caracteres en total, para que una sola consulta no dispare el costo.
@@ -131,10 +141,10 @@ identificar" y la base "Prospecto: se le preguntará en el primer contacto". El 
 persona cuando habla con ella, y si nadie la contacta en 30 días, sus datos se eliminan solos
 (ver `docs/LEY_21719.md`).
 
-## Usar GPT (OpenAI) en vez de Gemini
+## GPT (OpenAI): el proveedor del asistente
 
-Desde el 25-09-2026 el asistente puede funcionar con **GPT**. Las herramientas, las reglas y los
-límites son exactamente los mismos; solo cambia el modelo que conversa.
+Desde el 25-09-2026 el asistente puede funcionar con **GPT** y desde el 30-09-2026 es el único proveedor encendido.
+Las herramientas, las reglas y los límites son los mismos que tenía con Gemini; solo cambia el modelo que conversa.
 
 **Qué hace falta:** una clave de API de [platform.openai.com](https://platform.openai.com/api-keys)
 con saldo cargado. **La suscripción de ChatGPT no sirve**: es una cuenta distinta que no da acceso a
@@ -143,9 +153,9 @@ la API.
 **Cómo activarlo**, en `.env.local` (nunca en el chat ni en el código):
 
 ```
-AI_PROVIDER=openai
 OPENAI_API_KEY=la-clave
 # Opcionales (los valores de abajo son los predeterminados):
+# AI_PROVIDER=openai
 # OPENAI_MODEL=gpt-5-nano
 # OPENAI_REASONING_EFFORT=minimal
 # AI_DEFAULT_MONTHLY_BUDGET_USD=30
@@ -162,9 +172,9 @@ razonamiento mínimo (`OPENAI_REASONING_EFFORT=minimal`) y cada respuesta tiene 
 - La conversación se guarda siempre en el formato de Gemini, así que el navegador no cambia. El
   servidor la traduce al formato de OpenAI en cada paso (`server/openaiChat.ts`) y devuelve la
   respuesta traducida. Se puede cambiar de proveedor sin perder nada.
-- Agregar la clave de OpenAI **no cambia el proveedor**: hay que pedirlo con `AI_PROVIDER=openai`.
-  Si OpenAI es la única clave configurada, se usa sola.
-- La clave personal que se ingresa en el chat es de Gemini; si hay una, se usa Gemini.
+- GPT es el proveedor por defecto: basta `OPENAI_API_KEY`, no hace falta `AI_PROVIDER`. Gemini solo se enciende con
+  `AI_PROVIDER=gemini` escrito a propósito (`resolveProvider` en `server/aiChat.ts`).
+- La clave personal del chat (de Gemini) se ignora con GPT: el servidor no la lee y el chat no la muestra.
 - No se envía temperatura: los modelos de razonamiento de OpenAI solo aceptan el valor por defecto.
 - Si OpenAI rechaza el nivel de razonamiento pedido (un modelo que no lo admite), se reintenta una vez sin él.
 
@@ -210,14 +220,19 @@ Un modelo que no está en la tabla se cobra como uno caro (US$ 2,50 / 10,00): el
   su propia clave y su propio despliegue, o un tope de la cuenta en platform.openai.com (Limits), que es el último
   resguardo y está fuera de Revela.
 - **Google Places** (búsqueda real de empresas) tiene su propio cobro y no se cuenta aquí.
-- **La clave personal de Gemini** del chat es de la persona y no pasa por el presupuesto.
+- **Gemini** está apagado: como la clave personal del chat se ignora, no hay gasto de IA que escape del presupuesto por ahí.
 
 **Pruebas:** `npm run test:ai` simula a OpenAI y recorre la conversación completa por el servidor, incluida una
 herramienta que ejecuta el navegador, y cubre los precios, el tope, el aislamiento entre CRMs, quién puede cambiar
 el presupuesto y la caída de la base. `npm run test:db` prueba las tablas y funciones de la 0031 (quién escribe,
-quién lee, el registro de cambios). **Falta la prueba con la clave real.**
+quién lee, el registro de cambios).
 
-**Ley 21.719:** OpenAI pasa a ser otro subencargado que recibe datos del CRM. Recibe lo mismo que
-Gemini: la ficha mínima del lead, sin correo, teléfono ni monto. Queda en el registro de
-tratamientos (`docs/cumplimiento/revela-2026-09/rat.csv`) y requiere el mismo análisis de
-transferencia internacional.
+**Prueba con la clave real (30-09-2026, `gpt-5-nano`, CRM "Revela Pruebas", con sesión):** el asistente respondió, buscó
+(sin `GOOGLE_PLACES_API_KEY` la búsqueda devuelve datos de demostración) y el gasto quedó anotado: 5 llamadas,
+12.797 tokens de entrada (9.216 en caché) y 469 de salida = US$ 0,000413, igual al cálculo a mano con la tabla de
+precios. Falta probar el tope agotándolo con la clave real; el corte está cubierto por `npm run test:ai`.
+
+**Ley 21.719:** con Gemini apagado, OpenAI es el único subencargado de IA que recibe datos del CRM (Google ya no
+recibe nada por este camino). Recibe lo mismo que recibía Gemini: la ficha mínima del lead, sin correo, teléfono ni
+monto. Figura en el registro de tratamientos (`docs/cumplimiento/revela-2026-09/rat.csv`, que lista "Gemini (Google) u
+OpenAI" porque es de antes de esta decisión) y requiere el análisis de transferencia internacional.
