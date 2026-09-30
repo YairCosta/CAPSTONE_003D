@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_prospecto-30-dias" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
+  <bpmn:collaboration id="Colaboracion_prospecto-30-dias">
+    <bpmn:documentation>Proceso 3 · Datos guardados sin permiso: se pregunta en el primer contacto o se borran a los 30 días</bpmn:documentation>
+    <bpmn:participant id="Participante_prospecto-30-dias" name="CRM de una empresa en Revela" processRef="Proceso_prospecto-30-dias" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_prospecto-30-dias" name="Proceso 3 · Datos guardados sin permiso: se pregunta en el primer contacto o se borran a los 30 días" isExecutable="false">
+    <bpmn:laneSet id="Carriles_prospecto-30-dias">
+      <bpmn:lane id="Carril_vendedor" name="Usuario base (vendedor)">
+        <bpmn:flowNodeRef>Nodo_captura</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_contacto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_informar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gAutoriza</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_sigue</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_sistema" name="Revela (app y base de datos)">
+        <bpmn:flowNodeRef>Nodo_guardar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gEvento</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_noContactar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_finNo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_plazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_anonimizar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_finAnon</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Nodo_captura" name="Captura a una persona sin su autorización (prospecto)">
+      <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Nodo_guardar" name="Guardar como prospecto con plazo de 30 días">
+      <bpmn:incoming>Flujo_1</bpmn:incoming>
+      <bpmn:outgoing>Flujo_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:eventBasedGateway id="Nodo_gEvento" name="¿Qué pasa primero?">
+      <bpmn:incoming>Flujo_2</bpmn:incoming>
+      <bpmn:outgoing>Flujo_3</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_4</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="Nodo_contacto" name="Primer contacto con el prospecto">
+      <bpmn:incoming>Flujo_3</bpmn:incoming>
+      <bpmn:outgoing>Flujo_5</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Mensaje_contacto" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="Nodo_informar" name="Informar al titular y registrar su respuesta">
+      <bpmn:incoming>Flujo_5</bpmn:incoming>
+      <bpmn:outgoing>Flujo_6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Nodo_gAutoriza" name="¿Autoriza?">
+      <bpmn:incoming>Flujo_6</bpmn:incoming>
+      <bpmn:outgoing>Flujo_7</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Nodo_sigue" name="Sigue como lead normal">
+      <bpmn:incoming>Flujo_7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Nodo_noContactar" name="Marcar «no contactar» en todo el CRM">
+      <bpmn:incoming>Flujo_8</bpmn:incoming>
+      <bpmn:outgoing>Flujo_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Nodo_finNo" name="No se le vuelve a contactar">
+      <bpmn:incoming>Flujo_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="Nodo_plazo" name="Pasan 30 días sin contacto">
+      <bpmn:incoming>Flujo_4</bpmn:incoming>
+      <bpmn:outgoing>Flujo_10</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="Timer_plazo">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P30D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Nodo_anonimizar" name="Anonimizar el prospecto (tarea diaria 03:15 UTC)">
+      <bpmn:incoming>Flujo_10</bpmn:incoming>
+      <bpmn:outgoing>Flujo_11</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Nodo_finAnon" name="Datos personales eliminados">
+      <bpmn:incoming>Flujo_11</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flujo_1" sourceRef="Nodo_captura" targetRef="Nodo_guardar" />
+    <bpmn:sequenceFlow id="Flujo_2" sourceRef="Nodo_guardar" targetRef="Nodo_gEvento" />
+    <bpmn:sequenceFlow id="Flujo_3" sourceRef="Nodo_gEvento" targetRef="Nodo_contacto" />
+    <bpmn:sequenceFlow id="Flujo_4" sourceRef="Nodo_gEvento" targetRef="Nodo_plazo" />
+    <bpmn:sequenceFlow id="Flujo_5" sourceRef="Nodo_contacto" targetRef="Nodo_informar" />
+    <bpmn:sequenceFlow id="Flujo_6" sourceRef="Nodo_informar" targetRef="Nodo_gAutoriza" />
+    <bpmn:sequenceFlow id="Flujo_7" name="Sí" sourceRef="Nodo_gAutoriza" targetRef="Nodo_sigue" />
+    <bpmn:sequenceFlow id="Flujo_8" name="No" sourceRef="Nodo_gAutoriza" targetRef="Nodo_noContactar" />
+    <bpmn:sequenceFlow id="Flujo_9" sourceRef="Nodo_noContactar" targetRef="Nodo_finNo" />
+    <bpmn:sequenceFlow id="Flujo_10" sourceRef="Nodo_plazo" targetRef="Nodo_anonimizar" />
+    <bpmn:sequenceFlow id="Flujo_11" sourceRef="Nodo_anonimizar" targetRef="Nodo_finAnon" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagrama_prospecto-30-dias">
+    <bpmndi:BPMNPlane id="Plano_prospecto-30-dias" bpmnElement="Colaboracion_prospecto-30-dias">
+      <bpmndi:BPMNShape id="Participante_prospecto-30-dias_di" bpmnElement="Participante_prospecto-30-dias" isHorizontal="true">
+        <dc:Bounds x="24" y="94" width="1688" height="340" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_vendedor_di" bpmnElement="Carril_vendedor" isHorizontal="true">
+        <dc:Bounds x="58" y="94" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_sistema_di" bpmnElement="Carril_sistema" isHorizontal="true">
+        <dc:Bounds x="58" y="264" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_captura_di" bpmnElement="Nodo_captura">
+        <dc:Bounds x="187" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="159" y="204" width="94" height="62" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
+        <dc:Bounds x="313" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gEvento_di" bpmnElement="Nodo_gEvento">
+        <dc:Bounds x="532" y="323" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="488" y="381" width="60" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_contacto_di" bpmnElement="Nodo_contacto">
+        <dc:Bounds x="715" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="670" y="204" width="128" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_informar_di" bpmnElement="Nodo_informar">
+        <dc:Bounds x="841" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gAutoriza_di" bpmnElement="Nodo_gAutoriza" isMarkerVisible="true">
+        <dc:Bounds x="1236" y="153" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1185" y="211" width="67" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_sigue_di" bpmnElement="Nodo_sigue">
+        <dc:Bounds x="1419" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1388" y="204" width="101" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_noContactar_di" bpmnElement="Nodo_noContactar">
+        <dc:Bounds x="1369" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_finNo_di" bpmnElement="Nodo_finNo">
+        <dc:Bounds x="1595" y="330" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1557" y="374" width="114" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_plazo_di" bpmnElement="Nodo_plazo">
+        <dc:Bounds x="715" y="330" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="677" y="374" width="114" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_anonimizar_di" bpmnElement="Nodo_anonimizar">
+        <dc:Bounds x="841" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_finAnon_di" bpmnElement="Nodo_finAnon">
+        <dc:Bounds x="1067" y="330" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1032" y="374" width="108" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flujo_1_di" bpmnElement="Flujo_1">
+        <di:waypoint x="225" y="179" />
+        <di:waypoint x="291" y="179" />
+        <di:waypoint x="291" y="349" />
+        <di:waypoint x="313" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_2_di" bpmnElement="Flujo_2">
+        <di:waypoint x="451" y="349" />
+        <di:waypoint x="532" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_3_di" bpmnElement="Flujo_3">
+        <di:waypoint x="558" y="323" />
+        <di:waypoint x="558" y="179" />
+        <di:waypoint x="715" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_4_di" bpmnElement="Flujo_4">
+        <di:waypoint x="584" y="349" />
+        <di:waypoint x="715" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
+        <di:waypoint x="753" y="179" />
+        <di:waypoint x="841" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_6_di" bpmnElement="Flujo_6">
+        <di:waypoint x="979" y="179" />
+        <di:waypoint x="1236" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_7_di" bpmnElement="Flujo_7">
+        <di:waypoint x="1288" y="179" />
+        <di:waypoint x="1419" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_8_di" bpmnElement="Flujo_8">
+        <di:waypoint x="1262" y="205" />
+        <di:waypoint x="1262" y="349" />
+        <di:waypoint x="1369" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_9_di" bpmnElement="Flujo_9">
+        <di:waypoint x="1507" y="349" />
+        <di:waypoint x="1595" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_10_di" bpmnElement="Flujo_10">
+        <di:waypoint x="753" y="349" />
+        <di:waypoint x="841" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_11_di" bpmnElement="Flujo_11">
+        <di:waypoint x="979" y="349" />
+        <di:waypoint x="1067" y="349" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

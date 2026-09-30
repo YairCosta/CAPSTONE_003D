@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_proceso-comercial" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
+  <bpmn:collaboration id="Colaboracion_proceso-comercial">
+    <bpmn:documentation>Proceso 1 · De interesado a cliente: de la captura al cierre de un lead</bpmn:documentation>
+    <bpmn:participant id="Participante_proceso-comercial" name="CRM de una empresa en Revela" processRef="Proceso_proceso-comercial" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_proceso-comercial" name="Proceso 1 · De interesado a cliente: de la captura al cierre de un lead" isExecutable="false">
+    <bpmn:laneSet id="Carriles_proceso-comercial">
+      <bpmn:lane id="Carril_vendedor" name="Usuario base (vendedor)">
+        <bpmn:flowNodeRef>Nodo_inicio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_capturar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_contactar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_avanzar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gResultado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_descartado</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_sistema" name="Revela (app y base de datos)">
+        <bpmn:flowNodeRef>Nodo_validar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gValido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_guardar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gZona</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_kpi</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_gerente" name="Gerente">
+        <bpmn:flowNodeRef>Nodo_ubicar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_revisar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_ganado</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Nodo_inicio" name="Aparece una empresa interesada">
+      <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Nodo_capturar" name="Capturar lead con país, zona, productos, origen y base del dato">
+      <bpmn:incoming>Flujo_1</bpmn:incoming>
+      <bpmn:incoming>Flujo_4</bpmn:incoming>
+      <bpmn:outgoing>Flujo_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_validar" name="Validar CRM, país habilitado, zona del país y moneda">
+      <bpmn:incoming>Flujo_2</bpmn:incoming>
+      <bpmn:outgoing>Flujo_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Nodo_gValido" name="¿Datos válidos?">
+      <bpmn:incoming>Flujo_3</bpmn:incoming>
+      <bpmn:outgoing>Flujo_4</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Nodo_guardar" name="Guardar en «Nuevo», calcular el valor y registrar el cambio">
+      <bpmn:incoming>Flujo_5</bpmn:incoming>
+      <bpmn:outgoing>Flujo_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Nodo_gZona" name="¿Tiene zona?">
+      <bpmn:incoming>Flujo_6</bpmn:incoming>
+      <bpmn:outgoing>Flujo_7</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Nodo_ubicar" name="Ubicar el lead en su zona (Leads sin zona)">
+      <bpmn:incoming>Flujo_7</bpmn:incoming>
+      <bpmn:outgoing>Flujo_9</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Nodo_contactar" name="Registrar contacto: canal, resultado y próximo seguimiento">
+      <bpmn:incoming>Flujo_8</bpmn:incoming>
+      <bpmn:incoming>Flujo_9</bpmn:incoming>
+      <bpmn:incoming>Flujo_12</bpmn:incoming>
+      <bpmn:outgoing>Flujo_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Nodo_avanzar" name="Avanzar el lead en el pipeline (solo hacia adelante)">
+      <bpmn:incoming>Flujo_10</bpmn:incoming>
+      <bpmn:outgoing>Flujo_11</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Nodo_gResultado" name="¿Cómo sigue?">
+      <bpmn:incoming>Flujo_11</bpmn:incoming>
+      <bpmn:outgoing>Flujo_12</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_13</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Nodo_descartado" name="Lead descartado">
+      <bpmn:incoming>Flujo_13</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Nodo_kpi" name="Sumar al KPI, al mapa por zona y al ranking">
+      <bpmn:incoming>Flujo_14</bpmn:incoming>
+      <bpmn:outgoing>Flujo_15</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Nodo_revisar" name="Revisar resultados por zona y producto">
+      <bpmn:incoming>Flujo_15</bpmn:incoming>
+      <bpmn:outgoing>Flujo_16</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Nodo_ganado" name="Negocio ganado y analizado">
+      <bpmn:incoming>Flujo_16</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flujo_1" sourceRef="Nodo_inicio" targetRef="Nodo_capturar" />
+    <bpmn:sequenceFlow id="Flujo_2" sourceRef="Nodo_capturar" targetRef="Nodo_validar" />
+    <bpmn:sequenceFlow id="Flujo_3" sourceRef="Nodo_validar" targetRef="Nodo_gValido" />
+    <bpmn:sequenceFlow id="Flujo_4" name="No: se corrige" sourceRef="Nodo_gValido" targetRef="Nodo_capturar" />
+    <bpmn:sequenceFlow id="Flujo_5" name="Sí" sourceRef="Nodo_gValido" targetRef="Nodo_guardar" />
+    <bpmn:sequenceFlow id="Flujo_6" sourceRef="Nodo_guardar" targetRef="Nodo_gZona" />
+    <bpmn:sequenceFlow id="Flujo_7" name="No" sourceRef="Nodo_gZona" targetRef="Nodo_ubicar" />
+    <bpmn:sequenceFlow id="Flujo_8" name="Sí" sourceRef="Nodo_gZona" targetRef="Nodo_contactar" />
+    <bpmn:sequenceFlow id="Flujo_9" sourceRef="Nodo_ubicar" targetRef="Nodo_contactar" />
+    <bpmn:sequenceFlow id="Flujo_10" sourceRef="Nodo_contactar" targetRef="Nodo_avanzar" />
+    <bpmn:sequenceFlow id="Flujo_11" sourceRef="Nodo_avanzar" targetRef="Nodo_gResultado" />
+    <bpmn:sequenceFlow id="Flujo_12" name="Sigue en curso" sourceRef="Nodo_gResultado" targetRef="Nodo_contactar" />
+    <bpmn:sequenceFlow id="Flujo_13" name="Descartado" sourceRef="Nodo_gResultado" targetRef="Nodo_descartado" />
+    <bpmn:sequenceFlow id="Flujo_14" name="Ganado" sourceRef="Nodo_gResultado" targetRef="Nodo_kpi" />
+    <bpmn:sequenceFlow id="Flujo_15" sourceRef="Nodo_kpi" targetRef="Nodo_revisar" />
+    <bpmn:sequenceFlow id="Flujo_16" sourceRef="Nodo_revisar" targetRef="Nodo_ganado" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagrama_proceso-comercial">
+    <bpmndi:BPMNPlane id="Plano_proceso-comercial" bpmnElement="Colaboracion_proceso-comercial">
+      <bpmndi:BPMNShape id="Participante_proceso-comercial_di" bpmnElement="Participante_proceso-comercial" isHorizontal="true">
+        <dc:Bounds x="24" y="94" width="2392" height="510" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_vendedor_di" bpmnElement="Carril_vendedor" isHorizontal="true">
+        <dc:Bounds x="58" y="94" width="2358" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_sistema_di" bpmnElement="Carril_sistema" isHorizontal="true">
+        <dc:Bounds x="58" y="264" width="2358" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_gerente_di" bpmnElement="Carril_gerente" isHorizontal="true">
+        <dc:Bounds x="58" y="434" width="2358" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_inicio_di" bpmnElement="Nodo_inicio">
+        <dc:Bounds x="187" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="142" y="204" width="128" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_capturar_di" bpmnElement="Nodo_capturar">
+        <dc:Bounds x="313" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_validar_di" bpmnElement="Nodo_validar">
+        <dc:Bounds x="489" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gValido_di" bpmnElement="Nodo_gValido" isMarkerVisible="true">
+        <dc:Bounds x="708" y="323" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="623" y="303" width="101" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
+        <dc:Bounds x="841" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gZona_di" bpmnElement="Nodo_gZona" isMarkerVisible="true">
+        <dc:Bounds x="1060" y="323" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="995" y="381" width="81" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_ubicar_di" bpmnElement="Nodo_ubicar">
+        <dc:Bounds x="1193" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_contactar_di" bpmnElement="Nodo_contactar">
+        <dc:Bounds x="1369" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_avanzar_di" bpmnElement="Nodo_avanzar">
+        <dc:Bounds x="1545" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gResultado_di" bpmnElement="Nodo_gResultado" isMarkerVisible="true">
+        <dc:Bounds x="1764" y="153" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1699" y="211" width="81" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_descartado_di" bpmnElement="Nodo_descartado">
+        <dc:Bounds x="1947" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1916" y="204" width="101" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_kpi_di" bpmnElement="Nodo_kpi">
+        <dc:Bounds x="1897" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_revisar_di" bpmnElement="Nodo_revisar">
+        <dc:Bounds x="2073" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_ganado_di" bpmnElement="Nodo_ganado">
+        <dc:Bounds x="2299" y="500" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2264" y="544" width="108" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flujo_1_di" bpmnElement="Flujo_1">
+        <di:waypoint x="225" y="179" />
+        <di:waypoint x="313" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_2_di" bpmnElement="Flujo_2">
+        <di:waypoint x="451" y="179" />
+        <di:waypoint x="470" y="179" />
+        <di:waypoint x="470" y="349" />
+        <di:waypoint x="489" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_3_di" bpmnElement="Flujo_3">
+        <di:waypoint x="627" y="349" />
+        <di:waypoint x="708" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_4_di" bpmnElement="Flujo_4">
+        <di:waypoint x="734" y="323" />
+        <di:waypoint x="734" y="110" />
+        <di:waypoint x="382" y="110" />
+        <di:waypoint x="382" y="131" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
+        <di:waypoint x="760" y="349" />
+        <di:waypoint x="841" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_6_di" bpmnElement="Flujo_6">
+        <di:waypoint x="979" y="349" />
+        <di:waypoint x="1060" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_7_di" bpmnElement="Flujo_7">
+        <di:waypoint x="1086" y="375" />
+        <di:waypoint x="1086" y="519" />
+        <di:waypoint x="1193" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_8_di" bpmnElement="Flujo_8">
+        <di:waypoint x="1086" y="323" />
+        <di:waypoint x="1086" y="179" />
+        <di:waypoint x="1369" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_9_di" bpmnElement="Flujo_9">
+        <di:waypoint x="1331" y="519" />
+        <di:waypoint x="1350" y="519" />
+        <di:waypoint x="1350" y="179" />
+        <di:waypoint x="1369" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_10_di" bpmnElement="Flujo_10">
+        <di:waypoint x="1507" y="179" />
+        <di:waypoint x="1545" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_11_di" bpmnElement="Flujo_11">
+        <di:waypoint x="1683" y="179" />
+        <di:waypoint x="1764" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_12_di" bpmnElement="Flujo_12">
+        <di:waypoint x="1790" y="153" />
+        <di:waypoint x="1790" y="110" />
+        <di:waypoint x="1438" y="110" />
+        <di:waypoint x="1438" y="131" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_13_di" bpmnElement="Flujo_13">
+        <di:waypoint x="1816" y="179" />
+        <di:waypoint x="1947" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_14_di" bpmnElement="Flujo_14">
+        <di:waypoint x="1790" y="205" />
+        <di:waypoint x="1790" y="349" />
+        <di:waypoint x="1897" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_15_di" bpmnElement="Flujo_15">
+        <di:waypoint x="2035" y="349" />
+        <di:waypoint x="2054" y="349" />
+        <di:waypoint x="2054" y="519" />
+        <di:waypoint x="2073" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_16_di" bpmnElement="Flujo_16">
+        <di:waypoint x="2211" y="519" />
+        <di:waypoint x="2299" y="519" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

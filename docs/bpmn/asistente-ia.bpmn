@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_asistente-ia" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
+  <bpmn:collaboration id="Colaboracion_asistente-ia">
+    <bpmn:documentation>Proceso 5 · Buscar clientes con el asistente de IA</bpmn:documentation>
+    <bpmn:participant id="Participante_asistente-ia" name="CRM de una empresa en Revela" processRef="Proceso_asistente-ia" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_asistente-ia" name="Proceso 5 · Buscar clientes con el asistente de IA" isExecutable="false">
+    <bpmn:laneSet id="Carriles_asistente-ia">
+      <bpmn:lane id="Carril_usuario" name="Usuario del CRM (vendedor o gerente)">
+        <bpmn:flowNodeRef>Nodo_pide</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_sinSesion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_elegir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_confirmar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_servidor" name="Servidor del asistente (IA)">
+        <bpmn:flowNodeRef>Nodo_verificar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gSesion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_buscar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_crm" name="CRM (navegador y base de datos)">
+        <bpmn:flowNodeRef>Nodo_duplicados</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gParecidos</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_guardar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_registrado</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Nodo_pide" name="Pide al asistente buscar empresas">
+      <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Nodo_verificar" name="Verificar la sesión de CRM y el límite de consultas">
+      <bpmn:incoming>Flujo_1</bpmn:incoming>
+      <bpmn:outgoing>Flujo_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Nodo_gSesion" name="¿Sesión válida?">
+      <bpmn:incoming>Flujo_2</bpmn:incoming>
+      <bpmn:outgoing>Flujo_3</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Nodo_sinSesion" name="Se le pide iniciar sesión">
+      <bpmn:incoming>Flujo_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Nodo_buscar" name="Buscar empresas con la IA (Google Places o demo)">
+      <bpmn:incoming>Flujo_4</bpmn:incoming>
+      <bpmn:outgoing>Flujo_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Nodo_elegir" name="Elegir una empresa y pedir que la guarde">
+      <bpmn:incoming>Flujo_5</bpmn:incoming>
+      <bpmn:outgoing>Flujo_6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_duplicados" name="Buscar leads parecidos en el CRM">
+      <bpmn:incoming>Flujo_6</bpmn:incoming>
+      <bpmn:outgoing>Flujo_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Nodo_gParecidos" name="¿Hay parecidos?">
+      <bpmn:incoming>Flujo_7</bpmn:incoming>
+      <bpmn:outgoing>Flujo_8</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_9</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Nodo_confirmar" name="Confirmar si es el mismo lead o uno nuevo">
+      <bpmn:incoming>Flujo_8</bpmn:incoming>
+      <bpmn:outgoing>Flujo_10</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_guardar" name="Guardar solo datos de la empresa (reglas del perfil y RLS)">
+      <bpmn:incoming>Flujo_9</bpmn:incoming>
+      <bpmn:incoming>Flujo_10</bpmn:incoming>
+      <bpmn:outgoing>Flujo_11</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Nodo_registrado" name="Lead registrado y en el historial">
+      <bpmn:incoming>Flujo_11</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flujo_1" sourceRef="Nodo_pide" targetRef="Nodo_verificar" />
+    <bpmn:sequenceFlow id="Flujo_2" sourceRef="Nodo_verificar" targetRef="Nodo_gSesion" />
+    <bpmn:sequenceFlow id="Flujo_3" name="No" sourceRef="Nodo_gSesion" targetRef="Nodo_sinSesion" />
+    <bpmn:sequenceFlow id="Flujo_4" name="Sí" sourceRef="Nodo_gSesion" targetRef="Nodo_buscar" />
+    <bpmn:sequenceFlow id="Flujo_5" sourceRef="Nodo_buscar" targetRef="Nodo_elegir" />
+    <bpmn:sequenceFlow id="Flujo_6" sourceRef="Nodo_elegir" targetRef="Nodo_duplicados" />
+    <bpmn:sequenceFlow id="Flujo_7" sourceRef="Nodo_duplicados" targetRef="Nodo_gParecidos" />
+    <bpmn:sequenceFlow id="Flujo_8" name="Sí" sourceRef="Nodo_gParecidos" targetRef="Nodo_confirmar" />
+    <bpmn:sequenceFlow id="Flujo_9" name="No" sourceRef="Nodo_gParecidos" targetRef="Nodo_guardar" />
+    <bpmn:sequenceFlow id="Flujo_10" sourceRef="Nodo_confirmar" targetRef="Nodo_guardar" />
+    <bpmn:sequenceFlow id="Flujo_11" sourceRef="Nodo_guardar" targetRef="Nodo_registrado" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagrama_asistente-ia">
+    <bpmndi:BPMNPlane id="Plano_asistente-ia" bpmnElement="Colaboracion_asistente-ia">
+      <bpmndi:BPMNShape id="Participante_asistente-ia_di" bpmnElement="Participante_asistente-ia" isHorizontal="true">
+        <dc:Bounds x="24" y="94" width="1864" height="510" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_usuario_di" bpmnElement="Carril_usuario" isHorizontal="true">
+        <dc:Bounds x="58" y="94" width="1830" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_servidor_di" bpmnElement="Carril_servidor" isHorizontal="true">
+        <dc:Bounds x="58" y="264" width="1830" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_crm_di" bpmnElement="Carril_crm" isHorizontal="true">
+        <dc:Bounds x="58" y="434" width="1830" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_pide_di" bpmnElement="Nodo_pide">
+        <dc:Bounds x="187" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="149" y="204" width="114" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_verificar_di" bpmnElement="Nodo_verificar">
+        <dc:Bounds x="313" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gSesion_di" bpmnElement="Nodo_gSesion" isMarkerVisible="true">
+        <dc:Bounds x="532" y="323" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="447" y="303" width="101" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_sinSesion_di" bpmnElement="Nodo_sinSesion">
+        <dc:Bounds x="715" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="674" y="204" width="121" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_buscar_di" bpmnElement="Nodo_buscar">
+        <dc:Bounds x="665" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_elegir_di" bpmnElement="Nodo_elegir">
+        <dc:Bounds x="841" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_duplicados_di" bpmnElement="Nodo_duplicados">
+        <dc:Bounds x="1017" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gParecidos_di" bpmnElement="Nodo_gParecidos" isMarkerVisible="true">
+        <dc:Bounds x="1236" y="493" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1272" y="551" width="101" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_confirmar_di" bpmnElement="Nodo_confirmar">
+        <dc:Bounds x="1369" y="131" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_guardar_di" bpmnElement="Nodo_guardar">
+        <dc:Bounds x="1545" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_registrado_di" bpmnElement="Nodo_registrado">
+        <dc:Bounds x="1771" y="500" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1723" y="544" width="134" height="32" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flujo_1_di" bpmnElement="Flujo_1">
+        <di:waypoint x="225" y="179" />
+        <di:waypoint x="291" y="179" />
+        <di:waypoint x="291" y="349" />
+        <di:waypoint x="313" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_2_di" bpmnElement="Flujo_2">
+        <di:waypoint x="451" y="349" />
+        <di:waypoint x="532" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_3_di" bpmnElement="Flujo_3">
+        <di:waypoint x="558" y="323" />
+        <di:waypoint x="558" y="179" />
+        <di:waypoint x="715" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_4_di" bpmnElement="Flujo_4">
+        <di:waypoint x="584" y="349" />
+        <di:waypoint x="665" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
+        <di:waypoint x="803" y="349" />
+        <di:waypoint x="822" y="349" />
+        <di:waypoint x="822" y="179" />
+        <di:waypoint x="841" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_6_di" bpmnElement="Flujo_6">
+        <di:waypoint x="979" y="179" />
+        <di:waypoint x="998" y="179" />
+        <di:waypoint x="998" y="519" />
+        <di:waypoint x="1017" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_7_di" bpmnElement="Flujo_7">
+        <di:waypoint x="1155" y="519" />
+        <di:waypoint x="1236" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_8_di" bpmnElement="Flujo_8">
+        <di:waypoint x="1262" y="493" />
+        <di:waypoint x="1262" y="179" />
+        <di:waypoint x="1369" y="179" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_9_di" bpmnElement="Flujo_9">
+        <di:waypoint x="1288" y="519" />
+        <di:waypoint x="1545" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_10_di" bpmnElement="Flujo_10">
+        <di:waypoint x="1507" y="179" />
+        <di:waypoint x="1526" y="179" />
+        <di:waypoint x="1526" y="519" />
+        <di:waypoint x="1545" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_11_di" bpmnElement="Flujo_11">
+        <di:waypoint x="1683" y="519" />
+        <di:waypoint x="1771" y="519" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

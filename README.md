@@ -1,0 +1,86 @@
+# Revela
+
+CRM SaaS multi-tenant con inteligencia geográfica: captura leads, los ubica en un mapa por zona
+(comuna, distrito, municipio, cantón…), mide qué se vende y dónde, y opera en los 19 países de
+América Latina.
+
+Proyecto de tesis de Ingeniería en Informática, Duoc UC (sección 003D).
+Se pilotea con **Empresa Piloto**, empresa de servicios que opera en Chile y Perú. La aplicación
+trae una **cuenta de demostración** con datos ficticios, pensada para quien llega desde la landing.
+
+## Qué hace
+
+- **KPI y mapa:** leads ubicados por su zona oficial (14.489 zonas de América Latina: las comunas de
+  Chile, los distritos de Perú, los municipios de México y Brasil…, agrupadas por región), zonas
+  coloreadas por dinero ganado o por cierres, y ranking de zonas y de productos. El mapa muestra zonas,
+  nunca la ubicación de un lead.
+- **Países:** con el plan Internacional, la gerencia activa los países donde trabaja su empresa; cada
+  uno suma sus zonas, su moneda y su forma de nombrarlas. Ver [`docs/MULTIPAIS.md`](docs/MULTIPAIS.md).
+- **Pipeline:** tablero por etapas, del lead nuevo hasta ganado o descartado.
+- **Registro de contacto y agenda:** bitácora de cada interacción y calendario de seguimientos.
+- **Gerencia:** empresas cliente, contactos, catálogo de productos y servicios, y usuarios del CRM.
+- **Auditoría:** historial de cambios que solo se agrega, con reversión de un cambio.
+- **Administración:** creación y suspensión de CRMs, y exportación a Excel.
+- **Asistente de IA:** busca empresas y registra leads, sin poder borrar nada.
+
+Cada empresa tiene su propio CRM y los datos nunca se mezclan: el aislamiento se valida en la
+aplicación y, en producción, con RLS y triggers en la base de datos.
+
+## Tecnologías
+
+| Capa | Herramientas |
+|---|---|
+| Interfaz | React 19, TypeScript, Vite, Tailwind CSS v4 |
+| Mapa | Leaflet, mapas base de Esri; límites de BCN (Chile), INEI (Perú) y geoBoundaries (resto de América Latina) |
+| Base de datos | PostgreSQL 17 + PostGIS en Supabase (toda la app conectada con `VITE_DATA_SOURCE=supabase`; la demo sigue en memoria) |
+| Servicios | OpenAI GPT (asistente; Gemini apagado), Google Places, Banco Central de Chile (tipo de cambio) |
+
+## Cómo ejecutarlo
+
+```bash
+npm install
+npm run dev
+```
+
+La aplicación queda en `http://localhost:5173`. Por defecto los datos son de ejemplo y viven en
+memoria: se reinician al recargar la página. Con `VITE_DATA_SOURCE=supabase` en `.env.local`, el
+login y la administración de la plataforma usan la base real de Supabase (ver `docs/USUARIOS.md`);
+con `?demo` en la URL se abre la demo pública.
+
+**Demo pública:** `https://revela-henna.vercel.app/?demo` (o `http://localhost:5173/?demo`) entra sin
+contraseña al CRM "Revela Demo", como gerente o como usuario base. Los datos son ficticios, viven solo
+en esa pestaña (se borran al recargar) y no hay asistente de IA. En desarrollo, el login también
+ofrece la cuenta demo con contraseña, para las pruebas automáticas.
+
+La cuenta de administrador de plataforma solo existe en desarrollo y no viaja en la aplicación
+publicada: en producción vive en Supabase Auth.
+
+Para el asistente de IA hace falta un archivo `.env.local` con `OPENAI_API_KEY`
+(ver `.env.example`). Ese archivo nunca se sube al repositorio.
+
+## Pruebas
+
+```bash
+npm run test:tenant   # aislamiento entre CRMs y reglas de negocio
+npm run test:export   # exportación a Excel
+npm run test:ai       # asistente de IA (OpenAI simulado)
+npm run test:sql      # migraciones de la base de datos
+npm run test:db       # reglas de la base real de Supabase (lo deshace todo al terminar)
+npm run test:supabase # conexión con Supabase e invitaciones, con Supabase simulado
+npm run test:e2e      # punta a punta con Chrome (requiere npm run dev)
+npm run test:bundle   # lo que se publica no trae datos de prueba ni claves
+npm run test:vercel   # la app y la API tal como quedarían en Vercel (ver docs/DESPLIEGUE.md)
+```
+
+## Documentación
+
+En [`docs/`](docs/): base de datos, multipaís, monedas, catálogo, contactos, agenda, exportación,
+auditoría, usuarios, asistente de IA, seguridad, cumplimiento de la Ley 21.719, pagos, publicación, los
+diagramas de arquitectura, componentes y estados, y los procesos en BPMN 2.0 ([`docs/PROCESOS.md`](docs/PROCESOS.md)).
+
+## Estado
+
+Publicada en Vercel (`https://revela-henna.vercel.app`) y conectada a Supabase (PostgreSQL con PostGIS),
+en piloto con una empresa real. Pasó una revisión de seguridad por casos de uso el 27-09-2026
+([`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) §5). La demo pública se abre sin contraseña con `?demo`, con datos
+ficticios en memoria.

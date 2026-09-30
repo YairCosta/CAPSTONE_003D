@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1780" height="880" viewBox="0 0 1780 880">
+<defs><marker id="punta-64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+         </marker>
+<marker id="punta-4F46E5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#4F46E5"/>
+         </marker>
+<marker id="punta-059669" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+         </marker>
+<marker id="punta-DC2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC2626"/>
+         </marker>
+<marker id="punta-B45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
+         </marker></defs>
+<rect width="1780" height="880" fill="#F8FAFC"/>
+<text x="890" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revela · Diagrama de estados del lead</text>
+<text x="890" y="62" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Etapas del pipeline comercial, con probabilidad de cierre y SLA por etapa</text>
+<circle cx="60" cy="293" r="13" fill="#0F172A"/>
+<text x="60" y="370" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">captura del lead</text>
+<path d="M 76 293 L 96 293" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="98" y="250" width="216" height="86" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="206" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Nuevo Lead</text>
+<text x="206" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">10% · SLA 1 día</text>
+<path d="M 314 293 L 358 293" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<text x="336" y="362" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">primer contacto</text>
+<path d="M 206 336 L 206 418 L 840 418" fill="none" stroke="#DC2626" stroke-width="1.8"  />
+<rect x="358" y="250" width="216" height="86" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="466" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Toma de Contacto</text>
+<text x="466" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">25% · SLA 2 días</text>
+<path d="M 574 293 L 618 293" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<text x="596" y="362" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">interés y presupuesto</text>
+<path d="M 466 336 L 466 418 L 840 418" fill="none" stroke="#DC2626" stroke-width="1.8"  />
+<path d="M 466 250 Q 336 172 206 250" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="618" y="250" width="216" height="86" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="726" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Calificado</text>
+<text x="726" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">45% · SLA 4 días</text>
+<path d="M 834 293 L 878 293" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<text x="856" y="362" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cotización enviada</text>
+<path d="M 726 336 L 726 418 L 840 418" fill="none" stroke="#DC2626" stroke-width="1.8"  />
+<path d="M 726 250 Q 596 172 466 250" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="878" y="250" width="216" height="86" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="986" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Propuesta</text>
+<text x="986" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">70% · SLA 5 días</text>
+<path d="M 1094 293 L 1138 293" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<text x="1116" y="362" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">acuerdo cerrado</text>
+<path d="M 986 336 L 986 418 L 840 418" fill="none" stroke="#DC2626" stroke-width="1.8"  />
+<path d="M 986 250 Q 856 172 726 250" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="1138" y="250" width="216" height="86" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1246" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Pago Pendiente</text>
+<text x="1246" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">90% · SLA 3 días</text>
+<path d="M 1354 293 L 1398 293" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<text x="1376" y="362" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pago acreditado</text>
+<path d="M 1246 336 L 1246 418 L 840 418" fill="none" stroke="#DC2626" stroke-width="1.8"  />
+<path d="M 1246 250 Q 1116 172 986 250" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="1398" y="250" width="216" height="86" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="1506" y="291" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Cerrado (Ganado)</text>
+<text x="1506" y="311" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">100% · estado final</text>
+<path d="M 1506 250 Q 1376 172 1246 250" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 840 418 L 840 468" fill="none" stroke="#DC2626" stroke-width="1.8"  marker-end="url(#punta-DC2626)"/>
+<text x="900" y="150" font-size="13" font-weight="700" fill="#B45309" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Retroceder a la etapa anterior: solo gerencia</text>
+<rect x="640" y="468" width="400" height="80" rx="16" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+<text x="840" y="506.5" font-size="16" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Perdido / Descartado</text>
+<text x="840" y="527.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">0% · estado final · se conserva para medir la conversión</text>
+<text x="840" y="585" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">no califica · sin respuesta · eligió a la competencia</text>
+<circle cx="1700" cy="293" r="15" fill="none" stroke="#0F172A" stroke-width="2"/>
+<circle cx="1700" cy="293" r="9" fill="#0F172A"/>
+<path d="M 1616 293 L 1682 293" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<circle cx="1120" cy="510" r="15" fill="none" stroke="#0F172A" stroke-width="2"/>
+<circle cx="1120" cy="510" r="9" fill="#0F172A"/>
+<path d="M 1044 510 L 1102 510" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="40" y="636" width="1700" height="200" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="64" y="668" font-size="16" font-weight="700" fill="#0F172A" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Reglas de transición</text>
+<text x="64" y="700" font-size="13.5" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Usuario base:</text>
+<text x="196" y="700" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Solo avanza: no puede retroceder ni sacar un lead de Ganado o Perdido.</text>
+<text x="64" y="732" font-size="13.5" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Gerente:</text>
+<text x="196" y="732" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Mueve el lead en cualquier dirección y revierte cambios desde Auditoría.</text>
+<text x="64" y="764" font-size="13.5" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Automático:</text>
+<text x="196" y="764" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Registrar un contacto puede avanzar la etapa. Un lead descartado sale de las métricas de zona.</text>
+<text x="64" y="796" font-size="13.5" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Control:</text>
+<text x="196" y="796" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">La regla vive en el guard (sanitizeLeadUpdate + canChangeStage): vale igual para la pantalla y el asistente IA.</text>
+<line x1="1180" y1="663" x2="1230" y2="663" stroke="#4F46E5" stroke-width="2"/>
+<text x="1240" y="668" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">avance (usuario base y gerente)</text>
+<line x1="1180" y1="687" x2="1230" y2="687" stroke="#B45309" stroke-width="2"/>
+<text x="1240" y="692" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">retroceso (solo gerente)</text>
+<line x1="1180" y1="711" x2="1230" y2="711" stroke="#DC2626" stroke-width="2"/>
+<text x="1240" y="716" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">descarte del lead</text>
+</svg>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definiciones_derechos-del-titular" targetNamespace="https://revela.cl/bpmn" exporter="Revela (scripts/generar-bpmn.mjs)" exporterVersion="1.0">
+  <bpmn:collaboration id="Colaboracion_derechos-del-titular">
+    <bpmn:documentation>Proceso 2 · Una persona pide ver, corregir o borrar sus datos (Ley 21.719)</bpmn:documentation>
+    <bpmn:participant id="Participante_derechos-del-titular" name="CRM de una empresa en Revela" processRef="Proceso_derechos-del-titular" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proceso_derechos-del-titular" name="Proceso 2 · Una persona pide ver, corregir o borrar sus datos (Ley 21.719)" isExecutable="false">
+    <bpmn:laneSet id="Carriles_derechos-del-titular">
+      <bpmn:lane id="Carril_titular" name="Titular de los datos">
+        <bpmn:flowNodeRef>Nodo_pide</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_recibe</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_usuario" name="Usuario del CRM (vendedor o gerente)">
+        <bpmn:flowNodeRef>Nodo_registrar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_gerente" name="Gerente">
+        <bpmn:flowNodeRef>Nodo_revisar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_gAprueba</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_motivo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_responder</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Carril_sistema" name="Revela (app y base de datos)">
+        <bpmn:flowNodeRef>Nodo_bloquear</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_anonimizar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Nodo_cerrar</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Nodo_pide" name="Pide acceder, corregir, oponerse o borrar sus datos">
+      <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Mensaje_pide" />
+    </bpmn:startEvent>
+    <bpmn:userTask id="Nodo_registrar" name="Registrar la solicitud y su motivo en Registro de contacto">
+      <bpmn:incoming>Flujo_1</bpmn:incoming>
+      <bpmn:outgoing>Flujo_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_bloquear" name="Bloquear el lead: no se edita, no se mueve ni se contacta">
+      <bpmn:incoming>Flujo_2</bpmn:incoming>
+      <bpmn:outgoing>Flujo_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Nodo_revisar" name="Verificar la identidad y revisar la solicitud">
+      <bpmn:incoming>Flujo_3</bpmn:incoming>
+      <bpmn:outgoing>Flujo_4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Nodo_gAprueba" name="¿Se aprueba?">
+      <bpmn:incoming>Flujo_4</bpmn:incoming>
+      <bpmn:outgoing>Flujo_5</bpmn:outgoing>
+      <bpmn:outgoing>Flujo_6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Nodo_motivo" name="Registrar el motivo del rechazo">
+      <bpmn:incoming>Flujo_5</bpmn:incoming>
+      <bpmn:outgoing>Flujo_7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Nodo_anonimizar" name="Anonimizar: borra los datos personales y conserva la operación">
+      <bpmn:incoming>Flujo_6</bpmn:incoming>
+      <bpmn:outgoing>Flujo_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Nodo_cerrar" name="Cerrar la solicitud, desbloquear y dejarla en el historial">
+      <bpmn:incoming>Flujo_7</bpmn:incoming>
+      <bpmn:incoming>Flujo_8</bpmn:incoming>
+      <bpmn:outgoing>Flujo_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sendTask id="Nodo_responder" name="Responder al titular dentro del plazo">
+      <bpmn:incoming>Flujo_9</bpmn:incoming>
+      <bpmn:outgoing>Flujo_10</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="Nodo_recibe" name="Recibe la respuesta">
+      <bpmn:incoming>Flujo_10</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flujo_1" sourceRef="Nodo_pide" targetRef="Nodo_registrar" />
+    <bpmn:sequenceFlow id="Flujo_2" sourceRef="Nodo_registrar" targetRef="Nodo_bloquear" />
+    <bpmn:sequenceFlow id="Flujo_3" sourceRef="Nodo_bloquear" targetRef="Nodo_revisar" />
+    <bpmn:sequenceFlow id="Flujo_4" sourceRef="Nodo_revisar" targetRef="Nodo_gAprueba" />
+    <bpmn:sequenceFlow id="Flujo_5" name="No" sourceRef="Nodo_gAprueba" targetRef="Nodo_motivo" />
+    <bpmn:sequenceFlow id="Flujo_6" name="Sí" sourceRef="Nodo_gAprueba" targetRef="Nodo_anonimizar" />
+    <bpmn:sequenceFlow id="Flujo_7" sourceRef="Nodo_motivo" targetRef="Nodo_cerrar" />
+    <bpmn:sequenceFlow id="Flujo_8" sourceRef="Nodo_anonimizar" targetRef="Nodo_cerrar" />
+    <bpmn:sequenceFlow id="Flujo_9" sourceRef="Nodo_cerrar" targetRef="Nodo_responder" />
+    <bpmn:sequenceFlow id="Flujo_10" sourceRef="Nodo_responder" targetRef="Nodo_recibe" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagrama_derechos-del-titular">
+    <bpmndi:BPMNPlane id="Plano_derechos-del-titular" bpmnElement="Colaboracion_derechos-del-titular">
+      <bpmndi:BPMNShape id="Participante_derechos-del-titular_di" bpmnElement="Participante_derechos-del-titular" isHorizontal="true">
+        <dc:Bounds x="24" y="94" width="1688" height="680" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_titular_di" bpmnElement="Carril_titular" isHorizontal="true">
+        <dc:Bounds x="58" y="94" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_usuario_di" bpmnElement="Carril_usuario" isHorizontal="true">
+        <dc:Bounds x="58" y="264" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_gerente_di" bpmnElement="Carril_gerente" isHorizontal="true">
+        <dc:Bounds x="58" y="434" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Carril_sistema_di" bpmnElement="Carril_sistema" isHorizontal="true">
+        <dc:Bounds x="58" y="604" width="1654" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_pide_di" bpmnElement="Nodo_pide">
+        <dc:Bounds x="187" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="139" y="204" width="134" height="47" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_registrar_di" bpmnElement="Nodo_registrar">
+        <dc:Bounds x="313" y="301" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_bloquear_di" bpmnElement="Nodo_bloquear">
+        <dc:Bounds x="489" y="641" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_revisar_di" bpmnElement="Nodo_revisar">
+        <dc:Bounds x="665" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_gAprueba_di" bpmnElement="Nodo_gAprueba" isMarkerVisible="true">
+        <dc:Bounds x="884" y="493" width="52" height="52" />
+        <bpmndi:BPMNLabel><dc:Bounds x="819" y="551" width="81" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_motivo_di" bpmnElement="Nodo_motivo">
+        <dc:Bounds x="1017" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_anonimizar_di" bpmnElement="Nodo_anonimizar">
+        <dc:Bounds x="1017" y="641" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_cerrar_di" bpmnElement="Nodo_cerrar">
+        <dc:Bounds x="1193" y="641" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_responder_di" bpmnElement="Nodo_responder">
+        <dc:Bounds x="1369" y="471" width="138" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Nodo_recibe_di" bpmnElement="Nodo_recibe">
+        <dc:Bounds x="1595" y="160" width="38" height="38" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1550" y="138" width="128" height="17" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flujo_1_di" bpmnElement="Flujo_1">
+        <di:waypoint x="225" y="179" />
+        <di:waypoint x="291" y="179" />
+        <di:waypoint x="291" y="349" />
+        <di:waypoint x="313" y="349" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_2_di" bpmnElement="Flujo_2">
+        <di:waypoint x="451" y="349" />
+        <di:waypoint x="470" y="349" />
+        <di:waypoint x="470" y="689" />
+        <di:waypoint x="489" y="689" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_3_di" bpmnElement="Flujo_3">
+        <di:waypoint x="627" y="689" />
+        <di:waypoint x="646" y="689" />
+        <di:waypoint x="646" y="519" />
+        <di:waypoint x="665" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_4_di" bpmnElement="Flujo_4">
+        <di:waypoint x="803" y="519" />
+        <di:waypoint x="884" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_5_di" bpmnElement="Flujo_5">
+        <di:waypoint x="936" y="519" />
+        <di:waypoint x="1017" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_6_di" bpmnElement="Flujo_6">
+        <di:waypoint x="910" y="545" />
+        <di:waypoint x="910" y="689" />
+        <di:waypoint x="1017" y="689" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_7_di" bpmnElement="Flujo_7">
+        <di:waypoint x="1155" y="519" />
+        <di:waypoint x="1174" y="519" />
+        <di:waypoint x="1174" y="689" />
+        <di:waypoint x="1193" y="689" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_8_di" bpmnElement="Flujo_8">
+        <di:waypoint x="1155" y="689" />
+        <di:waypoint x="1193" y="689" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_9_di" bpmnElement="Flujo_9">
+        <di:waypoint x="1331" y="689" />
+        <di:waypoint x="1350" y="689" />
+        <di:waypoint x="1350" y="519" />
+        <di:waypoint x="1369" y="519" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flujo_10_di" bpmnElement="Flujo_10">
+        <di:waypoint x="1507" y="519" />
+        <di:waypoint x="1551" y="519" />
+        <di:waypoint x="1551" y="179" />
+        <di:waypoint x="1595" y="179" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

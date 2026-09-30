@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="870" viewBox="0 0 1680 870">
+<defs><marker id="punta-64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+         </marker>
+<marker id="punta-4F46E5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#4F46E5"/>
+         </marker>
+<marker id="punta-059669" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+         </marker>
+<marker id="punta-DC2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC2626"/>
+         </marker>
+<marker id="punta-B45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
+         </marker></defs>
+<rect width="1680" height="870" fill="#F8FAFC"/>
+<text x="840" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revela · Arquitectura</text>
+<text x="840" y="62" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Frontend en un hosting web y backend en Supabase: desacoplados para bajar costos</text>
+<rect x="40" y="90" width="250" height="520" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="56" y="114" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">USUARIOS</text>
+<text x="274" y="114" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">navegador</text>
+<rect x="64" y="150" width="202" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="165" y="196" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Administrador</text>
+<text x="165" y="216" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">crea CRMs y exporta</text>
+<rect x="64" y="290" width="202" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="165" y="336" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gerente</text>
+<text x="165" y="356" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">KPI, gerencia, auditoría</text>
+<rect x="64" y="430" width="202" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="165" y="476" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Usuario base</text>
+<text x="165" y="496" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">captura y pipeline</text>
+<rect x="330" y="90" width="470" height="520" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="346" y="114" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">FRONTEND · hosting web</text>
+<text x="784" y="114" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">archivos estáticos</text>
+<rect x="356" y="134" width="418" height="112" rx="10" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="565" y="189" font-size="17" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Aplicación web (SPA)</text>
+<text x="565" y="211" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">React 19 + TypeScript + Tailwind · módulos por perfil</text>
+<rect x="356" y="270" width="200" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="456" y="316" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Leaflet</text>
+<text x="456" y="336" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">mapa, puntos y zonas</text>
+<rect x="574" y="270" width="200" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="674" y="316" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">supabase-js</text>
+<text x="674" y="336" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cliente de datos y login</text>
+<rect x="356" y="390" width="418" height="96" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="565" y="436" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Build de Vite</text>
+<text x="565" y="456" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">HTML, JS y CSS listos para subir a cualquier hosting</text>
+<text x="565" y="520" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Se descarga una vez y corre en el navegador del usuario</text>
+<text x="565" y="544" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Ej.: cPanel o Vercel</text>
+<rect x="840" y="90" width="470" height="520" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="856" y="114" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">BACKEND · Supabase (nube)</text>
+<text x="1294" y="114" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">plan gratuito en el piloto</text>
+<text x="1075" y="544" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">11 migraciones escritas y validadas, aún sin conectar</text>
+<rect x="866" y="134" width="200" height="96" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="966" y="180" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Supabase Auth</text>
+<text x="966" y="200" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">login y sesiones</text>
+<rect x="1084" y="134" width="200" height="96" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="1184" y="180" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">API REST + RLS</text>
+<text x="1184" y="200" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cada CRM ve solo sus datos</text>
+<rect x="866" y="254" width="418" height="112" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="1075" y="309" font-size="17" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">PostgreSQL + PostGIS</text>
+<text x="1075" y="331" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">leads, empresas, contactos y auditoría · zonas como polígonos</text>
+<rect x="866" y="390" width="418" height="112" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="1075" y="445" font-size="17" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Edge Functions</text>
+<text x="1075" y="467" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asistente IA · tipo de cambio · búsqueda de empresas</text>
+<path d="M 1184 230 L 1184 252" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="1350" y="90" width="290" height="520" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="1366" y="114" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVICIOS EXTERNOS</text>
+
+<rect x="1372" y="128" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1495" y="163.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">OpenAI (GPT)</text>
+<text x="1495" y="182.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asistente de prospección</text>
+<rect x="1372" y="222" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1495" y="257.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Google Places</text>
+<text x="1495" y="276.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">empresas reales</text>
+<rect x="1372" y="316" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1495" y="351.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Banco Central de Chile</text>
+<text x="1495" y="370.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">dólar observado</text>
+<rect x="1372" y="410" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1495" y="445.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ExchangeRate-API</text>
+<text x="1495" y="464.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">otras monedas</text>
+<rect x="1372" y="504" width="246" height="76" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1495" y="539.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Esri</text>
+<text x="1495" y="558.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">mapa base</text>
+<path d="M 292 350 L 328 350" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="288" y="328" width="44" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="310" y="340" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">HTTPS</text>
+<path d="M 802 182 L 838 182" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="798" y="160" width="44" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="820" y="172" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">login</text>
+<path d="M 838 318 L 802 318" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<path d="M 802 306 L 838 306" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="798" y="286" width="44" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="820" y="298" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">datos</text>
+<path d="M 1286 420 L 1330 420 L 1330 166 L 1370 166" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1330 260 L 1370 260" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1286 448 L 1370 448" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1346 448 L 1346 354 L 1370 354" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 356 318 L 344 318 L 344 638 L 1495 638 L 1495 582" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="832.2" y="626" width="135.60000000000002" height="18" rx="5" fill="#F8FAFC" opacity="0.97"/>
+<text x="900" y="639" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">mapa base (teselas)</text>
+<text x="40" y="690" font-size="17" font-weight="700" fill="#0F172A" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">¿Por qué desacoplado?</text>
+<rect x="40" y="708" width="385" height="132" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="58" y="738" font-size="15" font-weight="700" fill="#059669" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Costo</text>
+<text x="58" y="764" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">El frontend son archivos estáticos: hosting barato</text>
+<text x="58" y="783" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">o gratis.</text>
+<text x="58" y="802" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Supabase tiene plan gratuito para el piloto.</text>
+<rect x="445" y="708" width="385" height="132" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="463" y="738" font-size="15" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Seguridad</text>
+<text x="463" y="764" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Las API keys viven en el backend, nunca en el</text>
+<text x="463" y="783" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">navegador.</text>
+<text x="463" y="802" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">RLS aísla cada CRM dentro de la misma base.</text>
+<rect x="850" y="708" width="385" height="132" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="868" y="738" font-size="15" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Mantención</text>
+<text x="868" y="764" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Cada parte se cambia por separado: otro hosting no</text>
+<text x="868" y="783" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">toca la base, y viceversa.</text>
+<rect x="1255" y="708" width="385" height="132" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1273" y="738" font-size="15" font-weight="700" fill="#B45309" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Estado hoy</text>
+<text x="1273" y="764" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Corre en local con datos de ejemplo. El asistente</text>
+<text x="1273" y="783" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">y el tipo de cambio corren dentro de Vite y pasan</text>
+<text x="1273" y="802" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">a Edge Functions al desplegar.</text>
+</svg>

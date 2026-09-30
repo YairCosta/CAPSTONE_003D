@@ -1,0 +1,940 @@
+// Pruebas de la conexión con Supabase sin tocar la base real: traducción de filas, reglas de quién
+// invita a quién, mensajes de error y el endpoint de invitaciones con un Supabase simulado.
+// Ejecutar: npm run test:supabase
+import assert from 'node:assert/strict';
+import { Readable } from 'node:stream';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  companyCountryRows,
+  companyFromRow,
+  companyToRow,
+  profileUpdateRow,
+  userFromRow,
+  auditEntryFromRow,
+  auditEntryToRow,
+  isAuditEntityConnected,
+  revertKindFor,
+  type CompanyRow,
+} from '../src/lib/db/mappers.ts';
+import {
+  accountToRow,
+  assembleTenantData,
+  catalogToRow,
+  leadFromRow,
+  leadToRow,
+  mergeStageConfigs,
+  privacyRequestFor,
+  stageFromRow,
+  stageToRow,
+  tenantRowsFromSnapshot,
+  territoryFromRow,
+} from '../src/lib/db/crmMappers.ts';
+import { acceptLeads, diffTenantData, type TenantSnapshot } from '../src/lib/db/sync.ts';
+import { loadZonePolygons } from '../src/lib/db/crm.ts';
+import { setCompanyCountry, setCompanyViewCurrency } from '../src/lib/db/platform.ts';
+import { enabledCountriesOf } from '../src/lib/tenantGuards.ts';
+import { conTildes } from './tildes-zonas.mjs';
+import {
+  bugFromRow,
+  companyUsageFromRow,
+  loadBugReports,
+  loadMyLastSurveyAt,
+  loadUsageSnapshot,
+  recordLogin,
+  submitBugReport,
+  submitSurvey,
+  surveyFromRow,
+  updateBugStatus,
+  userActivityFromRow,
+} from '../src/lib/db/usage.ts';
+import { locateInCommune, zoneCenter } from '../src/lib/geocoding.ts';
+import { findZonesByName, groupZonesForSelect, regionsOf } from '../src/lib/zones.ts';
+import { readFileSync } from 'node:fs';
+import type { ClientAccount, Lead } from '../src/types/crm.ts';
+import { buildAuditEntry } from '../src/lib/audit.ts';
+import { authorizeInvite, type InviteCaller } from '../src/lib/userAdmin.ts';
+import { authErrorMessage, dbErrorMessage } from '../src/lib/db/errors.ts';
+import { validateNewPassword, validatePasswordChange } from '../src/lib/passwords.ts';
+import { createAdminMiddleware } from '../server/adminUsers.ts';
+
+const tests: { name: string; fn: () => void | Promise<void> }[] = [];
+const test = (name: string, fn: () => void | Promise<void>) => tests.push({ name, fn });
+
+const CRM_A = '11111111-1111-1111-1111-111111111111';
+const CRM_B = '22222222-2222-2222-2222-222222222222';
+
+const filaCrm = (over: Partial<CompanyRow> = {}): CompanyRow => ({
+  id: CRM_A,
+  name: 'Empresa Piloto',
+  slug: 'piloto',
+  tax_id: null,
+  is_active: true,
+  plan: 'international',
+  home_country: 'PE',
+  default_lat: null,
+  default_lng: null,
+  default_zoom: null,
+  created_at: '2026-09-25T12:00:00Z',
+  ...over,
+});
+
+// ------------------------------------------------------------------ traducción de filas
+test('CRM: el país base va primero y los países de otro CRM no se cuelan', () => {
+  const crm = companyFromRow(filaCrm(), [
+    { company_id: CRM_A, country_code: 'CL' },
+    { company_id: CRM_A, country_code: 'PE' },
+    { company_id: CRM_B, country_code: 'CL' },
+  ]);
+  assert.deepEqual(crm.enabledCountries, ['PE', 'CL']);
+  assert.equal(crm.homeCountry, 'PE');
+});
+
+test('CRM: en plan Nacional solo cuenta el país base; las filas guardadas vuelven al reactivar el plan', () => {
+  const crm = companyFromRow(filaCrm({ plan: 'national' }), [
+    { company_id: CRM_A, country_code: 'CL' },
+    { company_id: CRM_A, country_code: 'PE' },
+  ]);
+  assert.deepEqual(enabledCountriesOf(crm), ['PE']);
+  assert.deepEqual(enabledCountriesOf({ ...crm, plan: 'international' }), ['PE', 'CL']);
+  // Al guardar con el plan Nacional solo se asegura el país base: las otras filas no se tocan
+  assert.deepEqual(companyCountryRows(CRM_A, crm).map((r) => r.country_code), ['PE']);
+});
+
+test('CRM: sin coordenadas propias, el mapa parte en las del país base', () => {
+  const crm = companyFromRow(filaCrm({ home_country: 'CL', plan: 'national' }), []);
+  assert.equal(crm.homeCountry, 'CL');
+  assert.equal(typeof crm.defaultLat, 'number');
+  assert.equal(crm.taxId, undefined);
+});
+
+test('CRM: al guardar, los países incluyen siempre el base y el plan Nacional no agrega otros', () => {
+  const internacional = companyCountryRows(CRM_A, { homeCountry: 'CL', enabledCountries: ['PE'], plan: 'international' });
+  assert.deepEqual(internacional.map((r) => r.country_code).sort(), ['CL', 'PE']);
+  const nacional = companyCountryRows(CRM_A, { homeCountry: 'CL', enabledCountries: ['CL', 'PE'], plan: 'national' });
+  assert.deepEqual(nacional.map((r) => r.country_code), ['CL']);
+  const fila = companyToRow({ ...companyFromRow(filaCrm(), []), taxId: '  ', name: ' Piloto ' });
+  assert.equal(fila.tax_id, null);
+  assert.equal(fila.name, 'Piloto');
+});
+
+test('CRM: con el plan Internacional puede partir solo con el país base (la gerencia suma los demás)', () => {
+  const crm = companyFromRow(filaCrm({ home_country: 'CL' }), [{ company_id: CRM_A, country_code: 'CL' }]);
+  assert.equal(crm.plan, 'international');
+  assert.deepEqual(crm.enabledCountries, ['CL']);
+});
+
+test('Divisas de la vista: se leen solo las del CRM y con código válido', () => {
+  const crm = companyFromRow(filaCrm({ home_country: 'CL' }), [{ company_id: CRM_A, country_code: 'PE' }], [
+    { company_id: CRM_A, currency_code: 'PEN' },
+    { company_id: CRM_A, currency_code: 'XXX' },
+    { company_id: CRM_A, currency_code: 'toString' },
+    { company_id: CRM_B, currency_code: 'MXN' },
+  ]);
+  assert.deepEqual(crm.viewCurrencies, ['PEN']);
+  assert.deepEqual(companyFromRow(filaCrm(), []).viewCurrencies, []);
+});
+
+test('Divisas de la vista: sumar no duplica; quitar borra solo esa divisa de ese CRM', async () => {
+  const llamadas: unknown[] = [];
+  const fake = {
+    from: (tabla: string) => {
+      assert.equal(tabla, 'company_view_currencies');
+      return {
+        upsert: async (fila: unknown, opciones: unknown) => {
+          llamadas.push(['upsert', fila, opciones]);
+          return { error: null };
+        },
+        delete: () => {
+          const filtros: [string, string][] = [];
+          const cadena = {
+            eq: (campo: string, valor: string) => {
+              filtros.push([campo, valor]);
+              if (filtros.length === 2) {
+                llamadas.push(['delete', filtros]);
+                return Promise.resolve({ error: null });
+              }
+              return cadena;
+            },
+          };
+          return cadena;
+        },
+      };
+    },
+  } as unknown as SupabaseClient;
+  assert.deepEqual(await setCompanyViewCurrency(fake, CRM_A, 'PEN', true), { ok: true, data: null });
+  assert.deepEqual(await setCompanyViewCurrency(fake, CRM_A, 'PEN', false), { ok: true, data: null });
+  assert.deepEqual(llamadas, [
+    ['upsert', { company_id: CRM_A, currency_code: 'PEN' }, { onConflict: 'company_id,currency_code', ignoreDuplicates: true }],
+    ['delete', [['company_id', CRM_A], ['currency_code', 'PEN']]],
+  ]);
+});
+
+test('Países: activar inserta sin duplicar; desactivar borra solo ese país de ese CRM', async () => {
+  const llamadas: unknown[] = [];
+  const fake = {
+    from: (tabla: string) => {
+      assert.equal(tabla, 'company_countries');
+      return {
+        upsert: async (fila: unknown, opciones: unknown) => {
+          llamadas.push(['upsert', fila, opciones]);
+          return { error: null };
+        },
+        delete: () => {
+          const filtros: [string, string][] = [];
+          const cadena = {
+            eq: (campo: string, valor: string) => {
+              filtros.push([campo, valor]);
+              if (filtros.length === 2) {
+                llamadas.push(['delete', filtros]);
+                return Promise.resolve({ error: null });
+              }
+              return cadena;
+            },
+          };
+          return cadena;
+        },
+      };
+    },
+  } as unknown as SupabaseClient;
+  assert.deepEqual(await setCompanyCountry(fake, CRM_A, 'MX', true), { ok: true, data: null });
+  assert.deepEqual(await setCompanyCountry(fake, CRM_A, 'PE', false), { ok: true, data: null });
+  assert.deepEqual(llamadas, [
+    ['upsert', { company_id: CRM_A, country_code: 'MX' }, { ignoreDuplicates: true }],
+    ['delete', [['company_id', CRM_A], ['country_code', 'PE']]],
+  ]);
+
+  const rechazo = { from: () => ({ upsert: async () => ({ error: { message: 'new row violates row-level security policy', code: '42501' } }) }) } as unknown as SupabaseClient;
+  const r = await setCompanyCountry(rechazo, CRM_A, 'MX', true);
+  assert.equal(r.ok, false);
+  assert.doesNotMatch(!r.ok ? r.error : '', /row-level/, 'el texto técnico de la base no llega a la pantalla');
+});
+
+test('Usuarios: la contraseña nunca viene de la base y un rol desconocido no da más permisos', () => {
+  const usuario = userFromRow({
+    id: 'u1',
+    company_id: CRM_A,
+    full_name: 'Sebastián',
+    email: 'sebastian@piloto.demo',
+    role: 'root',
+    is_active: true,
+    created_at: '2026-09-25T12:00:00Z',
+  });
+  assert.equal(usuario.password, '');
+  assert.equal(usuario.role, 'agent');
+  // Un administrador de plataforma no pertenece a ningún CRM
+  assert.equal(profileUpdateRow({ ...usuario, role: 'superadmin' }).company_id, null);
+  assert.equal(profileUpdateRow(usuario).company_id, CRM_A);
+});
+
+// ------------------------------------------------------------------ auditoría
+test('Auditoría: la fila no trae fecha ni marca de revertido; la base las fija al guardar', () => {
+  const actor = userFromRow({ id: 'u1', company_id: CRM_A, full_name: 'Sebastián', email: 's@piloto.demo', role: 'manager', is_active: true, created_at: '2026-09-25T12:00:00Z' });
+  const entrada = buildAuditEntry(
+    { companyId: CRM_A, action: 'deactivate', entity: 'user', entityId: 'u2', entityLabel: 'Vendedor', summary: 'Activo', changes: [{ field: 'isActive', label: 'Activo', before: 'Sí', after: 'No' }] },
+    actor,
+    '33333333-3333-3333-3333-333333333333'
+  );
+  const fila = auditEntryToRow(entrada);
+  assert.equal(fila.id, '33333333-3333-3333-3333-333333333333');
+  assert.equal(fila.actor_role, 'manager');
+  assert.deepEqual(fila.changes, entrada.changes);
+  assert.ok(!('created_at' in fila) && !('reverted_at' in fila));
+  // Sin estado anterior: el cambio no se puede deshacer
+  assert.equal(fila.revert_snapshot, null);
+});
+
+test('Auditoría: lo que viene de la base se lee igual que lo de memoria', () => {
+  const entrada = auditEntryFromRow({
+    id: 'a1',
+    company_id: CRM_A,
+    actor_id: null,
+    actor_name: 'Revela (tarea automática)',
+    actor_role: 'manager',
+    action: 'update',
+    entity: 'lead',
+    entity_id: 'l1',
+    entity_label: 'Minera Sur',
+    summary: 'Datos personales eliminados automáticamente',
+    changes: null,
+    revert_snapshot: null,
+    reverted_at: null,
+    reverted_by: null,
+    created_at: '2026-09-26T03:15:00Z',
+  });
+  assert.equal(entrada.actorId, 'sistema');
+  assert.deepEqual(entrada.changes, []);
+  assert.equal(entrada.revertedAt, undefined);
+  assert.equal(entrada.revert, undefined);
+});
+
+test('Auditoría: "Volver atrás" funciona con lo guardado en la base', () => {
+  const fila = {
+    id: 'a2', company_id: CRM_A, actor_id: 'u1', actor_name: 'Sebastián', actor_role: 'manager', entity_id: 'x', entity_label: 'X',
+    summary: 's', changes: [], reverted_at: '2026-09-26T10:00:00Z', reverted_by: 'u1', created_at: '2026-09-26T09:00:00Z',
+  };
+  const eliminada = auditEntryFromRow({ ...fila, action: 'delete', entity: 'account', revert_snapshot: { id: 'acc-1', name: 'Minera' } }, (id) => (id === 'u1' ? 'Sebastián' : undefined));
+  assert.equal(eliminada.revert?.kind, 'account-deleted');
+  assert.equal(eliminada.revertedBy, 'Sebastián');
+  assert.equal(auditEntryFromRow({ ...fila, action: 'update', entity: 'catalog', revert_snapshot: { id: 'i1' } }).revert?.kind, 'catalog');
+  assert.equal(auditEntryFromRow({ ...fila, action: 'export', entity: 'export', revert_snapshot: { id: 'e' } }).revert, undefined);
+  assert.equal(revertKindFor('lead', 'stage'), 'lead');
+});
+
+test('Auditoría: todo el historial va a la base (CRMs, usuarios, leads, empresas, catálogo, contactos, etapas y exportaciones)', () => {
+  for (const conectada of ['company', 'user', 'lead', 'account', 'catalog', 'activity', 'stage', 'export'] as const) {
+    assert.ok(isAuditEntityConnected(conectada), conectada);
+  }
+});
+
+// ------------------------------------------------------------------ etapa 3: leads y sincronización
+const cuenta = (over: Partial<ClientAccount> = {}): ClientAccount => ({
+  id: 'acc-1', companyId: CRM_A, countryCode: 'CL', name: 'Minera Sur', isActive: true, createdAt: '2026-09-26T12:00:00Z', ...over,
+});
+const lead = (over: Partial<Lead> = {}): Lead => ({
+  id: 'lead-1', companyId: CRM_A, countryCode: 'CL', fullName: 'Ana Pérez', commercialStatus: 'new', estimatedDealValue: 1000,
+  rawAddress: 'Av. Siempre Viva 123', geocodingStatus: 'success', createdAt: '2026-09-26T12:00:00Z', clientAccountId: 'acc-1',
+  companyName: 'Minera Sur', contacts: [], items: [], valueSource: 'manual', dataOrigin: 'form', consentStatus: 'inquiry', ...over,
+});
+const vacio: TenantSnapshot = { leads: [], accounts: [], activities: [], catalog: [] };
+
+test('Lead: textos en blanco van como NULL y la moneda por defecto es la del país', () => {
+  const fila = leadToRow(lead({ jobTitle: '  ', notes: '', email: ' ' }));
+  assert.equal(fila.job_title, null);
+  assert.equal(fila.notes, null);
+  assert.equal(fila.email, null);
+  assert.equal(fila.currency_code, 'CLP');
+  assert.equal(fila.value_source, 'manual');
+  // La anonimización solo la escribe la base
+  assert.ok(!('anonymized_at' in fila) && !('anonymized_reason' in fila) && !('created_at' in fila));
+});
+
+test('Lead: al leerlo, la moneda del país queda implícita y los montos son números', () => {
+  const base = {
+    ...leadToRow(lead()), created_by: null, estimated_deal_value: '150000.00', anonymized_at: null, anonymized_reason: null, created_at: '2026-09-26T12:00:00+00:00',
+  };
+  const leido = leadFromRow(base, { accountName: 'Minera Sur', contacts: [], items: [] });
+  assert.equal(leido.currency, undefined);
+  assert.equal(leido.estimatedDealValue, 150000);
+  assert.equal(leido.companyName, 'Minera Sur');
+  assert.equal(leadFromRow({ ...base, currency_code: 'USD' }, { contacts: [], items: [] }).currency, 'USD');
+  // Ida y vuelta sin diferencias: cargar desde la base no genera escrituras
+  assert.deepEqual(diffTenantData({ ...vacio, leads: [leido] }, { ...vacio, leads: [leido] }), []);
+});
+
+test('Sincronización: una empresa nueva va antes que su lead, y el lead antes que su bitácora', () => {
+  const nuevo = lead({ contacts: [{ id: 'c1', fullName: 'Juan Firma' }], items: [{ itemId: 'i1', quantity: 2, unitPrice: 500 }] });
+  const actividad = { id: 'act-1', leadId: 'lead-1', companyId: CRM_A, channel: 'call' as const, outcome: 'interested' as const, summary: 'Llamada', agentName: 'Vendedor', createdAt: '2026-09-26T12:05:00Z' };
+  const ops = diffTenantData(vacio, { ...vacio, accounts: [cuenta()], leads: [nuevo], activities: [actividad] });
+  assert.deepEqual(ops.map((o) => o.kind), ['account-insert', 'lead-insert', 'lead-contacts', 'lead-items', 'activity-insert']);
+});
+
+test('Sincronización: mover de etapa envía solo esa columna (no pisa lo que otro editó)', () => {
+  const antes = { ...vacio, accounts: [cuenta()], leads: [lead()] };
+  const ops = diffTenantData(antes, { ...antes, leads: [lead({ commercialStatus: 'contacted' })] });
+  assert.equal(ops.length, 1);
+  assert.deepEqual(ops[0], { kind: 'lead-update', id: 'lead-1', patch: { commercial_status: 'contacted' } });
+});
+
+test('Sincronización: cambiar productos agrega los nuevos y quita los que salieron', () => {
+  const antes = { ...vacio, leads: [lead({ items: [{ itemId: 'i1', quantity: 1, unitPrice: 500 }] })] };
+  const ops = diffTenantData(antes, { ...vacio, leads: [lead({ items: [{ itemId: 'i2', quantity: 3, unitPrice: 100 }] })] });
+  const items = ops.find((o) => o.kind === 'lead-items');
+  assert.ok(items && items.kind === 'lead-items');
+  assert.deepEqual(items.upserts.map((u) => u.catalog_item_id), ['i2']);
+  assert.deepEqual(items.deleteItemIds, ['i1']);
+});
+
+test('Sincronización: las bajas van al final y la bitácora nunca se edita', () => {
+  const producto = { id: 'i9', companyId: CRM_A, type: 'product' as const, name: 'Notebook', prices: { CL: 500000 }, isActive: true, createdAt: '2026-09-26T12:00:00Z' };
+  const actividad = { id: 'act-1', leadId: 'lead-1', companyId: CRM_A, channel: 'call' as const, outcome: 'interested' as const, summary: 'Llamada', agentName: 'Vendedor', createdAt: '2026-09-26T12:05:00Z' };
+  const antes = { ...vacio, accounts: [cuenta(), cuenta({ id: 'acc-2', name: 'Sin leads' })], leads: [lead()], catalog: [producto], activities: [actividad] };
+  const despues = { ...antes, accounts: [cuenta()], catalog: [], leads: [lead({ notes: 'Nota nueva' })], activities: [{ ...actividad, summary: 'editado' }] };
+  const tipos = diffTenantData(antes, despues).map((o) => o.kind);
+  assert.deepEqual(tipos, ['lead-update', 'catalog-delete', 'account-delete']);
+});
+
+test('Sincronización: precios por país del catálogo, incluido quitar uno', () => {
+  const producto = { id: 'i1', companyId: CRM_A, type: 'service' as const, name: 'Soporte', billing: 'monthly' as const, prices: { CL: 50000, PE: 180 }, isActive: true, createdAt: '2026-09-26T12:00:00Z' };
+  const ops = diffTenantData({ ...vacio, catalog: [producto] }, { ...vacio, catalog: [{ ...producto, prices: { CL: 55000 } }] });
+  assert.equal(ops.length, 1);
+  const op = ops[0];
+  assert.ok(op.kind === 'catalog-upsert');
+  assert.deepEqual(op.prices, [{ catalog_item_id: 'i1', country_code: 'CL', price: 55000 }]);
+  assert.deepEqual(op.removedCountries, ['PE']);
+  // Un producto nunca lleva periodicidad (la base lo rechazaría)
+  assert.equal(catalogToRow({ ...producto, type: 'product' }).billing_type, null);
+});
+
+test('Sincronización: lo que anonimiza la base no vuelve a la base como una edición', () => {
+  const original = lead();
+  const anonimizado = lead({ fullName: 'Titular eliminado', rawAddress: 'Dirección eliminada', noContact: true, consentStatus: 'withdrawn', anonymizedAt: '2026-09-26T13:00:00Z', anonymizedReason: 'request' });
+  const antes = { ...vacio, leads: [original] };
+  assert.ok(diffTenantData(antes, { ...vacio, leads: [anonimizado] }).length > 0);
+  assert.deepEqual(diffTenantData(acceptLeads(antes, [anonimizado]), { ...vacio, leads: [anonimizado] }), []);
+});
+
+test('Privacidad: el lead muestra la solicitud pendiente aunque haya otras resueltas', () => {
+  const filas = [
+    { id: 'r1', lead_id: 'lead-1', reason: 'wrong_data', detail: null, requested_by_name: 'Ana', requested_at: '2026-09-20T10:00:00Z', status: 'rejected', decided_by_name: 'Sebastián', decided_at: '2026-09-21T10:00:00Z', decision_note: null },
+    { id: 'r2', lead_id: 'lead-1', reason: 'erasure', detail: 'Por correo', requested_by_name: 'Ana', requested_at: '2026-09-25T10:00:00Z', status: 'pending', decided_by_name: null, decided_at: null, decision_note: null },
+    { id: 'r3', lead_id: 'otro', reason: 'other', detail: null, requested_by_name: 'Ana', requested_at: '2026-09-26T10:00:00Z', status: 'pending', decided_by_name: null, decided_at: null, decision_note: null },
+  ];
+  const solicitud = privacyRequestFor('lead-1', filas);
+  assert.equal(solicitud?.status, 'pending');
+  assert.equal(solicitud?.reason, 'erasure');
+  assert.equal(privacyRequestFor('sin-solicitudes', filas), undefined);
+});
+
+test('Zonas: el lead queda asignado a su zona, sin coordenadas', () => {
+  const zona = territoryFromRow({
+    id: 'z1', company_id: CRM_A, country_code: 'CL', name: 'Providencia', code: 'PROV-01', color_hex: '#3B82F6',
+    polygon: { type: 'MultiPolygon', coordinates: [[[[-70.63, -33.42], [-70.585, -33.415], [-70.59, -33.445], [-70.635, -33.44], [-70.63, -33.42]]]] },
+  });
+  const ubicado = locateInCommune(zona, 'Av. Providencia 1234');
+  assert.equal(ubicado.assignedTerritoryId, 'z1');
+  assert.equal(ubicado.geocodingStatus, 'success');
+  assert.equal(ubicado.normalizedAddress, 'Av. Providencia 1234, Providencia, Chile');
+  // Minimización: la ubicación es la zona; no se calcula ningún punto
+  assert.ok(!('latitude' in ubicado) && !('longitude' in ubicado));
+  assert.equal(locateInCommune(undefined, 'x').geocodingStatus, 'manual_review');
+  // El centro de la zona (para su burbuja en el mapa) sí se calcula, desde el polígono
+  const centro = zoneCenter(zona)!;
+  assert.ok(centro.latitude < -33.4 && centro.latitude > -33.46);
+});
+
+test('Errores: los mensajes de las reglas de Revela se muestran; los técnicos no', () => {
+  assert.equal(
+    dbErrorMessage({ code: '42501', message: 'Lead bloqueado: hay una solicitud del titular pendiente de resolver.' }, 'x'),
+    'Lead bloqueado: hay una solicitud del titular pendiente de resolver.'
+  );
+  assert.match(dbErrorMessage({ code: '42501', message: 'new row violates row-level security policy for table "leads"' }, 'x'), /permiso/);
+  assert.equal(dbErrorMessage({ code: '23514', message: 'La zona asignada pertenece a otro país' }, 'x'), 'La zona asignada pertenece a otro país');
+  assert.match(dbErrorMessage({ code: '23514', message: 'new row for relation "leads" violates check constraint "leads_email_check"' }, 'x'), /reglas/);
+});
+
+// ------------------------------------------------------------------ etapas 4 y 5: pipeline y exportación
+const etapaPorDefecto = { id: 'qualified' as const, label: 'Calificado', shortCode: 'CALIF', color: '#6366F1', description: 'Necesidad confirmada', winProbability: 40, slaDays: 3, orderIndex: 2 };
+
+test('Etapas: lo guardado reemplaza a lo por defecto y la base recibe valores válidos', () => {
+  const guardada = stageFromRow({ stage: 'qualified', label: 'Calificado Piloto', short_code: 'CAL', color_hex: '#22C55E', description: null, win_probability: 55, sla_days: 5, order_index: 2 });
+  const nueva = { ...etapaPorDefecto, id: 'won' as const, label: 'Ganado' };
+  const mezcla = mergeStageConfigs([etapaPorDefecto, nueva], [guardada]);
+  assert.deepEqual(mezcla.map((e) => e.label), ['Calificado Piloto', 'Ganado']);
+  const fila = stageToRow(CRM_A, { ...etapaPorDefecto, winProbability: 140.6, slaDays: -2, description: '  ' });
+  assert.deepEqual([fila.win_probability, fila.sla_days, fila.description, fila.stage], [100, 0, null, 'qualified']);
+});
+
+test('Sincronización: editar una etapa la guarda primero; sin cambios no se escribe nada', () => {
+  const antes = { ...vacio, companyId: CRM_A, stages: [etapaPorDefecto] };
+  assert.deepEqual(diffTenantData(antes, antes), []);
+  const ops = diffTenantData(antes, { ...antes, accounts: [cuenta()], stages: [{ ...etapaPorDefecto, winProbability: 60 }] });
+  assert.deepEqual(ops.map((o) => o.kind), ['stage-upsert', 'account-insert']);
+  const op = ops[0];
+  assert.ok(op.kind === 'stage-upsert' && op.row.company_id === CRM_A && op.row.win_probability === 60);
+});
+
+test('Exportación: el JSON de la base arma los mismos datos que la carga normal', () => {
+  const filaLead = { ...leadToRow(lead()), estimated_deal_value: '1000.00', anonymized_at: null, anonymized_reason: null, created_at: '2026-09-26T12:00:00+00:00', created_by: 'u1', updated_at: 'x', location: 'no-debe-usarse' };
+  const datos = assembleTenantData(
+    tenantRowsFromSnapshot({
+      format_version: 'v2',
+      client_accounts: [{ ...accountToRow(cuenta()), created_at: '2026-09-26T12:00:00+00:00' }],
+      leads: [filaLead],
+      lead_contacts: [
+        { id: 'p1', lead_id: 'lead-1', full_name: 'Ana Pérez', job_title: null, email: null, phone: null, is_primary: true },
+        { id: 'c1', lead_id: 'lead-1', full_name: 'Juan Firma', job_title: 'Gerente', email: null, phone: null, is_primary: false },
+      ],
+      catalog_items: [{ id: 'i1', company_id: CRM_A, item_type: 'service', name: 'Soporte', sku: null, category: null, description: null, billing_type: 'monthly', is_active: true, created_at: 'x', prices: { CL: 50000, PE: '180.00' } }],
+      pipeline_stage_configs: [{ stage: 'won', label: 'Cerrado', short_code: 'WIN', color_hex: '#22C55E', description: null, win_probability: 100, sla_days: 0, order_index: 5 }],
+      territories: [{ id: 'z1', company_id: CRM_A, country_code: 'CL', name: 'Providencia', code: 'PROV-01', color_hex: '#3B82F6', geojson: { type: 'MultiPolygon', coordinates: [] } }],
+    })
+  );
+  assert.equal(datos.leads[0].companyName, 'Minera Sur');
+  // El contacto principal ya está en el lead: solo se agregan los adicionales
+  assert.deepEqual(datos.leads[0].contacts?.map((c) => c.fullName), ['Juan Firma']);
+  assert.deepEqual(datos.catalog[0].prices, { CL: 50000, PE: 180 });
+  assert.equal(datos.stages[0].label, 'Cerrado');
+  assert.equal(datos.territories[0].geojsonPolygon.type, 'MultiPolygon');
+});
+
+// ------------------------------------------------------------------ contornos solo de las zonas en uso
+test('Contornos: se piden solo las zonas indicadas, de a 100 por consulta, y una zona sin contorno no se inventa', async () => {
+  const consultas: string[][] = [];
+  const fake = {
+    from: (tabla: string) => ({
+      select: (columnas: string) => ({
+        in: async (campo: string, ids: string[]) => {
+          assert.equal(tabla, 'territories_geojson');
+          assert.equal(columnas, 'id, polygon');
+          assert.equal(campo, 'id');
+          consultas.push(ids);
+          return { data: ids.map((id) => ({ id, polygon: id === 'z-7' ? null : { type: 'MultiPolygon', coordinates: [[[[0, 0], [1, 0], [1, 1], [0, 0]]]] } })), error: null };
+        },
+      }),
+    }),
+  } as unknown as SupabaseClient;
+  const ids = Array.from({ length: 230 }, (_, i) => `z-${i}`);
+  const resultado = await loadZonePolygons(fake, ids);
+  assert.ok(resultado.ok);
+  assert.deepEqual(consultas.map((c) => c.length), [100, 100, 30]);
+  assert.equal(resultado.data.size, 229);
+  assert.equal(resultado.data.has('z-7'), false);
+  assert.deepEqual(await loadZonePolygons(fake, []), { ok: true, data: new Map() });
+  assert.equal(consultas.length, 3);
+
+  const caida = { from: () => ({ select: () => ({ in: async () => ({ data: null, error: { message: 'x', code: '500' } }) }) }) } as unknown as SupabaseClient;
+  const error = await loadZonePolygons(caida, ['z-1']);
+  assert.equal(error.ok, false);
+});
+
+test('Contornos: una zona sin contorno cargado no tiene centro ni se ubica en el mapa', () => {
+  const sinContorno = territoryFromRow({ id: 'z1', company_id: 'c', country_code: 'CL', name: 'Providencia', code: 'CL-13123', color_hex: null });
+  assert.deepEqual(sinContorno.geojsonPolygon, { type: 'MultiPolygon', coordinates: [] });
+  assert.equal(zoneCenter(sinContorno), null);
+});
+
+// ------------------------------------------------------------------ zonas oficiales por región
+const oficiales = (pais: string) =>
+  (JSON.parse(readFileSync(`datos/zonas/zonas-${pais}.geojson`, 'utf8')) as { features: { properties: Record<string, string | number> }[] }).features.map(
+    ({ properties: p }) => ({
+      territoryId: String(p.code),
+      territoryName: String(p.name),
+      countryCode: String(p.country_code) as 'CL' | 'PE',
+      regionCode: String(p.region_code),
+      regionName: String(p.region_name),
+      provinceName: String(p.province_name),
+      regionOrder: Number(p.region_order),
+    })
+  );
+const comunas = oficiales('cl');
+const distritos = oficiales('pe');
+
+test('Zonas oficiales: 345 comunas en 16 regiones y 1.893 distritos en 25 departamentos, con códigos únicos', () => {
+  assert.equal(comunas.length, 345);
+  assert.equal(regionsOf(comunas).length, 16);
+  assert.equal(distritos.length, 1893);
+  assert.equal(regionsOf(distritos).length, 25);
+  assert.equal(new Set([...comunas, ...distritos].map((z) => z.territoryId)).size, 345 + 1893);
+  assert.ok(comunas.every((z) => /^CL-\d{5}$/.test(z.territoryId)) && distritos.every((z) => /^PE-\d{6}$/.test(z.territoryId)));
+  assert.equal(comunas.find((z) => z.territoryId === 'CL-13123')?.territoryName, 'Providencia');
+});
+
+test('Zonas: Chile ordena sus regiones de norte a sur; Perú, alfabético y con tildes', () => {
+  const chile = regionsOf(comunas).map((r) => r.name);
+  assert.equal(chile[0], 'Arica y Parinacota');
+  assert.equal(chile.at(-1), 'Magallanes y de la Antártica Chilena');
+  assert.ok(chile.indexOf('Metropolitana de Santiago') < chile.indexOf('Ñuble'));
+  const peru = regionsOf(distritos).map((r) => r.name);
+  assert.deepEqual(peru.slice(0, 3), ['Amazonas', 'Áncash', 'Apurímac']);
+  assert.ok(peru.includes('Junín') && peru.includes('San Martín'));
+});
+
+test('Zonas: sin región, la lista va agrupada por región; con región, por provincia', () => {
+  assert.equal(groupZonesForSelect(comunas).length, 16);
+  const santiago = groupZonesForSelect(comunas, 'CL-13');
+  assert.equal(santiago.reduce((acc, g) => acc + g.zones.length, 0), 52);
+  assert.ok(santiago.some((g) => g.label === 'Provincia de Santiago'));
+  // Los dos Miraflores del departamento de Lima quedan en provincias distintas
+  const lima = groupZonesForSelect(distritos, 'PE-15');
+  const miraflores = lima.filter((g) => g.zones.some((z) => z.territoryName === 'Miraflores')).map((g) => g.label);
+  assert.deepEqual(miraflores.sort(), ['Provincia de Lima', 'Provincia de Yauyos']);
+});
+
+// ------------------------------------------------------------------ uso, encuestas y reportes (0030)
+const personaUso = { id: 'u-1', companyId: CRM_A, role: 'agent', isActive: true, fullName: 'Vendedor', email: 'v@x.cl', createdAt: '2026-01-01T00:00:00Z' } as const;
+
+test('Uso: los conteos de la base se leen como números aunque lleguen como texto', () => {
+  assert.deepEqual(
+    companyUsageFromRow({ crm_id: CRM_A, leads_total: '12', leads_created: 3, leads_active: '7', leads_won: 4, leads_lost: '1', leads_stagnant: 2 }),
+    { companyId: CRM_A, leadsTotal: 12, leadsCreated: 3, leadsActive: 7, leadsWon: 4, leadsLost: 1, leadsStagnant: 2 }
+  );
+  assert.deepEqual(userActivityFromRow({ person_id: 'u-1', logins_period: '2', logins_total: 9, last_login_at: '2026-10-01T10:00:00Z' }), {
+    userId: 'u-1',
+    loginsPeriod: 2,
+    loginsTotal: 9,
+    lastLoginAt: '2026-10-01T10:00:00Z',
+  });
+  assert.equal(userActivityFromRow({ person_id: 'u-2', logins_period: 0, logins_total: 0, last_login_at: null }).lastLoginAt, null);
+});
+
+test('Encuestas y reportes: las filas se traducen y un estado desconocido se muestra como nuevo', () => {
+  assert.deepEqual(surveyFromRow({ id: 's1', company_id: CRM_A, user_id: 'u-1', score: 9, comment: '  Muy útil  ', created_at: 'c' }), {
+    id: 's1',
+    companyId: CRM_A,
+    userId: 'u-1',
+    score: 9,
+    comment: 'Muy útil',
+    createdAt: 'c',
+  });
+  assert.equal(surveyFromRow({ id: 's2', company_id: CRM_A, user_id: 'u-1', score: 3, comment: '   ', created_at: 'c' }).comment, undefined);
+  const bug = bugFromRow({ id: 'b1', company_id: CRM_A, user_id: 'u-1', description: 'Se queda cargando', page: 'kanban', user_agent: null, status: 'resolved', created_at: 'c', resolved_at: 'r' });
+  assert.deepEqual([bug.status, bug.page, bug.userAgent, bug.resolvedAt], ['resolved', 'kanban', undefined, 'r']);
+  assert.equal(bugFromRow({ id: 'b2', company_id: CRM_A, user_id: 'u-1', description: 'x', page: null, user_agent: null, status: 'raro', created_at: 'c', resolved_at: null }).status, 'new');
+});
+
+test('Uso: el administrador pide los conteos con el período y el plazo elegidos, y un error no muestra el texto de la base', async () => {
+  const llamadas: [string, unknown][] = [];
+  const fake = {
+    rpc: async (nombre: string, args: unknown) => {
+      llamadas.push([nombre, args]);
+      return nombre === 'admin_usage_by_company'
+        ? { data: [{ crm_id: CRM_A, leads_total: 5, leads_created: 2, leads_active: 3, leads_won: 1, leads_lost: 1, leads_stagnant: 1 }], error: null }
+        : { data: [{ person_id: 'u-1', logins_period: 1, logins_total: 1, last_login_at: null }], error: null };
+    },
+  } as unknown as SupabaseClient;
+  const uso = await loadUsageSnapshot(fake, { days: 90, stagnantDays: 7, inactiveDays: 14 });
+  assert.ok(uso.ok && uso.data.companies[0].leadsStagnant === 1 && uso.data.users[0].userId === 'u-1');
+  assert.deepEqual(llamadas, [
+    ['admin_usage_by_company', { p_days: 90, p_stagnant_days: 7 }],
+    ['admin_user_activity', { p_days: 90 }],
+  ]);
+  const caida = { rpc: async () => ({ data: null, error: { message: 'permission denied for table leads', code: '42501' } }) } as unknown as SupabaseClient;
+  const error = await loadUsageSnapshot(caida, { days: 30, stagnantDays: 14, inactiveDays: 7 });
+  assert.ok(!error.ok && !/permission denied|leads/.test(error.error));
+});
+
+test('Ingresos: anotar el ingreso nunca estorba, ni sin conexión', async () => {
+  let llamado = '';
+  await recordLogin({ rpc: async (n: string) => ((llamado = n), { error: null }) } as unknown as SupabaseClient);
+  assert.equal(llamado, 'record_login');
+  await recordLogin({ rpc: async () => { throw new Error('sin conexión'); } } as unknown as SupabaseClient);
+});
+
+test('Encuestas y reportes: cada persona envía lo suyo, recortado, y el mensaje de la base llega tal cual', async () => {
+  const insertados: [string, Record<string, unknown>][] = [];
+  const fake = (error: { message: string; code: string } | null) =>
+    ({ from: (tabla: string) => ({ insert: async (fila: Record<string, unknown>) => (insertados.push([tabla, fila]), { error }) }) }) as unknown as SupabaseClient;
+  const ok = await submitSurvey(fake(null), personaUso, 9, '  ' + 'a'.repeat(1200));
+  assert.ok(ok.ok);
+  assert.equal(insertados[0][0], 'satisfaction_surveys');
+  assert.deepEqual([insertados[0][1].company_id, insertados[0][1].user_id, insertados[0][1].score], [CRM_A, 'u-1', 9]);
+  assert.equal(String(insertados[0][1].comment).length, 1000, 'el comentario se recorta a 1.000');
+  assert.equal((await submitSurvey(fake(null), personaUso, 4, '   ')).ok && insertados[1][1].comment, null, 'sin comentario va como vacío');
+
+  const reporte = await submitBugReport(fake(null), personaUso, { description: '  Se queda cargando al guardar  ', page: 'kanban', userAgent: 'x'.repeat(400) });
+  assert.ok(reporte.ok);
+  assert.equal(insertados[2][0], 'bug_reports');
+  assert.equal(insertados[2][1].description, 'Se queda cargando al guardar');
+  assert.equal(String(insertados[2][1].user_agent).length, 300);
+
+  const repetida = await submitSurvey(fake({ message: 'Ya respondiste la encuesta hoy. ¡Gracias!', code: 'P0001' }), personaUso, 8, '');
+  assert.ok(!repetida.ok && repetida.error === 'Ya respondiste la encuesta hoy. ¡Gracias!');
+  const tecnico = await submitBugReport(fake({ message: 'new row violates row-level security policy for table "bug_reports"', code: '42501' }), personaUso, { description: 'Descripción larga de prueba' });
+  assert.ok(!tecnico.ok && !/row-level|bug_reports/.test(tecnico.error));
+  assert.ok(!(await submitSurvey(fake(null), { ...personaUso, companyId: null }, 5, '')).ok, 'el administrador de la plataforma no responde encuestas');
+});
+
+test('Reportes: el administrador cambia el estado y avisa si el reporte no existe', async () => {
+  const cliente = (filas: unknown[]) =>
+    ({ from: () => ({ update: (cambio: unknown) => ({ eq: (campo: string, valor: string) => ({ select: async () => ({ data: campo === 'id' && valor === 'b1' ? filas : [], error: null, cambio }) }) }) }) }) as unknown as SupabaseClient;
+  assert.equal(await updateBugStatus(cliente([{ id: 'b1' }]), 'b1', 'resolved'), null);
+  assert.match((await updateBugStatus(cliente([{ id: 'b1' }]), 'otro', 'seen')) ?? '', /No se encontró/);
+  const lectura = {
+    from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: [{ id: 'b1', company_id: CRM_A, user_id: 'u-1', description: 'd', page: null, user_agent: null, status: 'new', created_at: 'c', resolved_at: null }], error: null }) }) }) }),
+  } as unknown as SupabaseClient;
+  const lista = await loadBugReports(lectura);
+  assert.ok(lista.ok && lista.data.length === 1 && lista.data[0].status === 'new');
+  assert.equal(await loadMyLastSurveyAt({ from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: [] }) }) }) }) }) } as unknown as SupabaseClient, 'u-1'), null);
+});
+
+test('Zonas: las tildes que faltan en la fuente se corrigen solo donde no hay duda', () => {
+  assert.equal(conTildes('San Jose de la Concepcion'), 'San José de la Concepción');
+  assert.equal(conTildes('Jesus Maria'), 'Jesús María');
+  assert.equal(conTildes('Valle de Angeles'), 'Valle de Ángeles');
+  // Se respetan: la ñ no se adivina (Canas, Cusco / Cañas, Costa Rica), Cesar es un departamento de
+  // Colombia y lo que ya trae tilde o ñ queda como viene
+  for (const igual of ['Canas', 'San Juan del Cesar', 'Mariaña', 'Peña', 'Ñuñoa', 'Huancayo']) assert.equal(conTildes(igual), igual);
+  assert.equal(distritos.find((z) => z.territoryId === 'PE-150113')?.territoryName, 'Jesús María');
+  assert.equal(comunas.find((z) => z.territoryId === 'CL-08301')?.territoryName, 'Los Ángeles');
+});
+
+test('Zonas: el asistente encuentra la zona por nombre y pide la región si hay varias', () => {
+  assert.deepEqual(findZonesByName(comunas, 'nunoa').map((z) => z.territoryId), ['CL-13120']);
+  assert.equal(findZonesByName(distritos, 'Rímac').length, 1);
+  assert.equal(findZonesByName(distritos, 'Santa Rosa').length, 10);
+  assert.equal(findZonesByName(distritos, 'Miraflores').length, 4);
+  assert.deepEqual(findZonesByName(distritos, 'Miraflores', 'Lima').map((z) => z.territoryId), ['PE-150122']);
+  assert.deepEqual(findZonesByName(distritos, 'Miraflores', 'Arequipa').map((z) => z.regionName), ['Arequipa']);
+  assert.deepEqual(findZonesByName(distritos, 'Lugar inexistente'), []);
+});
+
+// ------------------------------------------------------------------ quién invita a quién
+const superadmin: InviteCaller = { role: 'superadmin', companyId: null, isActive: true };
+const gerenteA: InviteCaller = { role: 'manager', companyId: CRM_A, isActive: true };
+const cuerpo = (over: Record<string, unknown> = {}) => ({
+  email: ' Nuevo@piloto.demo ',
+  fullName: 'Persona Nueva',
+  role: 'agent',
+  companyId: CRM_A,
+  ...over,
+});
+
+test('Invitar: el administrador invita a cualquier CRM y normaliza el email', () => {
+  const r = authorizeInvite(superadmin, cuerpo({ companyId: CRM_B, role: 'manager' }));
+  assert.ok(r.ok);
+  assert.equal(r.invite.email, 'nuevo@piloto.demo');
+  assert.equal(r.invite.companyId, CRM_B);
+  const admin = authorizeInvite(superadmin, cuerpo({ role: 'superadmin' }));
+  assert.ok(admin.ok);
+  assert.equal(admin.invite.companyId, null);
+});
+
+test('Invitar: el gerente solo invita a su propio CRM y nunca crea administradores', () => {
+  assert.ok(authorizeInvite(gerenteA, cuerpo()).ok);
+  const otro = authorizeInvite(gerenteA, cuerpo({ companyId: CRM_B }));
+  assert.ok(!otro.ok && otro.status === 403);
+  const admin = authorizeInvite(gerenteA, cuerpo({ role: 'superadmin', companyId: null }));
+  assert.ok(!admin.ok && admin.status === 403);
+});
+
+test('Invitar: usuario base, desactivado o sin perfil no invita', () => {
+  for (const caller of [
+    { role: 'agent', companyId: CRM_A, isActive: true } as InviteCaller,
+    { ...gerenteA, isActive: false },
+    null,
+  ]) {
+    const r = authorizeInvite(caller, cuerpo());
+    assert.ok(!r.ok && r.status === 403);
+  }
+});
+
+test('Invitar: datos incompletos se rechazan con 400', () => {
+  for (const malo of [cuerpo({ email: 'sin-arroba' }), cuerpo({ fullName: '  ' }), cuerpo({ role: 'root' }), cuerpo({ companyId: '' })]) {
+    const r = authorizeInvite(superadmin, malo);
+    assert.ok(!r.ok && r.status === 400, JSON.stringify(malo));
+  }
+  assert.ok(!authorizeInvite(superadmin, 'texto').ok);
+});
+
+// ------------------------------------------------------------------ mensajes
+test('Errores: nunca se muestra el texto crudo de la base, salvo los mensajes propios de Revela', () => {
+  assert.match(dbErrorMessage({ code: '23505', message: 'duplicate key value violates unique constraint "companies_slug_key"' }, 'x'), /Ya existe/);
+  assert.match(dbErrorMessage({ code: '42501', message: 'new row violates row-level security policy for table "profiles"' }, 'x'), /permiso/);
+  assert.equal(dbErrorMessage({ code: '99999', message: 'relation "public.secret" does not exist' }, 'Falló.'), 'Falló.');
+  assert.equal(dbErrorMessage({ code: 'P0001', message: 'El lead está bloqueado por una solicitud del titular.' }, 'x'), 'El lead está bloqueado por una solicitud del titular.');
+});
+
+test('Login: el mismo mensaje para email inexistente y contraseña equivocada', () => {
+  assert.equal(authErrorMessage({ code: 'invalid_credentials', status: 400 }), 'Email o contraseña incorrectos.');
+  assert.match(authErrorMessage({ code: 'email_not_confirmed' }), /invitación/);
+  assert.match(authErrorMessage({ status: 429 }), /Espera/);
+});
+
+test('Contraseñas: la nueva se valida igual en la demo, la invitación y la recuperación', () => {
+  assert.equal(validateNewPassword('clave2026', 'clave2026'), null);
+  assert.match(validateNewPassword('corta1', 'corta1')!, /al menos/);
+  assert.match(validateNewPassword('solamenteletras', 'solamenteletras')!, /letras y números/);
+  assert.match(validateNewPassword('clave2026', 'clave2027')!, /no coinciden/);
+  assert.match(validateNewPassword('clave2026', 'clave2026', 'clave2026')!, /distinta/);
+  assert.match(validatePasswordChange('actual123', { current: 'otra', next: 'nueva2026', confirm: 'nueva2026' })!, /actual no es correcta/);
+});
+
+// ------------------------------------------------------------------ endpoint de invitaciones (Supabase simulado)
+interface FakeState {
+  tokens: Record<string, string>; // token → id de usuario de Auth
+  profiles: Record<string, unknown>[];
+  companies: Record<string, unknown>[];
+  invited: { email: string; options: { data?: { full_name?: string }; redirectTo?: string } }[];
+  deleted: string[];
+  failProfileInsert?: boolean;
+  failInvite?: { status: number; message: string; code?: string };
+}
+
+const fakeSupabase = (state: FakeState) => {
+  const tabla = (nombre: 'profiles' | 'companies') => {
+    const filtros: [string, unknown][] = [];
+    let insertada: Record<string, unknown> | null = null;
+    const coincide = () => state[nombre].filter((r) => filtros.every(([c, v]) => r[c] === v));
+    const q = {
+      select: () => q,
+      eq: (col: string, val: unknown) => {
+        filtros.push([col, val]);
+        return q;
+      },
+      insert: (fila: Record<string, unknown>) => {
+        insertada = fila;
+        return q;
+      },
+      maybeSingle: async () => ({ data: coincide()[0] ?? null, error: null }),
+      single: async () => {
+        if (insertada) {
+          if (state.failProfileInsert) return { data: null, error: { code: '23503', message: 'fk' } };
+          const fila = { ...insertada, created_at: '2026-09-25T12:00:00Z' };
+          state[nombre].push(fila);
+          return { data: fila, error: null };
+        }
+        const filas = coincide();
+        return filas.length === 1 ? { data: filas[0], error: null } : { data: null, error: { code: 'PGRST116' } };
+      },
+    };
+    return q;
+  };
+  return {
+    auth: {
+      getUser: async (token: string) =>
+        state.tokens[token]
+          ? { data: { user: { id: state.tokens[token] } }, error: null }
+          : { data: { user: null }, error: { status: 401, message: 'invalid JWT' } },
+      admin: {
+        inviteUserByEmail: async (email: string, options: FakeState['invited'][number]['options']) => {
+          if (state.failInvite) return { data: { user: null }, error: state.failInvite };
+          state.invited.push({ email, options });
+          return { data: { user: { id: `auth-${state.invited.length}` } }, error: null };
+        },
+        deleteUser: async (id: string) => {
+          state.deleted.push(id);
+          return { data: {}, error: null };
+        },
+      },
+    },
+    from: tabla,
+  } as unknown as SupabaseClient;
+};
+
+const estadoBase = (over: Partial<FakeState> = {}): FakeState => ({
+  tokens: { 'tok-admin': 'u-admin', 'tok-gerente': 'u-gerente', 'tok-base': 'u-base' },
+  profiles: [
+    { id: 'u-admin', role: 'superadmin', company_id: null, is_active: true, email: 'admin@revela.cl' },
+    { id: 'u-gerente', role: 'manager', company_id: CRM_A, is_active: true, email: 'sebastian@piloto.demo' },
+    { id: 'u-base', role: 'agent', company_id: CRM_A, is_active: true, email: 'base@piloto.demo' },
+  ],
+  companies: [
+    { id: CRM_A, is_active: true },
+    { id: CRM_B, is_active: false },
+  ],
+  invited: [],
+  deleted: [],
+  ...over,
+});
+
+const middlewareCon = (state: FakeState, conClave = true) =>
+  createAdminMiddleware({
+    supabaseUrl: 'https://proyecto.supabase.co',
+    serviceKey: conClave ? 'clave-de-prueba' : undefined,
+    appUrl: 'http://localhost:5173',
+    createAdminClient: () => fakeSupabase(state),
+  });
+
+const invitar = (mw: ReturnType<typeof createAdminMiddleware>, token: string | null, body: object, method = 'POST') =>
+  new Promise<{ status: number; json: Record<string, unknown> }>((resolve) => {
+    const req = Readable.from([Buffer.from(JSON.stringify(body))]) as unknown as IncomingMessage;
+    Object.assign(req, { method, url: '/invite', headers: token ? { authorization: `Bearer ${token}` } : {} });
+    let status = 200;
+    const res = {
+      set statusCode(v: number) {
+        status = v;
+      },
+      setHeader() {},
+      end(texto: string) {
+        resolve({ status, json: JSON.parse(texto) });
+      },
+    } as unknown as ServerResponse;
+    void mw(req, res, () => resolve({ status: 404, json: {} }));
+  });
+
+test('Endpoint: sin la clave secreta responde 503 y explica qué falta', async () => {
+  const r = await invitar(middlewareCon(estadoBase(), false), 'tok-admin', cuerpo());
+  assert.equal(r.status, 503);
+  assert.match(String(r.json.error), /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test('Endpoint: sin sesión o con un token falso no invita a nadie', async () => {
+  const state = estadoBase();
+  assert.equal((await invitar(middlewareCon(state), null, cuerpo())).status, 401);
+  assert.equal((await invitar(middlewareCon(state), 'tok-inventado', cuerpo())).status, 401);
+  assert.equal(state.invited.length, 0);
+});
+
+test('Endpoint: el rol y el CRM salen de la base, no de lo que diga la solicitud', async () => {
+  const state = estadoBase();
+  // El usuario base dice ser administrador en el cuerpo: igual se rechaza
+  const r = await invitar(middlewareCon(state), 'tok-base', { ...cuerpo(), callerRole: 'superadmin' });
+  assert.equal(r.status, 403);
+  const otroCrm = await invitar(middlewareCon(state), 'tok-gerente', cuerpo({ companyId: CRM_B }));
+  assert.equal(otroCrm.status, 403);
+  assert.equal(state.invited.length, 0);
+});
+
+test('Endpoint: invitación correcta crea el perfil con su CRM y rol, sin contraseña', async () => {
+  const state = estadoBase();
+  const r = await invitar(middlewareCon(state), 'tok-gerente', { ...cuerpo(), password: 'no-debe-usarse' });
+  assert.equal(r.status, 200);
+  assert.equal(state.invited.length, 1);
+  assert.equal(state.invited[0].email, 'nuevo@piloto.demo');
+  assert.equal(state.invited[0].options.redirectTo, 'http://localhost:5173');
+  assert.equal(state.invited[0].options.data?.full_name, 'Persona Nueva');
+  const perfil = state.profiles.find((p) => p.email === 'nuevo@piloto.demo')!;
+  assert.deepEqual([perfil.company_id, perfil.role, perfil.is_active], [CRM_A, 'agent', true]);
+  assert.ok(!JSON.stringify(state.invited).includes('no-debe-usarse'));
+  assert.ok(!JSON.stringify(r.json).includes('no-debe-usarse'));
+});
+
+test('Endpoint: email repetido o CRM desactivado no envían correo', async () => {
+  const state = estadoBase();
+  const repetido = await invitar(middlewareCon(state), 'tok-admin', cuerpo({ email: 'BASE@piloto.demo' }));
+  assert.equal(repetido.status, 409);
+  const inactivo = await invitar(middlewareCon(state), 'tok-admin', cuerpo({ companyId: CRM_B }));
+  assert.equal(inactivo.status, 409);
+  assert.equal(state.invited.length, 0);
+});
+
+test('Endpoint: si el perfil falla se borra la cuenta de Auth (no quedan cuentas a medias)', async () => {
+  const state = estadoBase({ failProfileInsert: true });
+  const r = await invitar(middlewareCon(state), 'tok-admin', cuerpo());
+  assert.equal(r.status, 500);
+  assert.deepEqual(state.deleted, ['auth-1']);
+});
+
+test('Endpoint: el límite de correos de Supabase se explica y los registros no llevan emails', async () => {
+  const registros: string[] = [];
+  const warn = console.warn;
+  const error = console.error;
+  console.warn = (...args: unknown[]) => registros.push(args.map(String).join(' '));
+  console.error = console.warn;
+  try {
+    const state = estadoBase({ failInvite: { status: 429, message: 'email rate limit exceeded' } });
+    const r = await invitar(middlewareCon(state), 'tok-admin', cuerpo());
+    assert.equal(r.status, 429);
+    assert.match(String(r.json.error), /SMTP/);
+    const fallaPerfil = estadoBase({ failProfileInsert: true });
+    await invitar(middlewareCon(fallaPerfil), 'tok-admin', cuerpo());
+  } finally {
+    console.warn = warn;
+    console.error = error;
+  }
+  assert.ok(registros.length > 0);
+  assert.ok(registros.every((linea) => !linea.includes('@') && !linea.includes('Persona Nueva')), registros.join('\n'));
+});
+
+test('Endpoint: sin SMTP propio, explica qué configurar en Supabase', async () => {
+  const state = estadoBase({ failInvite: { status: 400, message: 'Email address not authorized', code: 'email_address_not_authorized' } });
+  const r = await invitar(middlewareCon(state), 'tok-gerente', cuerpo());
+  assert.equal(r.status, 422);
+  assert.match(String(r.json.error), /SMTP/);
+  assert.equal(state.profiles.filter((p) => p.email === 'nuevo@piloto.demo').length, 0);
+});
+
+test('Endpoint: invitar solo acepta POST y rechaza cuerpos gigantes con 400', async () => {
+  const state = estadoBase();
+  const mw = middlewareCon(state);
+  assert.equal((await invitar(mw, 'tok-admin', cuerpo(), 'GET')).status, 405);
+  const gigante = await invitar(mw, 'tok-admin', { ...cuerpo(), relleno: 'x'.repeat(20_000) });
+  assert.equal(gigante.status, 400);
+  assert.equal(state.invited.length, 0);
+});
+
+// ------------------------------------------------------------------ resultado
+const results: { name: string; ok: boolean; error?: string }[] = [];
+for (const t of tests) {
+  try {
+    await t.fn();
+    results.push({ name: t.name, ok: true });
+  } catch (e) {
+    results.push({ name: t.name, ok: false, error: (e as Error).message });
+  }
+}
+for (const r of results) console.log(`${r.ok ? '✓' : '✗'} ${r.name}${r.error ? `\n    ${r.error}` : ''}`);
+const failed = results.filter((r) => !r.ok).length;
+console.log(`\n${results.length - failed}/${results.length} pruebas de la conexión con Supabase OK`);
+process.exit(failed ? 1 : 0);

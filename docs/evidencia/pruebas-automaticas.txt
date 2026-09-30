@@ -1,0 +1,346 @@
+$ npm run test:tenant
+✓ scopeActivities: no muestra actividades de leads de otro tenant
+✓ canRegisterActivity: rechaza leads de otro tenant
+✓ sanitizeLeadUpdate: no permite editar un lead de otro tenant
+✓ sanitizeLeadUpdate: fuerza la empresa dueña aunque se intente cambiar
+✓ sanitizeLeadUpdate: descarta empresas cliente de otro tenant
+✓ sanitizeAccountUpdate: bloquea cuentas ajenas y fuerza el tenant
+✓ enabledCountriesOf: plan Nacional solo ve su país base aunque tenga otros guardados
+✓ normalizeCompanyCountries: un plan Internacional puede partir solo con su país base
+✓ Plan Nacional: cuenta solo el país base, pero la lista se guarda y vuelve al reactivar el plan
+✓ setCountryByManager: la gerencia activa y desactiva países de su CRM con el plan Internacional
+✓ setCountryByManager: nunca el país base, nunca en plan Nacional, nunca otro perfil ni otro CRM
+✓ Países: los 19 de América Latina están completos (moneda, tasa, zona, región, teléfono y mapa)
+✓ Países: cada uno nombra su zona a su manera (no en todos lados hay comunas)
+✓ Divisas para ver el CRM: la del país base y el dólar siempre; las sumadas, solo de países activos
+✓ setViewCurrencyByManager: la gerencia suma y quita divisas de países activos, nunca las fijas
+✓ Catálogo: el precio sugerido de otro país es la conversión del primero cargado, sin tocar los precios
+✓ Uso: leads creados, abiertos, ganados, perdidos y estancados por CRM
+✓ Uso: un lead con una actividad reciente no está estancado aunque sea antiguo, y el plazo se puede cambiar
+✓ Uso: los ingresos se cuentan por persona, sin el administrador, y quien nunca ingresó queda sin fecha
+✓ Uso: en rojo quien dejó de ingresar y quien nunca lo hizo; la persona recién invitada o desactivada no
+✓ Encuestas: el NPS es el % de 9 y 10 menos el % de 0 a 6, y sin respuestas no hay número
+✓ Encuestas: se pregunta después de la primera semana, cada 30 días, y "Ahora no" espera 7
+✓ Reportes de errores: pide contar qué pasó, y cuenta los que siguen sin revisar
+✓ Uso: el panel en memoria da lo mismo que las funciones, y cambiar el estado de un reporte lo refleja
+✓ Monedas: el peso chileno y el guaraní se redondean sin decimales; el resto, con dos
+✓ sanitizeLeadUpdate: no permite mover un lead a un país no habilitado
+✓ sanitizeLeadUpdate: la zona y la empresa cliente deben ser del país del lead
+✓ sanitizeAccountUpdate: no permite empresas cliente en países no habilitados
+✓ registro de países: todos tienen moneda, zona y vista de mapa
+✓ monedas: cada monto se guarda en su moneda y se convierte solo para mostrar
+✓ moneda del lead: la negociada o, si no hay, la de su país
+✓ monedas de lead: las de los países del CRM más el dólar (crecen con el plan Internacional)
+✓ sanitizeLeadUpdate: solo acepta monedas permitidas para el CRM
+✓ vista en una sola moneda: totales y montos convertidos, el original se conserva
+✓ tipos de cambio: el CLP viene del Banco Central y sin conexión se usa el respaldo
+✓ sanitizeLeadItems: descarta productos de otro CRM y cantidades o precios inválidos
+✓ sanitizeLeadUpdate: no permite agregar a un lead un producto del catálogo de otro CRM
+✓ valor del lead: se calcula desde los ítems salvo que sea manual
+✓ sanitizeCatalogItemUpdate: bloquea ítems ajenos y fuerza el tenant
+✓ ventas por producto: unidades e ingresos solo de leads ganados, conversión con perdidos
+✓ canChangeStage: el usuario base avanza leads pero no los retrocede
+✓ canChangeStage: gerencia puede mover leads en cualquier dirección
+✓ diffFields: registra solo lo que cambió, con su valor anterior y el nuevo
+✓ auditoría: el historial de un CRM no incluye movimientos de otro
+✓ auditoría: solo se puede revertir lo que guardó su estado anterior, y una sola vez
+✓ sanitizeLeadContacts: limpia, recorta y limita los contactos adicionales
+✓ sanitizeLeadUpdate: los contactos adicionales se guardan limpios en el lead
+✓ sanitizeLeadUpdate: la regla del pipeline se aplica en el guard, no en cada pantalla
+✓ safeForModel: un nombre no puede simular instrucciones para la IA
+✓ findLeadMatches: encuentra el lead aunque el nombre de la empresa no sea exacto
+✓ findDuplicateCandidates: avisa antes de crear un lead que ya existe
+✓ pendingFollowUps: agrupa por urgencia y solo cuenta el compromiso vigente
+✓ monthGrid y countsByDay: semanas completas de lunes a domingo
+✓ sanitizeUserUpdate: solo superadmin, sin cambiar CRM/email ni escalar privilegios
+✓ validateNewUser: exige CRM existente y rol válido
+✓ validateNewTeamUser: el gerente solo crea usuarios de su propio CRM
+✓ sanitizeTeamUserUpdate: el gerente no toca otros CRMs, emails ni su propio acceso
+✓ sanitizeCompanyUpdate: solo superadmin
+✓ stageConfigsForTenant: cada CRM tiene su propia configuración
+✓ newId: 20.000 IDs generados seguidos sin colisiones
+✓ Privacidad: una solicitud pendiente bloquea el lead y lo saca de la agenda y del asistente
+✓ Privacidad: la solicitud no cruza de CRM y no se duplica
+✓ Privacidad: solo el gerente resuelve la solicitud
+✓ Privacidad: aprobar borra los datos personales y conserva la operación comercial
+✓ Privacidad: rechazar desbloquea y deja constancia del motivo
+✓ Privacidad: un lead anonimizado no se puede re-identificar editándolo
+✓ Privacidad: la oposición y la revocación bloquean el contacto
+✓ Privacidad: el origen y el consentimiento solo aceptan valores conocidos
+✓ Prospecto: vence a los 30 días sin contactar y no antes
+✓ Prospecto vencido: se anonimiza con el motivo del plazo, no como pedido del titular
+✓ Prospecto: la respuesta en el primer contacto cierra el plazo
+✓ Bloqueo: el guard rechaza editar, mover o registrar contacto con un lead bloqueado
+✓ Bloqueo: tampoco se registra contacto con quien se opuso, revocó o fue anonimizado
+✓ Auditoría: registra que cambió un dato personal, nunca su valor
+✓ Auditoría: el contacto de una empresa cliente tampoco queda en el historial
+✓ Auditoría: la etiqueta y el resumen nombran a la empresa, nunca a la persona
+✓ Revertir: restaura el negocio pero no revive datos personales borrados
+✓ Anonimizar: borra la dirección exacta y la bitácora de esa persona, y conserva la zona
+78/78 pruebas de aislamiento OK
+
+$ npm run test:export
+✓ GeoDemo: exporta todas sus filas (leads de Chile y Perú, empresas, catálogo, actividades)
+✓ GeoDemo: el archivo NO contiene datos de Constructora Norte
+✓ Norte: el archivo NO contiene datos de GeoDemo ni zonas de Perú
+✓ No incluye contraseñas
+✓ Relaciones: cada lead apunta a empresas, zonas e ítems presentes en el mismo archivo
+✓ Montos en moneda local y origen del valor (Calculado / Manual)
+✓ Excel real: se genera un .xlsx válido con Léeme, hojas de datos y Diccionario
+7/7 pruebas de exportación OK
+
+$ npm run test:sql
+✓ Hay migraciones y están numeradas en orden
+✓ No hay dos migraciones con la misma marca de tiempo
+✓ 20260914000001_initial_postgis_schema.sql: sintaxis SQL válida
+✓ 20260914000001_initial_postgis_schema.sql: funciones PL/pgSQL válidas (3)
+✓ 20260914000001_initial_postgis_schema.sql: los cambios destructivos están advertidos
+✓ 20260920000002_roles_tenants_client_accounts.sql: sintaxis SQL válida
+✓ 20260920000002_roles_tenants_client_accounts.sql: funciones PL/pgSQL válidas (3)
+✓ 20260920000002_roles_tenants_client_accounts.sql: los cambios destructivos están advertidos
+✓ 20260921000003_tenant_isolation_hardening.sql: sintaxis SQL válida
+✓ 20260921000003_tenant_isolation_hardening.sql: funciones PL/pgSQL válidas (3)
+✓ 20260921000003_tenant_isolation_hardening.sql: los cambios destructivos están advertidos
+✓ 20260922000004_international_plan.sql: sintaxis SQL válida
+✓ 20260922000004_international_plan.sql: funciones PL/pgSQL válidas (4)
+✓ 20260922000004_international_plan.sql: los cambios destructivos están advertidos
+✓ 20260923000005_catalog_products_services.sql: sintaxis SQL válida
+✓ 20260923000005_catalog_products_services.sql: funciones PL/pgSQL válidas (6)
+✓ 20260923000005_catalog_products_services.sql: los cambios destructivos están advertidos
+✓ 20260924000006_data_exports.sql: sintaxis SQL válida
+✓ 20260924000006_data_exports.sql: funciones PL/pgSQL válidas (1)
+✓ 20260924000006_data_exports.sql: los cambios destructivos están advertidos
+✓ 20260925000007_data_quality_conventions.sql: sintaxis SQL válida
+✓ 20260925000007_data_quality_conventions.sql: funciones PL/pgSQL válidas (2)
+✓ 20260925000007_data_quality_conventions.sql: los cambios destructivos están advertidos (2)
+✓ 20260926000008_audit_log.sql: sintaxis SQL válida
+✓ 20260926000008_audit_log.sql: funciones PL/pgSQL válidas (1)
+✓ 20260926000008_audit_log.sql: los cambios destructivos están advertidos
+✓ 20260927000009_lead_job_title.sql: sintaxis SQL válida
+✓ 20260927000009_lead_job_title.sql: funciones PL/pgSQL válidas (0)
+✓ 20260927000009_lead_job_title.sql: los cambios destructivos están advertidos
+✓ 20260928000010_lead_contacts.sql: sintaxis SQL válida
+✓ 20260928000010_lead_contacts.sql: funciones PL/pgSQL válidas (1)
+✓ 20260928000010_lead_contacts.sql: los cambios destructivos están advertidos
+✓ 20260929000011_lead_currency_choice.sql: sintaxis SQL válida
+✓ 20260929000011_lead_currency_choice.sql: funciones PL/pgSQL válidas (2)
+✓ 20260929000011_lead_currency_choice.sql: los cambios destructivos están advertidos
+✓ 20260930000012_lead_data_subject_rights.sql: sintaxis SQL válida
+✓ 20260930000012_lead_data_subject_rights.sql: funciones PL/pgSQL válidas (11)
+✓ 20260930000012_lead_data_subject_rights.sql: los cambios destructivos están advertidos
+✓ 20260930000013_fix_tenant_export_snapshot.sql: sintaxis SQL válida
+✓ 20260930000013_fix_tenant_export_snapshot.sql: funciones PL/pgSQL válidas (1)
+✓ 20260930000013_fix_tenant_export_snapshot.sql: los cambios destructivos están advertidos
+✓ 20260930000014_harden_function_privileges.sql: sintaxis SQL válida
+✓ 20260930000014_harden_function_privileges.sql: funciones PL/pgSQL válidas (0)
+✓ 20260930000014_harden_function_privileges.sql: los cambios destructivos están advertidos
+✓ 20261001000015_manager_team_and_platform_audit.sql: sintaxis SQL válida
+✓ 20261001000015_manager_team_and_platform_audit.sql: funciones PL/pgSQL válidas (2)
+✓ 20261001000015_manager_team_and_platform_audit.sql: los cambios destructivos están advertidos
+✓ 20261002000016_grant_service_role_tables.sql: sintaxis SQL válida
+✓ 20261002000016_grant_service_role_tables.sql: funciones PL/pgSQL válidas (0)
+✓ 20261002000016_grant_service_role_tables.sql: los cambios destructivos están advertidos
+✓ 20261003000017_crm_modules_connection.sql: sintaxis SQL válida
+✓ 20261003000017_crm_modules_connection.sql: funciones PL/pgSQL válidas (6)
+✓ 20261003000017_crm_modules_connection.sql: los cambios destructivos están advertidos
+✓ 20261003000018_fix_seed_territories_definer.sql: sintaxis SQL válida
+✓ 20261003000018_fix_seed_territories_definer.sql: funciones PL/pgSQL válidas (0)
+✓ 20261003000018_fix_seed_territories_definer.sql: los cambios destructivos están advertidos
+✓ 20261004000019_leads_without_coordinates.sql: sintaxis SQL válida
+✓ 20261004000019_leads_without_coordinates.sql: funciones PL/pgSQL válidas (0)
+✓ 20261004000019_leads_without_coordinates.sql: los cambios destructivos están advertidos
+✓ 20261005000020_official_zones.sql: sintaxis SQL válida
+✓ 20261005000020_official_zones.sql: funciones PL/pgSQL válidas (1)
+✓ 20261005000020_official_zones.sql: los cambios destructivos están advertidos
+✓ 20261006000021_drop_lead_coordinates.sql: sintaxis SQL válida
+✓ 20261006000021_drop_lead_coordinates.sql: funciones PL/pgSQL válidas (3)
+✓ 20261006000021_drop_lead_coordinates.sql: los cambios destructivos están advertidos (5)
+✓ 20261007000022_role_rules_and_change_log.sql: sintaxis SQL válida
+✓ 20261007000022_role_rules_and_change_log.sql: funciones PL/pgSQL válidas (5)
+✓ 20261007000022_role_rules_and_change_log.sql: los cambios destructivos están advertidos
+✓ 20261008000023_latam_countries_and_shared_zones.sql: sintaxis SQL válida
+✓ 20261008000023_latam_countries_and_shared_zones.sql: funciones PL/pgSQL válidas (2)
+✓ 20261008000023_latam_countries_and_shared_zones.sql: los cambios destructivos están advertidos
+✓ 20261008000024_empty_territory_polygon_copies.sql: sintaxis SQL válida
+✓ 20261008000024_empty_territory_polygon_copies.sql: funciones PL/pgSQL válidas (0)
+✓ 20261008000024_empty_territory_polygon_copies.sql: los cambios destructivos están advertidos
+✓ 20261008000025_zones_south_america.sql: sintaxis SQL válida
+✓ 20261008000025_zones_south_america.sql: funciones PL/pgSQL válidas (0)
+✓ 20261008000025_zones_south_america.sql: los cambios destructivos están advertidos
+✓ 20261008000026_zones_brazil.sql: sintaxis SQL válida
+✓ 20261008000026_zones_brazil.sql: funciones PL/pgSQL válidas (0)
+✓ 20261008000026_zones_brazil.sql: los cambios destructivos están advertidos
+✓ 20261008000027_zones_mexico_central_america_caribbean.sql: sintaxis SQL válida
+✓ 20261008000027_zones_mexico_central_america_caribbean.sql: funciones PL/pgSQL válidas (0)
+✓ 20261008000027_zones_mexico_central_america_caribbean.sql: los cambios destructivos están advertidos
+✓ 20261008000028_zone_catalog_name_fixes.sql: sintaxis SQL válida
+✓ 20261008000028_zone_catalog_name_fixes.sql: funciones PL/pgSQL válidas (0)
+✓ 20261008000028_zone_catalog_name_fixes.sql: los cambios destructivos están advertidos
+✓ 20261008000029_company_view_currencies.sql: sintaxis SQL válida
+✓ 20261008000029_company_view_currencies.sql: funciones PL/pgSQL válidas (1)
+✓ 20261008000029_company_view_currencies.sql: los cambios destructivos están advertidos
+✓ 20261009000030_usage_surveys_bug_reports.sql: sintaxis SQL válida
+✓ 20261009000030_usage_surveys_bug_reports.sql: funciones PL/pgSQL válidas (8)
+✓ 20261009000030_usage_surveys_bug_reports.sql: los cambios destructivos están advertidos
+✓ 20261010000031_ai_budget.sql: sintaxis SQL válida
+✓ 20261010000031_ai_budget.sql: funciones PL/pgSQL válidas (3)
+✓ 20261010000031_ai_budget.sql: los cambios destructivos están advertidos
+✓ 20261011000032_company_ai_keys.sql: sintaxis SQL válida
+✓ 20261011000032_company_ai_keys.sql: funciones PL/pgSQL válidas (4)
+✓ 20261011000032_company_ai_keys.sql: los cambios destructivos están advertidos
+✓ Todas las tablas con company_id tienen RLS (25)
+✓ Todas las tablas están documentadas con COMMENT ON (26)
+✓ Las funciones SECURITY DEFINER fijan search_path
+101/101 revisiones de migraciones OK
+Nota: esto revisa sintaxis y convenciones, no reemplaza aplicarlas en una base real (npx supabase db push).
+
+$ npm run test:e2e
+✓ La demo pública entra sin contraseña, como gerente de Revela Demo
+✓ La demo avisa que los datos son ficticios y pide no ingresar datos reales
+✓ La demo no trae los CRMs de prueba
+✓ En la demo no hay asistente de IA ni cambio de contraseña
+✓ En la demo se puede ver como usuario base, sin Gerencia
+✓ Salir de la demo lleva al login, que ofrece volver a la demo
+✓ GeoDemo (gerente) ve 21 leads (14 Chile + 7 Perú)
+✓ GeoDemo ve sus propios datos
+✓ GeoDemo (plan Internacional) ve sus datos de Perú
+✓ GeoDemo NO ve datos de Constructora Norte
+✓ GeoDemo ve su catálogo de productos y servicios
+✓ GeoDemo NO ve el catálogo de Constructora Norte
+✓ Con precio en Chile, Perú muestra un precio sugerido convertido, sin llenar el campo
+✓ El precio sugerido no se guarda: el producto queda solo con su precio de Chile
+✓ La captura calcula el valor desde los productos (3 × $7.000)
+✓ El ranking de productos incluye el producto vendido
+✓ El buscador del mapa ubica el producto en 1 zona
+✓ El mapa admite varias búsquedas a la vez
+✓ El mapa no dibuja la ubicación de cada lead, solo etiquetas de sus zonas o regiones
+✓ Al hacer clic en la burbuja de una zona se ven sus leads (tipo, productos y valor), sin teléfonos
+✓ GeoDemo ahora tiene 22 leads
+✓ La auditoría registra los cambios (creación, edición y etapa) con su autor
+✓ La auditoría no guarda el nombre de la persona ni lo conversado
+✓ Los datos creados en GeoDemo son visibles en GeoDemo
+✓ Constructora Norte (gerente) ve 3 leads
+✓ Constructora Norte NO ve datos ni cambios de GeoDemo (incluido su catálogo)
+✓ Constructora Norte ve solo su propio catálogo
+✓ Constructora Norte (plan Nacional) no ve el selector de países
+✓ Norte puede tener una empresa cliente con el mismo nombre que otro CRM
+✓ Norte ahora tiene 4 leads
+✓ GeoDemo sigue con 22 leads
+✓ GeoDemo NO ve datos de Norte
+✓ GeoDemo ve una sola "Empresa Aislada A" (la de Norte no se mezcla)
+✓ El chat no ofrece una clave personal de Gemini (apagado)
+✓ Al cerrar sesión se borra la clave personal de Gemini
+✓ El usuario base no ve el módulo de Auditoría
+✓ El usuario base no puede retroceder leads en el pipeline
+✓ Usuario base de Norte NO ve datos de GeoDemo
+✓ Usuario base de Norte ve el lead creado en Norte
+✓ El asistente de Norte usa GPT y no hereda ninguna clave de Gemini de GeoDemo
+✓ El asistente creó 2 leads con IDs distintos en el mismo turno
+✓ Norte tiene 6 leads tras el asistente
+✓ GeoDemo sigue con 22 leads
+✓ La "TechNova SpA" de GeoDemo mantiene sus 2 leads (no recibió el de Norte)
+✓ GeoDemo no ve "Empresa Doble IA" creada en Norte
+✓ Admin: GeoDemo tiene 22 leads
+✓ Admin: Constructora Norte tiene 6 leads
+✓ Admin no ve el contenido de los leads de ningún CRM
+✓ El modal de exportación resume las filas y advierte datos personales
+✓ Se descarga el Excel del CRM
+✓ El Excel trae los datos de GeoDemo (incluidos los creados en la prueba)
+✓ El Excel NO trae datos de otros CRMs ni contraseñas
+✓ Con el CRM de Norte desactivado, su gerente no puede entrar
+✓ Desactivar Norte no afecta a GeoDemo
+✓ Filtro solo Perú: 7 leads visibles
+✓ Filtro solo Perú: no aparecen datos de Chile
+✓ Filtro solo Perú: la zona se llama Distrito y los montos conservan su moneda original (S/)
+✓ Captura con filtro Perú propone Perú como país
+✓ Captura en Perú solo ofrece distritos de Perú
+✓ Perú ahora tiene 8 leads
+✓ Con ambos países GeoDemo suma 23 leads
+✓ Ganado e ingresos estimados se ven en una sola moneda, con los soles convertidos
+✓ El selector de moneda cambia todo el CRM a dólares
+✓ Sin plan Internacional GeoDemo ve solo Chile (15 leads)
+✓ Sin plan Internacional no se ven datos de Perú ni el selector de países
+✓ Al reactivar el plan vuelven los datos de Perú (23 leads)
+✓ El gerente ve a los usuarios de su CRM
+✓ El gerente NO ve usuarios de otros CRMs ni al administrador de la plataforma
+✓ El gerente crea un usuario de su CRM
+✓ La creación del usuario queda en la auditoría
+✓ El usuario recién creado puede iniciar sesión
+✓ El gerente no puede desactivarse a sí mismo
+✓ Un usuario desactivado ya no puede entrar
+✓ Rechaza una contraseña nueva demasiado corta
+✓ El gerente cambia su propia contraseña
+✓ La contraseña anterior deja de servir
+✓ Entra con la contraseña nueva
+✓ La auditoría registra el cambio de contraseña sin exponerla
+✓ Se agrega otro contacto al mismo lead
+✓ La agenda reúne los seguimientos agendados sin abrir lead por lead
+✓ El calendario del mes marca los días con seguimientos
+✓ El registro de contacto deja elegir con quién se habló
+✓ Se agrega un contacto desde la toma de contacto y queda elegido
+✓ La bitácora guarda con quién se habló
+✓ Antes de la solicitud, el lead aparece en la agenda
+✓ La solicitud del titular bloquea el lead
+✓ Un lead bloqueado no se puede editar
+✓ Un lead bloqueado sale de la agenda
+✓ La resolución advierte que el borrado no se puede deshacer
+✓ Aprobar la solicitud borra los datos personales del titular
+✓ La operación comercial se conserva tras el borrado
+✓ La auditoría muestra que un dato personal cambió, sin guardar su valor
+✓ El borrado queda en la auditoría sin exponer los datos borrados
+✓ El prospecto avisa que aún no sabe que tenemos sus datos y cuántos días quedan
+✓ No deja registrar el primer contacto sin la respuesta del prospecto
+✓ Con la respuesta registrada, deja de ser prospecto y el contacto avanza la etapa
+✓ La captura pide el origen y la base del dato, sin respuesta marcada
+✓ Sin elegir origen y base, el lead no se guarda
+✓ El usuario base no entra a Gerencia ni a la auditoría
+✓ El usuario base elige en qué moneda ver el CRM, pero no suma divisas (sin botón "$")
+✓ El usuario base registra la solicitud del titular
+✓ En el Pipeline, el lead bloqueado se ve bloqueado y no se puede avanzar ni arrastrar
+✓ El lead bloqueado sale del selector de contacto del usuario base
+✓ Solo la gerencia ve el botón para resolver la solicitud
+✓ El portal fiscalizador muestra la matriz completa y su advertencia
+✓ El portal fiscalizador no expone datos personales de ningún CRM
+✓ El portal fiscalizador publica el manifiesto con hashes
+✓ Descartar un lead ganado baja el KPI de Ganado
+✓ El total de leads muestra el desglose por estado del pipeline
+✓ El mapa repinta la zona que dejó de tener cierres
+✓ El ranking de zonas cambia con «Colorear por» ($ ganado / leads cerrados)
+✓ Las burbujas de las zonas quedan sobre las zonas y la leyenda (se pueden clickear)
+✓ Las tablas de Gerencia no necesitan barra horizontal a 1024 px
+✓ El cambio se aplicó antes de revertir
+✓ Volver atrás restaura el valor anterior
+✓ El dato revertido ya no aparece en Gerencia
+✓ La reversión queda registrada y el cambio original se marca como revertido
+✓ El historial nunca se borra: solo se agregan registros
+✓ Gerencia → Países y divisas muestra los 19 países de América Latina
+✓ El país base (Chile) queda siempre activo
+✓ La gerencia activa Argentina y aparece en el filtro de países
+✓ En Argentina la zona se llama "Partido o departamento" y ofrece solo zonas de Argentina
+✓ El lead de Argentina se guarda
+✓ Desactivar un país con leads pide confirmación y explica que no se borran
+✓ Al desactivar Argentina su lead deja de verse
+✓ Al reactivar Argentina su lead vuelve (desactivar no borra)
+✓ El botón "$" ofrece CLP y US$ fijos, y las monedas de los países activos (PEN y ARS)
+✓ La gerencia suma ARS y todo el CRM se puede ver en pesos argentinos
+✓ Activar y desactivar países, y sumar divisas, queda en la auditoría
+✓ Al quitar ARS desde Gerencia → Países y divisas, la vista vuelve a CLP
+✓ La encuesta de satisfacción aparece al entrar
+✓ La persona responde la encuesta con una nota y un comentario, y recibe las gracias
+✓ La encuesta se cierra sola después de agradecer
+✓ Un reporte demasiado corto pide contar más, sin enviarse
+✓ La persona envía el reporte del error y recibe las gracias
+✓ El usuario base también tiene el botón para reportar un error
+✓ El administrador de la plataforma no tiene el botón de reportar (recibe los reportes)
+✓ La pestaña "Uso y soporte" avisa con un 1 que hay un error sin revisar
+✓ Leads por CRM: GeoDemo muestra sus 21 leads en total y sus ganados, perdidos y estancados
+✓ La tarjeta "Leads en la plataforma" suma los conteos de todos los CRMs
+✓ Ingresos: el gerente que entró aparece "Al día" con 1 ingreso
+✓ Ingresos: quien nunca ingresó se marca en rojo ("Nunca ingresó") y va primero
+✓ El filtro "solo los que están en rojo" deja únicamente a quienes dejaron de ingresar o nunca lo hicieron
+✓ Satisfacción: la respuesta aparece con NPS 100, promedio 9 y su comentario
+✓ Errores reportados: llega el reporte con quién lo envió y en qué pestaña estaba
+✓ El administrador marca el reporte como visto
+✓ Al resolverlo, el reporte sale de la lista de pendientes y el aviso de la pestaña desaparece
+✓ Los reportes resueltos se pueden volver a ver y reabrir
+148/148 verificaciones de aislamiento OK

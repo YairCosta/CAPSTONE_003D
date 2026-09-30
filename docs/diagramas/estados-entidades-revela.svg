@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="880" viewBox="0 0 1680 880">
+<defs><marker id="punta-64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+         </marker>
+<marker id="punta-4F46E5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#4F46E5"/>
+         </marker>
+<marker id="punta-059669" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+         </marker>
+<marker id="punta-DC2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC2626"/>
+         </marker>
+<marker id="punta-B45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
+         </marker></defs>
+<rect width="1680" height="880" fill="#F8FAFC"/>
+<text x="840" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revela · Diagrama de estados de las entidades</text>
+<text x="840" y="62" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Estados y transiciones del resto del sistema</text>
+<rect x="40" y="84" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="60" y="116" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Empresa cliente y producto</text>
+<rect x="64" y="154" width="180" height="70" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="154" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Activa</text>
+<text x="154" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">recibe nuevos leads</text>
+<rect x="356" y="154" width="180" height="70" rx="16" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="446" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Desactivada</text>
+<text x="446" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">conserva su historial</text>
+<path d="M 244 178 L 356 178" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="262" y="160" width="76" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="172" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">desactivar</text>
+<path d="M 356 202 L 244 202" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="271.6" y="210" width="56.800000000000004" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="222" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">activar</text>
+<rect x="64" y="280" width="180" height="70" rx="16" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+<text x="154" y="313" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Eliminada</text>
+<text x="154" y="333" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">solo si nunca tuvo leads</text>
+<path d="M 154 224 L 154 278" fill="none" stroke="#DC2626" stroke-width="1.8"  marker-end="url(#punta-DC2626)"/>
+<rect x="122.4" y="243" width="63.2" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="154" y="255" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">eliminar</text>
+<text x="60" y="384" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Lo que tiene historial se desactiva, nunca se borra.</text>
+<text x="60" y="404" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">El gerente puede restaurar una eliminación.</text>
+<rect x="580" y="84" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="600" y="116" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">CRM de la empresa (tenant)</text>
+<rect x="604" y="154" width="180" height="70" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="694" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Activo</text>
+<text x="694" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">sus usuarios entran</text>
+<rect x="896" y="154" width="180" height="70" rx="16" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+<text x="986" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Suspendido</text>
+<text x="986" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">sin acceso, datos intactos</text>
+<path d="M 784 178 L 896 178" fill="none" stroke="#DC2626" stroke-width="1.8"  marker-end="url(#punta-DC2626)"/>
+<rect x="789.2" y="160" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="840" y="172" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">admin suspende</text>
+<path d="M 896 202 L 784 202" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="795.6" y="210" width="88.80000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="840" y="222" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">admin activa</text>
+<rect x="604" y="280" width="180" height="70" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="694" y="313" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Plan Nacional</text>
+<text x="694" y="333" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">un país y su moneda</text>
+<rect x="896" y="280" width="180" height="70" rx="16" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="986" y="313" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Plan Internacional</text>
+<text x="986" y="333" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">varios países y monedas</text>
+<path d="M 784 304 L 896 304" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="795.6" y="286" width="88.80000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="840" y="298" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">activar plan</text>
+<path d="M 896 328 L 784 328" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="802" y="336" width="76" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="840" y="348" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">desactivar</text>
+<text x="600" y="384" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Cada país habilitado suma su moneda para los leads.</text>
+<text x="600" y="404" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Desactivar el plan oculta los datos, no los borra.</text>
+<rect x="1120" y="84" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="1140" y="116" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Usuario del CRM</text>
+<rect x="1144" y="154" width="180" height="70" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="1234" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Activo</text>
+<text x="1234" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">puede iniciar sesión</text>
+<rect x="1436" y="154" width="180" height="70" rx="16" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1526" y="187" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Desactivado</text>
+<text x="1526" y="207" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">no entra · historial intacto</text>
+<path d="M 1324 178 L 1436 178" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="1342" y="160" width="76" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1380" y="172" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">desactivar</text>
+<path d="M 1436 202 L 1324 202" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="1345.2" y="210" width="69.6" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1380" y="222" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">reactivar</text>
+<rect x="1144" y="280" width="180" height="70" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1234" y="313" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Usuario base</text>
+<text x="1234" y="333" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">captura y avanza</text>
+<rect x="1436" y="280" width="180" height="70" rx="16" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="1526" y="313" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gerente</text>
+<text x="1526" y="333" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">administra su CRM</text>
+<path d="M 1324 304 L 1436 304" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="1329.2" y="286" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1380" y="298" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cambiar perfil</text>
+<path d="M 1436 328 L 1324 328" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="1329.2" y="336" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1380" y="348" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cambiar perfil</text>
+<text x="1140" y="384" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Lo crea el gerente de su CRM o el administrador.</text>
+<text x="1140" y="404" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">El gerente no puede desactivarse a sí mismo.</text>
+<rect x="40" y="462" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="60" y="494" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Ubicación y valor del lead</text>
+<rect x="64" y="532" width="180" height="70" rx="16" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="154" y="565" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Sin zona</text>
+<text x="154" y="585" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">no aparece en el mapa</text>
+<rect x="356" y="532" width="180" height="70" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="446" y="565" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Ubicado</text>
+<text x="446" y="585" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">punto y resultados por zona</text>
+<path d="M 244 556 L 356 556" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="255.6" y="538" width="88.80000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="550" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asignar zona</text>
+<path d="M 356 580 L 244 580" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="249.2" y="588" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="600" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cambia de país</text>
+<rect x="64" y="658" width="180" height="70" rx="16" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="154" y="691" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Valor calculado</text>
+<text x="154" y="711" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">suma de sus productos</text>
+<rect x="356" y="658" width="180" height="70" rx="16" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="446" y="691" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Valor manual</text>
+<text x="446" y="711" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">queda con etiqueta</text>
+<path d="M 244 682 L 356 682" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="252.4" y="664" width="95.2" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="676" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">editar a mano</text>
+<path d="M 356 706 L 244 706" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<rect x="262" y="714" width="76" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="300" y="726" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">recalcular</text>
+<text x="60" y="762" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">La cola «Leads sin zona» de Gerencia junta los que</text>
+<text x="60" y="782" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">llegaron sin ubicación (importación o asistente IA).</text>
+<rect x="580" y="462" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="600" y="494" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Seguimiento agendado (agenda)</text>
+<rect x="604" y="532" width="180" height="70" rx="16" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="694" y="565" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Agendado</text>
+<text x="694" y="585" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">fecha por delante</text>
+<rect x="896" y="532" width="180" height="70" rx="16" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+<text x="986" y="565" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Atrasado</text>
+<text x="986" y="585" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ya pasó la fecha</text>
+<path d="M 784 556 L 896 556" fill="none" stroke="#DC2626" stroke-width="1.8"  marker-end="url(#punta-DC2626)"/>
+<rect x="792.4" y="538" width="95.2" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="840" y="550" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pasa la fecha</text>
+<rect x="750" y="658" width="180" height="70" rx="16" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="840" y="691" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Atendido</text>
+<text x="840" y="711" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">sale de la agenda</text>
+<path d="M 694 602 L 780 656" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<rect x="686.2" y="619" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="737" y="631" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">nuevo contacto</text>
+<path d="M 986 602 L 900 656" fill="none" stroke="#059669" stroke-width="1.8"  marker-end="url(#punta-059669)"/>
+<text x="600" y="762" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Un lead tiene un solo compromiso vigente: el de su</text>
+<text x="600" y="782" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">última interacción. Ganados y perdidos salen de la agenda.</text>
+<rect x="1120" y="462" width="520" height="350" rx="14" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="1140" y="494" font-size="16" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Entrada de auditoría</text>
+<rect x="1144" y="580" width="180" height="70" rx="16" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="1234" y="613" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Registrada</text>
+<text x="1234" y="633" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">quién, qué y cuándo</text>
+<rect x="1436" y="532" width="180" height="70" rx="16" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1526" y="565" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revertida</text>
+<text x="1526" y="585" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">una sola vez</text>
+<rect x="1436" y="658" width="180" height="70" rx="16" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1526" y="691" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">No reversible</text>
+<text x="1526" y="711" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">creaciones y contactos</text>
+<path d="M 1324 602 L 1436 566" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="1348.4" y="564" width="63.2" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1380" y="576" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">revertir</text>
+<path d="M 1324 628 L 1436 692" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#punta-64748B)"/>
+<text x="1140" y="762" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Solo se agrega: nadie la edita ni la borra.</text>
+<text x="1140" y="782" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Revertir crea una entrada nueva y marca la original.</text>
+<text x="840" y="848" font-size="13" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Todas estas reglas están implementadas y cubiertas por pruebas automáticas (npm run test:tenant · test:e2e).</text>
+</svg>

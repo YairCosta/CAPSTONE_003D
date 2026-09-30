@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1150" viewBox="0 0 1680 1150">
+<defs><marker id="punta-64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/>
+         </marker>
+<marker id="punta-4F46E5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#4F46E5"/>
+         </marker>
+<marker id="punta-059669" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+         </marker>
+<marker id="punta-DC2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC2626"/>
+         </marker>
+<marker id="punta-B45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+           <path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/>
+         </marker></defs>
+<rect width="1680" height="1150" fill="#F8FAFC"/>
+<text x="840" y="38" font-size="25" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Revela · Diagrama de componentes</text>
+<text x="840" y="62" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Qué partes forman el sistema y cómo se comunican</text>
+<rect x="40" y="84" width="1600" height="600" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="56" y="108" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">NAVEGADOR (React 19 + TypeScript + Vite)</text>
+<text x="1624" y="108" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">src/</text>
+<rect x="660" y="112" width="360" height="58" rx="10" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+<text x="840" y="139" font-size="15" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">App.tsx — orquestador</text>
+<text x="840" y="159" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">sesión, CRM, países, moneda y estado</text>
+<rect x="60" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="163" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">KPI y Mapa</text>
+<text x="163" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">GeoStrategicMap · RankingSidebar</text>
+<path d="M 840 170 Q 501.5 203 163 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="286" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="389" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Pipeline</text>
+<text x="389" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">KanbanBoard</text>
+<path d="M 840 170 Q 614.5 203 389 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="512" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="615" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Registro de contacto</text>
+<text x="615" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ContactModule · AgendaPanel</text>
+<path d="M 840 170 Q 727.5 203 615 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="738" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="841" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gerencia</text>
+<text x="841" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Empresas · Catálogo · Usuarios</text>
+<path d="M 840 170 L 841 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="964" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1067" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Auditoría</text>
+<text x="1067" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">AuditModule</text>
+<path d="M 840 170 Q 953.5 167 1067 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="1190" y="202" width="206" height="70" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1293" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Administración</text>
+<text x="1293" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">AdminModule · exportación</text>
+<path d="M 840 170 Q 1066.5 167 1293 200" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="1416" y="202" width="206" height="70" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1519" y="234.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Estados (oculto)</text>
+<text x="1519" y="253.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">StageAdminModule</text>
+<path d="M 840 170 Q 1179.5 167 1519 200" fill="none" stroke="#64748B" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#punta-64748B)"/>
+<text x="60" y="306" font-size="13" font-weight="700" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Componentes compartidos</text>
+<rect x="60" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="163" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Navbar</text>
+<text x="163" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pestañas · moneda de la vista</text>
+<rect x="286" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="389" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">CountryBar</text>
+<text x="389" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">filtro de países</text>
+<rect x="512" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="615" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">LeadCaptureModal</text>
+<text x="615" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">captura · moneda del lead</text>
+<rect x="738" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="841" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">LeadItemsEditor</text>
+<text x="841" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">productos y precios</text>
+<rect x="964" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1067" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">LeadContactsEditor</text>
+<text x="1067" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">otros contactos del lead</text>
+<rect x="1190" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1293" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">CatalogInsights</text>
+<text x="1293" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">¿dónde se vende?</text>
+<rect x="1416" y="316" width="206" height="62" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1519" y="344.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">AiChatWidget</text>
+<text x="1519" y="362.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asistente IA</text>
+<text x="60" y="412" font-size="13" font-weight="700" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Lógica de negocio — src/lib y src/data (funciones puras, con pruebas)</text>
+<rect x="60" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="163" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">tenantGuards.ts</text>
+<text x="163" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aislamiento y reglas</text>
+<rect x="286" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="389" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">audit.ts</text>
+<text x="389" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">historial de cambios</text>
+<rect x="512" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="615" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">catalog.ts</text>
+<text x="615" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">productos y ventas</text>
+<rect x="738" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="841" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">currency.ts</text>
+<text x="841" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">moneda de cada lead</text>
+<rect x="964" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1067" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">metrics.ts</text>
+<text x="1067" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">resultados por zona</text>
+<rect x="1190" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1293" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">agenda.ts</text>
+<text x="1293" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">seguimientos</text>
+<rect x="1416" y="422" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1519" y="450.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">contacts.ts</text>
+<text x="1519" y="468.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">contactos del lead</text>
+<rect x="60" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="163" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">geocoding.ts</text>
+<text x="163" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ubicar en zona</text>
+<rect x="286" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="389" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aiLeadMatch.ts</text>
+<text x="389" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">la IA encuentra leads</text>
+<rect x="512" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="615" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aiSafety.ts</text>
+<text x="615" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">límites de la IA</text>
+<rect x="738" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="841" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">tenantExport.ts</text>
+<text x="841" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Excel del CRM</text>
+<rect x="964" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1067" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">data/countries.ts</text>
+<text x="1067" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">países, zonas y monedas</text>
+<rect x="1190" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1293" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">money.ts</text>
+<text x="1293" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">vista en una moneda</text>
+<rect x="1416" y="500" width="206" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1519" y="528.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">permissions.ts</text>
+<text x="1519" y="546.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">roles y pestañas</text>
+<path d="M 840 378 L 840 420" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="60" y="596" width="884" height="62" rx="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="502" y="624.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">src/data/mockGeoData.ts</text>
+<text x="502" y="642.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cuenta demo en memoria · CRMs de prueba en testTenants.ts, solo en desarrollo</text>
+<path d="M 500 564 L 500 594" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="40" y="712" width="800" height="150" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="56" y="736" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">BASE DE DATOS — Supabase (preparada, sin conectar)</text>
+<text x="824" y="736" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">11 migraciones</text>
+<rect x="70" y="746" width="240" height="92" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="190" y="789.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">PostgreSQL + PostGIS</text>
+<text x="190" y="807.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">16 tablas · zonas como polígonos</text>
+<rect x="326" y="746" width="240" height="92" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="446" y="789.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">RLS + triggers</text>
+<text x="446" y="807.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aislamiento entre CRMs, países y</text>
+<text x="446" y="821.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">monedas</text>
+<rect x="582" y="746" width="228" height="92" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+<text x="696" y="789.25" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Supabase Auth</text>
+<text x="696" y="807.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">usuarios y contraseñas</text>
+<rect x="860" y="712" width="780" height="150" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="876" y="736" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVIDOR (Node dentro de Vite)</text>
+<text x="1624" y="736" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">server/</text>
+<rect x="880" y="746" width="240" height="92" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1000" y="789.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">leadSearch.ts</text>
+<text x="1000" y="808.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">empresas por rubro y zona</text>
+<rect x="1140" y="746" width="240" height="92" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1260" y="789.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">exchangeRates.ts</text>
+<text x="1260" y="808.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">/api/rates · tipo de cambio del día</text>
+<rect x="1400" y="746" width="220" height="92" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+<text x="1510" y="789.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aiChat.ts</text>
+<text x="1510" y="808.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">/api/ai · la API key no llega al</text>
+<text x="1510" y="822.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">navegador</text>
+<rect x="40" y="890" width="1600" height="150" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+<text x="56" y="914" font-size="14" font-weight="700" fill="#4F46E5" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVICIOS EXTERNOS</text>
+<text x="1624" y="914" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">HTTPS</text>
+<rect x="64" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="184" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Esri Canvas</text>
+<text x="184" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">mapa base · GeoStrategicMap</text>
+<rect x="326" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="446" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">write-excel-file</text>
+<text x="446" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">genera el .xlsx</text>
+<rect x="588" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="708" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Google Places</text>
+<text x="708" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">empresas reales</text>
+<rect x="850" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="970" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Banco Central de Chile</text>
+<text x="970" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">dólar observado (mindicador.cl)</text>
+<rect x="1112" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1232" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ExchangeRate-API</text>
+<text x="1232" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">resto de monedas</text>
+<rect x="1374" y="924" width="240" height="92" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<text x="1494" y="967.5" font-size="14" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">OpenAI (GPT)</text>
+<text x="1494" y="986.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">modelo del asistente</text>
+<path d="M 1622 347 L 1662 347 L 1662 792 L 1622 792" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="1584.6" y="686" width="154.8" height="18" rx="5" fill="#F8FAFC" opacity="0.97"/>
+<text x="1662" y="699" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">consulta del asistente</text>
+<path d="M 1260 562 L 1260 744" fill="none" stroke="#4F46E5" stroke-width="1.8"  marker-end="url(#punta-4F46E5)"/>
+<rect x="1209.2" y="671" width="101.60000000000001" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="1260" y="683" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pide las tasas</text>
+<path d="M 500 658 L 500 744" fill="none" stroke="#059669" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#punta-059669)"/>
+<rect x="359.6" y="685" width="280.8" height="17" rx="5" fill="#F8FAFC" opacity="0.95"/>
+<text x="500" y="697" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pendiente: reemplazar los datos en memoria</text>
+<path d="M 1000 838 L 1000 866 L 708 866 L 708 922" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1180 838 L 1180 880 L 970 880 L 970 922" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1340 838 L 1340 874 L 1232 874 L 1232 922" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<path d="M 1510 838 L 1510 876 L 1494 876 L 1494 922" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#punta-B45309)"/>
+<rect x="40" y="1064" width="1600" height="62" rx="12" fill="#FFFFFF" stroke="#94A3B8"/>
+<text x="60" y="1088" font-size="13" font-weight="700" fill="#0F172A" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Leyenda:</text>
+<line x1="140" y1="1083" x2="190" y2="1083" stroke="#4F46E5" stroke-width="2"/>
+<text x="200" y="1088" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">flujo implementado</text>
+<line x1="360" y1="1083" x2="410" y2="1083" stroke="#059669" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="420" y="1088" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">preparado, aún no conectado</text>
+<line x1="640" y1="1083" x2="690" y2="1083" stroke="#B45309" stroke-width="2"/>
+<text x="700" y="1088" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">llamada a un servicio externo</text>
+<text x="60" y="1112" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">Estado: interfaz y reglas de negocio completas y probadas (167 verificaciones) · base de datos escrita en migraciones · persistencia real pendiente</text>
+</svg>
