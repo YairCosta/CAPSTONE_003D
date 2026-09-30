@@ -6,6 +6,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createClient } from '@supabase/supabase-js';
 import { createAiMiddleware, resolveProvider, type AiServerConfig } from './aiChat.ts';
+import { DEFAULT_MONTHLY_BUDGET_USD, createMemoryBudgetStore, createSupabaseBudgetStore, type AiBudgetStore } from './aiBudget.ts';
 import { createRatesMiddleware } from './exchangeRates.ts';
 import { createAdminMiddleware, type AdminServerConfig } from './adminUsers.ts';
 import { identifyCaller, type SessionCaller } from './session.ts';
@@ -22,11 +23,36 @@ export const aiConfigFrom = (env: ServerEnv, { requireSession = true }: { requir
   geminiApiKey: env.GEMINI_API_KEY || undefined,
   geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
   openaiApiKey: env.OPENAI_API_KEY || undefined,
-  openaiModel: env.OPENAI_MODEL || 'gpt-5-mini',
+  // El más barato que sirve para buscar y guardar leads: US$0,05 por millón de tokens de entrada (docs/ASISTENTE_IA.md)
+  openaiModel: env.OPENAI_MODEL || 'gpt-5-nano',
+  openaiReasoningEffort: env.OPENAI_REASONING_EFFORT || 'minimal',
   placesApiKey: env.GOOGLE_PLACES_API_KEY || undefined,
   requireSession,
   identify: sessionIdentifierFrom(env),
+  budget: budgetStoreFrom(env),
 });
+
+/**
+ * Dónde se lleva el gasto del asistente: en Supabase (con la clave secreta del servidor) o, sin ella,
+ * en la memoria del servidor (solo desarrollo local). El presupuesto predeterminado es de US$30 al mes
+ * y se puede cambiar con AI_DEFAULT_MONTHLY_BUDGET_USD.
+ */
+export function budgetStoreFrom(env: ServerEnv): AiBudgetStore {
+  const predeterminado = Number(env.AI_DEFAULT_MONTHLY_BUDGET_USD);
+  const base = Number.isFinite(predeterminado) && predeterminado >= 0 ? predeterminado : DEFAULT_MONTHLY_BUDGET_USD;
+  const { supabaseUrl, serviceKey } = adminConfigFrom(env);
+  if (!supabaseUrl || !serviceKey) return createMemoryBudgetStore(base);
+  const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  // Sin sesión (solo desarrollo local con Supabase configurado) el cupo "local" vive en memoria
+  const respaldo = createMemoryBudgetStore(base);
+  const enBase = createSupabaseBudgetStore(admin, base);
+  const deCrm = (scope: string) => scope !== 'local';
+  return {
+    status: (scope) => (deCrm(scope) ? enBase.status(scope) : respaldo.status(scope)),
+    setBudget: (scope, valor, usuario) => (deCrm(scope) ? enBase.setBudget(scope, valor, usuario) : respaldo.setBudget(scope, valor, usuario)),
+    record: (scope, uso) => (deCrm(scope) ? enBase.record(scope, uso) : respaldo.record(scope, uso)),
+  };
+}
 
 /** Verificador de sesiones de Supabase (necesita la URL y la clave secreta); sin ellas no hay. */
 export function sessionIdentifierFrom(env: ServerEnv): ((token: string) => Promise<SessionCaller | null>) | undefined {

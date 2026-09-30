@@ -231,4 +231,25 @@ sin violaciones, puede hablar con Supabase y **no** puede mandar datos a otro si
   su ID: no son datos personales ni comerciales, y las usan las políticas RLS.
 - Los avisos de Supabase sobre 14 funciones `SECURITY DEFINER` ejecutables: cada una valida quién llama o
   no expone nada (`rls_auto_enable` es un trigger de eventos y no se puede llamar).
-- El límite de consultas del asistente es por instancia del servidor, no global.
+- El límite de consultas del asistente es por instancia del servidor, no global. Lo que sí es global es el
+  **presupuesto mensual de IA** de cada CRM (sección 6), que vive en la base.
+
+## 6. Presupuesto mensual del asistente de IA (30-09-2026)
+
+Con GPT cada consulta cuesta dinero de la cuenta del cliente, y el límite de consultas por persona no acota el gasto
+total. Se agregó un **tope mensual por CRM en dólares** (`docs/ASISTENTE_IA.md`). Lo que se revisó:
+
+| Riesgo | Cómo se cubre |
+|---|---|
+| Gastar sin límite | El servidor mide el costo real de cada paso (tokens que informa OpenAI × precio del modelo) y rechaza con 402, sin llamar a OpenAI, cuando se alcanza el tope. Cada respuesta tiene un tope de 1.500 tokens y el razonamiento se pide al mínimo |
+| Que el tope falle y se gaste igual | Falla cerrado: si no se puede leer el presupuesto, no se llama al modelo. Un modelo desconocido se cobra como caro. Sin cifras de OpenAI se estima por encima de lo real |
+| Que alguien se suba el tope | Solo la gerencia de ese CRM, por `POST /api/ai/budget` con el token de su sesión; la base lo exige de nuevo (`set_company_ai_budget` verifica que sea gerente activo de ese CRM). Ninguna persona con sesión escribe las tablas (sin permisos de `INSERT/UPDATE/DELETE`) |
+| Que una inyección de instrucciones lo cambie | El asistente no tiene ninguna herramienta sobre la configuración (invariante 6): el presupuesto solo se cambia desde la pantalla, con sesión humana |
+| Que se descuente el gasto | `record_ai_usage` solo la ejecuta la clave del servidor; un gasto negativo no resta |
+| Mezcla entre CRMs | El gasto se anota y se lee con el CRM de la sesión verificada, nunca uno que mande el navegador; cada CRM tiene su fila |
+| Rastro | El cambio queda en la auditoría del CRM y en `change_log` con su autor, sin valores personales (el presupuesto no es un dato personal) |
+
+**Riesgos aceptados:** una sola clave de OpenAI sirve a todos los CRMs del servidor (el tope es por CRM, la factura
+es una); el gasto de Google Places y el de la clave personal de Gemini no cuentan en el presupuesto; y el precio de
+cada modelo es una tabla en el código que hay que actualizar si OpenAI lo cambia. El último resguardo es el límite de
+gasto de la cuenta en platform.openai.com, que está fuera de Revela.

@@ -44,6 +44,10 @@ una sesión abierta.
 - **Último ingreso:** el más reciente entre `login_events` y el último inicio de sesión que anotó Supabase Auth. Así quien entró
   antes de que existiera este registro no aparece como "nunca ingresó".
 - **Se borra a los 13 meses:** una tarea diaria de la base (`purge_old_login_events`).
+- **Aviso en el login:** la pantalla de ingreso dice que se anota la fecha del ingreso (nunca lo que se hace dentro), para qué
+  (soporte y medir el uso) y por cuánto tiempo. Es la transparencia que pide la Ley 21.719 para un tratamiento por interés
+  legítimo. La gerencia de un CRM **no ve** los ingresos de su equipo: solo el administrador, y solo para saber si el cliente
+  usa el producto; usarlo para vigilar a las personas sería otro asunto (laboral) y no se ofrece.
 
 Estado de cada persona (el plazo, 7 días por defecto, se elige arriba: 7, 14 o 30):
 

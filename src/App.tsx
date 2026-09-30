@@ -67,6 +67,7 @@ import {
   type Rates,
 } from './lib/currency';
 import { MoneyContext, buildMoneyApi, fetchRates, type RatesInfo } from './lib/money';
+import { formatUsd } from './lib/aiBudget';
 import type { CurrencyCode } from './data/countries';
 import {
   canChangeStage,
@@ -2283,6 +2284,18 @@ export function App() {
           onFindLeads={handleAiFindLeads}
           onUpdateLeadStage={handleAiUpdateLeadStage}
           getAccessToken={db ? async () => (await db.auth.getSession()).data.session?.access_token ?? null : undefined}
+          onBudgetChange={({ before, after }) => {
+            if (!currentCompany) return;
+            record({
+              companyId: currentCompany.id,
+              action: 'update',
+              entity: 'company',
+              entityId: currentCompany.id,
+              entityLabel: currentCompany.name,
+              summary: `Ajustó el presupuesto mensual del asistente de IA a ${formatUsd(after)}`,
+              changes: [{ field: 'aiMonthlyBudgetUsd', label: 'Presupuesto mensual de IA', before: formatUsd(before), after: formatUsd(after) }],
+            });
+          }}
         />
         </Seccion>
       )}

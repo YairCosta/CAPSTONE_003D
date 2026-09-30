@@ -145,10 +145,18 @@ la API.
 ```
 AI_PROVIDER=openai
 OPENAI_API_KEY=la-clave
-OPENAI_MODEL=gpt-5-mini
+# Opcionales (los valores de abajo son los predeterminados):
+# OPENAI_MODEL=gpt-5-nano
+# OPENAI_REASONING_EFFORT=minimal
+# AI_DEFAULT_MONTHLY_BUDGET_USD=30
 ```
 
-y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-mini".
+y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-nano". Publicada, las mismas variables
+van en Vercel (ver `docs/DESPLIEGUE.md`).
+
+**Modelo:** `gpt-5-nano`, el más barato de la tabla de abajo y suficiente para buscar, crear y mover leads.
+Los modelos GPT-5 razonan antes de responder y ese razonamiento se cobra como salida, así que se pide el
+razonamiento mínimo (`OPENAI_REASONING_EFFORT=minimal`) y cada respuesta tiene un tope de 1.500 tokens.
 
 **Cómo está hecho:**
 - La conversación se guarda siempre en el formato de Gemini, así que el navegador no cambia. El
@@ -158,9 +166,56 @@ y reiniciar `npm run dev`. En el chat, la cabecera dice "GPT · gpt-5-mini".
   Si OpenAI es la única clave configurada, se usa sola.
 - La clave personal que se ingresa en el chat es de Gemini; si hay una, se usa Gemini.
 - No se envía temperatura: los modelos de razonamiento de OpenAI solo aceptan el valor por defecto.
+- Si OpenAI rechaza el nivel de razonamiento pedido (un modelo que no lo admite), se reintenta una vez sin él.
 
-**Pruebas:** `npm run test:ai` simula a OpenAI y recorre la conversación completa por el servidor,
-incluida una herramienta que ejecuta el navegador. **Falta la prueba con la clave real.**
+### Presupuesto mensual de IA
+
+Cada consulta a OpenAI cuesta dinero (fracciones de centavo con `gpt-5-nano`, pero se acumulan). Cada CRM tiene un
+**presupuesto mensual en dólares, US$ 30 por defecto**, que **la gerencia ajusta desde el chat**: ícono de la llave →
+"Presupuesto mensual de IA". Lo mide y lo aplica el **servidor** (`server/aiBudget.ts`, `server/aiPricing.ts`):
+el navegador solo lo muestra y pide cambiarlo, nunca decide.
+
+| Qué | Cómo |
+|---|---|
+| Medición | En cada paso, OpenAI informa los tokens usados (`usage`); con el precio del modelo se calcula el costo exacto y se suma al gasto del mes del CRM (`ai_usage_monthly`, función `record_ai_usage`, atómica). Si por alguna razón no informa el uso, se estima por el tamaño del texto, por encima de lo real |
+| Tope | Antes de cada consulta se lee el gasto. Si alcanzó el presupuesto responde **402** con un mensaje claro y **no llama a OpenAI**. Una consulta de varias vueltas se corta a la mitad si se acaba en el camino |
+| Falla cerrado | Si no se puede leer el presupuesto (base caída), no se llama al modelo: mejor un error que un gasto sin tope |
+| Avisos | Desde el 80% el chat muestra un aviso ámbar; al llegar al tope, rojo, con el campo de mensaje deshabilitado. Con el presupuesto en **0** el asistente queda apagado |
+| Quién lo cambia | Solo la gerencia de ese CRM (`POST /api/ai/budget`, que llama a `set_company_ai_budget`: la base misma exige que sea gerente activo del CRM). Cualquier persona del CRM lo ve. El administrador de la plataforma no lo cambia: es decisión de cada cliente |
+| Renovación | El gasto se reinicia el día 1 de cada mes (UTC, como cobra OpenAI) |
+| Registro | El cambio queda en la auditoría del CRM ("Ajustó el presupuesto mensual del asistente de IA a US$ X") y en `change_log` con su autor |
+| Datos | `ai_usage_monthly` guarda solo números (llamadas, tokens y dólares): nada de lo conversado. Se escribe únicamente con la clave del servidor; ninguna persona con sesión puede borrar su gasto ni subirse el tope directo contra la base |
+
+**Por qué ninguna herramienta de la IA puede cambiarlo:** el asistente no tiene herramientas sobre
+configuración, y no debe tenerlas (invariante 6). Si pudiera subirse el tope, una instrucción maliciosa dentro
+de un dato (inyección indirecta, ver `docs/SEGURIDAD.md`) podría vaciar el presupuesto. El presupuesto se
+ajusta solo desde la pantalla, con la sesión de la gerencia.
+
+**Precios** (por millón de tokens, revisados el 30-09-2026 en developers.openai.com/api/docs/pricing; si OpenAI los
+cambia, se actualizan en `server/aiPricing.ts`):
+
+| Modelo | Entrada | Entrada en caché | Salida |
+|---|---|---|---|
+| `gpt-5-nano` (predeterminado) | US$ 0,05 | US$ 0,005 | US$ 0,40 |
+| `gpt-5-mini` | US$ 0,25 | US$ 0,025 | US$ 2,00 |
+| `gpt-4.1-nano` | US$ 0,10 | US$ 0,025 | US$ 0,40 |
+| `gpt-4.1-mini` | US$ 0,40 | US$ 0,10 | US$ 1,60 |
+| `gpt-4o-mini` | US$ 0,15 | US$ 0,075 | US$ 0,60 |
+
+Un modelo que no está en la tabla se cobra como uno caro (US$ 2,50 / 10,00): el tope protege de más, nunca de menos.
+
+**Lo que el presupuesto NO cubre:**
+- **Una sola clave de OpenAI sirve a todos los CRMs** del servidor. El tope es por CRM, pero la factura es una:
+  si hay varios CRMs activos (por ejemplo, de prueba), todos gastan de la misma cuenta. Para un cliente real conviene
+  su propia clave y su propio despliegue, o un tope de la cuenta en platform.openai.com (Limits), que es el último
+  resguardo y está fuera de Revela.
+- **Google Places** (búsqueda real de empresas) tiene su propio cobro y no se cuenta aquí.
+- **La clave personal de Gemini** del chat es de la persona y no pasa por el presupuesto.
+
+**Pruebas:** `npm run test:ai` simula a OpenAI y recorre la conversación completa por el servidor, incluida una
+herramienta que ejecuta el navegador, y cubre los precios, el tope, el aislamiento entre CRMs, quién puede cambiar
+el presupuesto y la caída de la base. `npm run test:db` prueba las tablas y funciones de la 0031 (quién escribe,
+quién lee, el registro de cambios). **Falta la prueba con la clave real.**
 
 **Ley 21.719:** OpenAI pasa a ser otro subencargado que recibe datos del CRM. Recibe lo mismo que
 Gemini: la ficha mínima del lead, sin correo, teléfono ni monto. Queda en el registro de

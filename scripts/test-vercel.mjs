@@ -120,6 +120,10 @@ try {
   const chat = await pedir('/api/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hola' }] }] }) });
   check('El asistente rechaza a quien no inició sesión', chat.status === 401, String(chat.status));
 
+  const presupuesto = await pedir('/api/ai/budget');
+  const presupuestoJson = await presupuesto.json().catch(() => ({}));
+  check('La ruta del presupuesto de IA existe y, sin GPT configurado, dice que no aplica', presupuesto.status === 200 && presupuestoJson.applies === false && iaJson.budgetEnforced === false, JSON.stringify(presupuestoJson));
+
   const admin = await pedir('/api/admin/status');
   check('La API de invitaciones responde', admin.status === 200, String(admin.status));
 

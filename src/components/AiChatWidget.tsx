@@ -18,8 +18,10 @@ import {
   Minimize2,
   PanelLeft,
   PanelRight,
+  Wallet,
 } from 'lucide-react';
 import { inputClass, labelClass, primaryButton, secondaryButton } from '../lib/styles';
+import { budgetLevel, budgetPercent, formatSpentUsd, formatUsd, monthLabel, type AiBudgetInfo } from '../lib/aiBudget';
 
 // ------------------------------------------------------------------ protocolo con /api/ai
 interface ChatContent {
@@ -50,9 +52,12 @@ interface ToolCall {
   result?: Record<string, unknown>;
 }
 
+/** Lo gastado en el mes, que el servidor agrega a cada respuesta cuando el CRM tiene presupuesto de IA */
+type BudgetUpdate = Pick<AiBudgetInfo, 'month' | 'budgetUsd' | 'spentUsd' | 'remainingUsd' | 'requests'>;
+
 type ChatResponse =
-  | { type: 'message'; text: string; contents: ChatContent[]; events: SearchEvent[]; model?: string }
-  | { type: 'tool_calls'; calls: ToolCall[]; contents: ChatContent[]; events: SearchEvent[]; model?: string }
+  | { type: 'message'; text: string; contents: ChatContent[]; events: SearchEvent[]; model?: string; budget?: BudgetUpdate }
+  | { type: 'tool_calls'; calls: ToolCall[]; contents: ChatContent[]; events: SearchEvent[]; model?: string; budget?: BudgetUpdate }
   | { type: 'error'; error: string };
 
 interface AiStatus {
@@ -84,6 +89,8 @@ interface AiChatWidgetProps {
   onUpdateLeadStage: (args: Record<string, unknown>) => Record<string, unknown>;
   /** Token de la sesión de Supabase: el servidor lo verifica antes de usar sus claves (sin Supabase, no hay) */
   getAccessToken?: () => Promise<string | null>;
+  /** La gerencia cambió el presupuesto mensual de IA: queda en la auditoría del CRM */
+  onBudgetChange?: (change: { before: number; after: number }) => void;
 }
 
 const KEY_STORAGE = 'revela-gemini-key';
@@ -199,6 +206,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   onFindLeads,
   onUpdateLeadStage,
   getAccessToken,
+  onBudgetChange,
 }) => {
   const keyStorage = `${KEY_STORAGE}:${userId}`;
   const [isOpen, setIsOpen] = useState(false);
@@ -212,6 +220,12 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   const [statusError, setStatusError] = useState(false);
   const [personalKey, setPersonalKey] = useState(() => readKey(keyStorage));
   const [keyDraft, setKeyDraft] = useState('');
+  // Presupuesto mensual de IA del CRM: lo mide el servidor; aquí se muestra y la gerencia lo ajusta
+  const [budget, setBudget] = useState<AiBudgetInfo | null>(null);
+  const [budgetDraft, setBudgetDraft] = useState('');
+  const [budgetSaving, setBudgetSaving] = useState(false);
+  const [budgetNote, setBudgetNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [budgetTick, setBudgetTick] = useState(0);
 
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -299,6 +313,9 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   // La clave del servidor sirve si no exige sesión o si hay una sesión de CRM (con Supabase)
   const serverKeyUsable = Boolean(status?.serverKeyConfigured && (!status.requiresSession || getAccessToken));
   const hasKey = Boolean(personalKey || serverKeyUsable);
+  // Con la clave personal de Gemini el gasto no sale del presupuesto del CRM
+  const level = budget && !personalKey ? budgetLevel(budget) : 'ok';
+  const blocked = level === 'exhausted';
 
   useEffect(() => {
     if (!isOpen || status) return;
@@ -310,6 +327,27 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
       })
       .catch(() => setStatusError(true));
   }, [isOpen, status]);
+
+  // Se lee al abrir el chat, al abrir la configuración y cuando una consulta falla (por si se agotó)
+  useEffect(() => {
+    if (!isOpen || !status || !serverKeyUsable) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
+        const response = await fetch('/api/ai/budget', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const data = (await response.json().catch(() => null)) as ({ applies?: boolean } & Partial<AiBudgetInfo>) | null;
+        if (!cancelled) setBudget(response.ok && data?.applies ? (data as AiBudgetInfo) : null);
+      } catch {
+        if (!cancelled) setBudget(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // getAccessToken cambia en cada render de App pero siempre lee la misma sesión
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, status, serverKeyUsable, showSettings, budgetTick]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -358,6 +396,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
 
         history = data.contents;
         if (data.model) setActiveModel(data.model);
+        if (data.budget) setBudget((prev) => (prev ? { ...prev, ...data.budget } : prev));
         if (data.events.length) push(...data.events.map((event) => ({ id: uid(), kind: 'search' as const, event })));
 
         if (data.type === 'message') {
@@ -389,6 +428,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
       // Se descarta el turno fallido para poder reintentar con un historial válido
       setContents(previousContents);
       push({ id: uid(), kind: 'error', text: (error as Error).message });
+      setBudgetTick((tick) => tick + 1);
     } finally {
       setLoadingLabel(null);
     }
@@ -410,6 +450,33 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
     setPersonalKey(key);
     setKeyDraft('');
     setShowSettings(false);
+  };
+
+  const saveBudget = async () => {
+    if (!budget || !budgetDraft.trim() || budgetSaving) return;
+    setBudgetSaving(true);
+    setBudgetNote(null);
+    try {
+      const token = getAccessToken ? await getAccessToken().catch(() => null) : null;
+      const response = await fetch('/api/ai/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ budgetUsd: budgetDraft }),
+      });
+      const data = (await response.json().catch(() => null)) as (Partial<AiBudgetInfo> & { error?: string }) | null;
+      if (!response.ok || !data || typeof data.budgetUsd !== 'number') {
+        setBudgetNote({ ok: false, text: data?.error ?? `No se pudo guardar el presupuesto (${response.status}).` });
+        return;
+      }
+      onBudgetChange?.({ before: budget.budgetUsd, after: data.budgetUsd });
+      setBudget({ ...budget, ...(data as AiBudgetInfo) });
+      setBudgetDraft('');
+      setBudgetNote({ ok: true, text: `Presupuesto mensual actualizado a ${formatUsd(data.budgetUsd)}.` });
+    } catch {
+      setBudgetNote({ ok: false, text: 'No se pudo conectar con el servidor del asistente.' });
+    } finally {
+      setBudgetSaving(false);
+    }
   };
 
   const removeKey = () => {
@@ -563,6 +630,76 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                 </p>
               </div>
 
+              {budget && (
+                <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4" aria-labelledby="ai-budget-title">
+                  <p id="ai-budget-title" className="flex items-center gap-2 font-semibold text-slate-200">
+                    <Wallet className="h-4 w-4 text-indigo-400" /> Presupuesto mensual de IA
+                  </p>
+                  <p className="mt-1 text-slate-300">
+                    {formatSpentUsd(budget.spentUsd)} de {formatUsd(budget.budgetUsd)} en {monthLabel(budget.month)}
+                  </p>
+                  <div
+                    role="progressbar"
+                    aria-label="Presupuesto de IA gastado este mes"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={budgetPercent(budget)}
+                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-800"
+                  >
+                    <div
+                      style={{ width: `${budgetPercent(budget)}%` }}
+                      className={`h-full rounded-full ${
+                        budgetLevel(budget) === 'exhausted' ? 'bg-rose-500' : budgetLevel(budget) === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {budget.requests} llamada{budget.requests === 1 ? '' : 's'} al modelo ({budget.model}). El gasto se reinicia el día 1 de cada mes y,
+                    al llegar al tope, el asistente deja de responder hasta entonces o hasta que la gerencia lo suba.
+                    {personalKey && ' Con tu clave personal de Gemini el gasto no cuenta aquí.'}
+                  </p>
+                  {budget.canEdit ? (
+                    <div className="mt-3">
+                      <label htmlFor="ai-budget" className={labelClass}>
+                        Nuevo presupuesto mensual (US$)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="ai-budget"
+                          type="text"
+                          inputMode="decimal"
+                          autoComplete="off"
+                          value={budgetDraft}
+                          onChange={(e) => setBudgetDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void saveBudget();
+                            }
+                          }}
+                          placeholder={String(budget.budgetUsd).replace('.', ',')}
+                          aria-describedby="ai-budget-help"
+                          className={inputClass}
+                        />
+                        <button type="button" onClick={() => void saveBudget()} disabled={!budgetDraft.trim() || budgetSaving} className={`${primaryButton} shrink-0`}>
+                          {budgetSaving ? 'Guardando…' : 'Guardar'}
+                        </button>
+                      </div>
+                      <p id="ai-budget-help" className="mt-1.5 text-sm text-slate-400">
+                        En dólares, hasta {formatUsd(1000)}. Con 0 el asistente queda apagado. Cada consulta cuesta fracciones de centavo.
+                      </p>
+                      {budgetNote && (
+                        <p role={budgetNote.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${budgetNote.ok ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          {budgetNote.text}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-400">Solo la gerencia del CRM puede cambiar el presupuesto.</p>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label htmlFor="gemini-key" className={labelClass}>
                   API key personal de Gemini
@@ -622,6 +759,23 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                         Puedo buscar empresas por rubro y zona y registrar en el CRM las que me indiques.
                       </p>
                     </div>
+                    {budget && level !== 'ok' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSettings(true)}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-xl border px-4 py-3 text-left text-sm ${
+                          blocked ? 'border-rose-500/40 bg-rose-500/10 text-rose-300' : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                        }`}
+                      >
+                        <Wallet className="h-4 w-4 shrink-0" />
+                        {blocked
+                          ? budget.budgetUsd === 0
+                            ? 'El asistente está apagado (presupuesto mensual en US$ 0). '
+                            : `Se acabó el presupuesto de IA de ${monthLabel(budget.month)} (${formatUsd(budget.budgetUsd)}). `
+                          : `Llevas ${budgetPercent(budget)}% del presupuesto de IA de ${monthLabel(budget.month)}. `}
+                        {budget.canEdit ? 'Pulsa aquí para ajustarlo.' : 'La gerencia puede subirlo.'}
+                      </button>
+                    )}
                     {!hasKey && status && (
                       <button
                         type="button"
@@ -629,7 +783,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                         className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-300"
                       >
                         <KeyRound className="h-4 w-4 shrink-0" />
-                        Falta la API key de Gemini. Pulsa aquí para configurarla.
+                        Falta la API key del asistente. Pulsa aquí para configurarla.
                       </button>
                     )}
                     <p className="text-sm font-semibold text-slate-400">Prueba con:</p>
@@ -638,8 +792,8 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                         key={suggestion}
                         type="button"
                         onClick={() => send(suggestion)}
-                        disabled={isLoading}
-                        className="block w-full cursor-pointer rounded-xl border border-slate-600 px-3.5 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+                        disabled={isLoading || blocked}
+                        className="block w-full cursor-pointer rounded-xl border border-slate-600 px-3.5 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {suggestion}
                       </button>
@@ -767,13 +921,14 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
                       send(input);
                     }
                   }}
-                  placeholder={hasKey ? 'Escribe un mensaje…' : 'Configura la API key para empezar'}
+                  disabled={blocked}
+                  placeholder={blocked ? 'Presupuesto mensual de IA agotado' : hasKey ? 'Escribe un mensaje…' : 'Configura la API key para empezar'}
                   aria-label="Mensaje para el asistente"
                   className={`${inputClass} max-h-32 resize-none`}
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || blocked || !input.trim()}
                   aria-label="Enviar mensaje"
                   className={`${primaryButton} h-[46px] w-[46px] shrink-0 px-0`}
                 >

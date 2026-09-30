@@ -30,6 +30,10 @@ entorno (`server/api.ts`): lo que se prueba en local es lo que se publica.
 | `SUPABASE_SERVICE_ROLE_KEY` | La clave secreta de Supabase, marcada **Sensitive** | Solo la función de invitaciones |
 | `APP_URL` | La dirección publicada, ej. `https://revela.vercel.app` | Enlace de los correos de invitación |
 | `AI_PROVIDER`, `GEMINI_API_KEY` u `OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY` | Opcionales | Asistente IA |
+| `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`, `AI_DEFAULT_MONTHLY_BUDGET_USD` | Opcionales (`gpt-5-nano`, `minimal`, `30`) | Modelo de GPT y presupuesto mensual de IA de cada CRM (ver `docs/ASISTENTE_IA.md`) |
+
+`OPENAI_API_KEY` se marca **Sensitive**. El presupuesto mensual de IA se guarda en Supabase, así que el asistente con GPT
+también necesita `SUPABASE_SERVICE_ROLE_KEY` en la función.
 
 Las `VITE_` se meten en la app al compilar: si se cambian, hay que volver a publicar (**Redeploy**).
 Las demás solo existen en la función. Ninguna clave se escribe en el código ni se pega en el chat.

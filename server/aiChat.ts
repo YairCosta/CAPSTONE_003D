@@ -5,6 +5,10 @@
 // Las claves del servidor (IA y Google Places) cuestan dinero: publicada, solo las usa quien tiene
 // sesión en un CRM (usuario base o gerente), con un límite de consultas por persona. Sin sesión (la
 // cuenta demo) el asistente funciona solo con una API key propia de Gemini, sin Google Places.
+//
+// Con GPT, además, cada CRM tiene un presupuesto mensual en dólares (server/aiBudget.ts): el servidor
+// calcula lo que cuesta cada llamada con los tokens que informa OpenAI, lo suma y deja de responder
+// cuando se alcanza. La gerencia lo ajusta desde el chat; la IA no tiene cómo tocarlo.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHash } from 'node:crypto';
@@ -12,6 +16,8 @@ import { ApiError, GoogleGenAI, Type, type Content, type FunctionDeclaration, ty
 import { searchPotentialLeads, type LeadSearchResult } from './leadSearch.ts';
 import { callOpenAi, describeOpenAiError, toOpenAiMessages, toOpenAiTools, type ModelStep } from './openaiChat.ts';
 import { bearerToken, createRateLimiter, type SessionCaller } from './session.ts';
+import { costOf, priceFor, type ModelUsage } from './aiPricing.ts';
+import { isExhausted, publicBudget, validateBudget, type AiBudgetStatus, type AiBudgetStore } from './aiBudget.ts';
 
 export type AiProvider = 'gemini' | 'openai';
 
@@ -31,6 +37,10 @@ export interface AiServerConfig {
   identify?: (token: string) => Promise<SessionCaller | null>;
   /** Límite de consultas por persona con las claves del servidor (por defecto 60 cada 10 minutos) */
   rateLimit?: { max: number; windowMs: number };
+  /** Presupuesto mensual por CRM (solo con GPT). Sin él, el gasto no se limita. */
+  budget?: AiBudgetStore;
+  /** Cuánto razona GPT-5 antes de responder ("minimal" es lo más barato) */
+  openaiReasoningEffort?: string;
 }
 
 /**
@@ -411,6 +421,23 @@ function describeGeminiError(error: unknown, model: string): { status: number; m
   return { status: 502, message: 'No se pudo contactar a Gemini. Revisa tu conexión a internet.' };
 }
 
+// ------------------------------------------------------------------ presupuesto
+/**
+ * A quién se le cuenta el gasto: al CRM de quien llama. En desarrollo local, sin sesión, a un cupo
+ * "local" para poder probar el chat sin Supabase. Con sesión de administrador o de alguien desactivado, a nadie.
+ */
+const budgetScope = (config: AiServerConfig, caller: SessionCaller | null): string | null => {
+  if (caller?.companyId && caller.isActive && (caller.role === 'agent' || caller.role === 'manager')) return caller.companyId;
+  return !config.requireSession && !caller ? 'local' : null;
+};
+
+const usd = (monto: number) => `US$ ${monto.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export const exhaustedMessage = (status: AiBudgetStatus): string =>
+  status.budgetUsd <= 0
+    ? 'El asistente de IA está apagado para este CRM (presupuesto en US$ 0,00). La gerencia puede activarlo en la configuración del asistente (el ícono de la llave, arriba en el chat).'
+    : `Se alcanzó el presupuesto mensual de IA (${usd(status.budgetUsd)}). Se renueva el día 1 del mes siguiente; la gerencia puede subirlo en la configuración del asistente (el ícono de la llave, arriba en el chat).`;
+
 // ------------------------------------------------------------------ middleware
 export function createAiMiddleware(config: AiServerConfig) {
   const dentroDelLimite = createRateLimiter(config.rateLimit ?? { max: 60, windowMs: 10 * 60 * 1000 });
@@ -426,7 +453,54 @@ export function createAiMiddleware(config: AiServerConfig) {
         requiresSession: config.requireSession,
         model: openai ? config.openaiModel : config.geminiModel,
         leadSource: config.placesApiKey ? 'google_places' : 'demo',
+        budgetEnforced: Boolean(openai && config.budget),
       });
+      return;
+    }
+
+    // Presupuesto mensual de IA del CRM de quien llama: cualquier persona del CRM lo ve; solo la gerencia lo cambia
+    if (path === '/budget') {
+      if (config.provider !== 'openai' || !config.budget) {
+        sendJson(res, 200, { applies: false });
+        return;
+      }
+      if (req.method !== 'GET' && req.method !== 'POST') {
+        sendJson(res, 405, { type: 'error', error: 'Método no permitido.' });
+        return;
+      }
+      try {
+        const token = bearerToken(req);
+        const caller = token && config.identify ? await config.identify(token).catch(() => null) : null;
+        const scope = budgetScope(config, caller);
+        if (!scope) {
+          sendJson(res, 401, { type: 'error', error: 'Inicia sesión en tu CRM para ver el presupuesto de IA.' });
+          return;
+        }
+        // Sin sesión (solo desarrollo local) se puede ajustar; con sesión, solo la gerencia de ese CRM
+        const canEdit = caller ? caller.role === 'manager' : true;
+        if (req.method === 'POST') {
+          if (!canEdit) {
+            sendJson(res, 403, { type: 'error', error: 'Solo la gerencia del CRM ajusta el presupuesto de IA.' });
+            return;
+          }
+          const body = await readJsonBody(req);
+          const valido = validateBudget(isRecord(body) ? body.budgetUsd : undefined);
+          if (!valido.ok) {
+            sendJson(res, 400, { type: 'error', error: valido.error });
+            return;
+          }
+          await config.budget.setBudget(scope, valido.value, caller?.userId ?? null);
+        }
+        const status = await config.budget.status(scope);
+        sendJson(res, 200, { applies: true, canEdit, model: config.openaiModel, ...publicBudget(status) });
+      } catch (error) {
+        if (error instanceof HttpError) {
+          sendJson(res, error.status, { type: 'error', error: error.message });
+          return;
+        }
+        console.error('[ai/budget]', String((error as Error)?.message ?? error).slice(0, 200));
+        sendJson(res, 503, { type: 'error', error: 'No se pudo leer o guardar el presupuesto de IA. Inténtalo de nuevo.' });
+      }
       return;
     }
 
@@ -484,6 +558,32 @@ export function createAiMiddleware(config: AiServerConfig) {
         return;
       }
 
+      // Presupuesto del mes: con GPT y la clave del servidor, nada se le pide al modelo si ya se gastó todo.
+      // Si no se puede verificar, tampoco: es plata del cliente, así que se falla cerrado.
+      const scope = provider === 'openai' && config.budget ? budgetScope(config, caller) : null;
+      let presupuesto: AiBudgetStatus | null = null;
+      if (scope && config.budget) {
+        try {
+          presupuesto = await config.budget.status(scope);
+        } catch (error) {
+          console.error('[ai/budget]', String((error as Error)?.message ?? error).slice(0, 200));
+          throw new HttpError(503, 'No se pudo verificar el presupuesto de IA. Inténtalo de nuevo en un momento.');
+        }
+        if (isExhausted(presupuesto)) throw new HttpError(402, exhaustedMessage(presupuesto));
+      }
+      const conPresupuesto = () => (presupuesto ? { budget: publicBudget(presupuesto) } : {});
+      // Suma lo que costó una llamada al gasto del mes; si no se alcanza a guardar, se avisa en el registro (sin datos)
+      const anotarGasto = async (uso: ModelUsage) => {
+        if (!scope || !config.budget || !presupuesto) return;
+        const costUsd = costOf(uso, priceFor(model).price);
+        presupuesto = { ...presupuesto, spentUsd: presupuesto.spentUsd + costUsd, requests: presupuesto.requests + 1 };
+        try {
+          await config.budget.record(scope, { ...uso, costUsd });
+        } catch (error) {
+          console.error('[ai/budget] no se pudo anotar el gasto:', String((error as Error)?.message ?? error).slice(0, 200));
+        }
+      };
+
       const tools = buildToolDeclarations(context.countries);
       const systemInstruction = buildSystemInstruction(context);
       const events: SearchEvent[] = [];
@@ -492,7 +592,13 @@ export function createAiMiddleware(config: AiServerConfig) {
       const openAiTools = provider === 'openai' ? toOpenAiTools(tools) : [];
       const stepOpenAi = (): Promise<ModelStep> => {
         model = config.openaiModel;
-        return callOpenAi({ apiKey, model, messages: toOpenAiMessages(systemInstruction, history), tools: openAiTools });
+        return callOpenAi({
+          apiKey,
+          model,
+          messages: toOpenAiMessages(systemInstruction, history),
+          tools: openAiTools,
+          reasoningEffort: config.openaiReasoningEffort,
+        });
       };
 
       // ---------------------------------------------------------------- Gemini
@@ -563,17 +669,20 @@ export function createAiMiddleware(config: AiServerConfig) {
       };
 
       for (let step = 0; step < MAX_MODEL_STEPS; step++) {
+        // Una consulta con varias vueltas puede agotar el presupuesto a la mitad: se corta ahí
+        if (step > 0 && presupuesto && isExhausted(presupuesto)) throw new HttpError(402, exhaustedMessage(presupuesto));
         const result = provider === 'openai' ? await stepOpenAi() : await stepGemini();
+        if (result.usage) await anotarGasto(result.usage);
 
         if (!result.parts.length) {
-          sendJson(res, 200, { type: 'message', text: 'No obtuve respuesta del modelo. Inténtalo de nuevo.', contents: history, events, model });
+          sendJson(res, 200, { type: 'message', text: 'No obtuve respuesta del modelo. Inténtalo de nuevo.', contents: history, events, model, ...conPresupuesto() });
           return;
         }
         history.push({ role: 'model', parts: result.parts });
 
         const functionCalls = result.functionCalls;
         if (functionCalls.length === 0) {
-          sendJson(res, 200, { type: 'message', text: result.text || 'Listo.', contents: history, events, model });
+          sendJson(res, 200, { type: 'message', text: result.text || 'Listo.', contents: history, events, model, ...conPresupuesto() });
           return;
         }
 
@@ -593,7 +702,7 @@ export function createAiMiddleware(config: AiServerConfig) {
 
         // El navegador ejecuta save_lead_to_crm y vuelve a llamar con las respuestas
         if (calls.some((call) => call.executedOn === 'client')) {
-          sendJson(res, 200, { type: 'tool_calls', calls, contents: history, events, model });
+          sendJson(res, 200, { type: 'tool_calls', calls, contents: history, events, model, ...conPresupuesto() });
           return;
         }
 
@@ -609,6 +718,7 @@ export function createAiMiddleware(config: AiServerConfig) {
         contents: history,
         events,
         model,
+        ...conPresupuesto(),
       });
     } catch (error) {
       if (error instanceof HttpError) {

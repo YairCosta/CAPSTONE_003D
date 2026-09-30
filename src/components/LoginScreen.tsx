@@ -199,6 +199,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             )}
           </form>
 
+          <p className="mt-5 text-center text-sm text-slate-400">
+            Al ingresar, Revela anota la fecha de tu ingreso (nunca lo que haces dentro) para dar soporte y medir el uso de la
+            plataforma. Se borra a los 13 meses.
+          </p>
+
           {demoHref && (
             <p className="mt-6 text-center text-[15px] text-slate-400">
               ¿Solo quieres mirar?{' '}

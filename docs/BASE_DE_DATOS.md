@@ -43,6 +43,8 @@ De la raíz hacia las hojas. Este es el orden para crear, poblar (seed) e import
 15. login_events                (ingresos de las personas a su CRM, 0030)
     satisfaction_surveys        (encuesta de satisfacción, 0030)
     bug_reports                 (errores que reportan las personas, 0030)
+16. company_ai_settings         (presupuesto mensual de IA de cada CRM, 0031)
+    ai_usage_monthly            (gasto de IA por CRM y mes, solo números, 0031)
 ```
 
 Relaciones principales:
@@ -201,6 +203,7 @@ La capa de datos vive en `src/lib/db/`: `mappers.ts` y `crmMappers.ts` (filas �
 | 0028 | Nombres de zona corregidos: tildes (Costa Rica, Ecuador, Honduras, distritos de Perú), El Salvador y Paraguay desde la edición humanitaria (sin zonas "Null" ni nombres cortados), lagos fuera y traducciones de la fuente. Actualiza también el nombre en las copias de cada CRM; se detiene si un CRM usa una zona que sale del catálogo |
 | 0029 | Divisas para ver el CRM: `company_view_currencies` guarda las monedas que la gerencia suma al selector del encabezado (la del país base y el dólar están siempre). RLS como `company_countries` (la gerencia agrega y quita solo en su CRM, el administrador en cualquiera), trigger que rechaza la moneda de un país que no está activo y registro en `change_log`. Solo cambia cómo se ven los montos. Ver `docs/MONEDAS.md` |
 | 0030 | Uso y soporte: `login_events` (ingresos; solo el administrador los lee, los escribe `record_login()` y se borran a los 13 meses), `satisfaction_surveys` (encuesta de 0 a 10; cada persona ve las suyas, una por día) y `bug_reports` (cada persona ve los suyos; el administrador los marca; hasta 10 por hora). `admin_usage_by_company()` y `admin_user_activity()`: conteos solo para el administrador, que no puede leer los leads. Ver `docs/USO_Y_SOPORTE.md` |
+| 0031 | Presupuesto mensual del asistente de IA: `company_ai_settings` (presupuesto en dólares por CRM, 30 por defecto, de 0 a 1.000) y `ai_usage_monthly` (llamadas, tokens y dólares por CRM y mes; solo números). Las dos las lee la gente del CRM (y el administrador) y **solo las escribe el servidor** con la clave secreta: `record_ai_usage()` suma cada llamada de forma atómica y `set_company_ai_budget()` cambia el tope a nombre de un gerente activo del CRM y lo deja en `change_log` (el trigger `log_row_change` no sirve con la clave secreta, que no tiene sesión de persona). Ver `docs/ASISTENTE_IA.md` |
 
 ## 8. Revisión automática
 
@@ -217,7 +220,7 @@ No reemplaza aplicarlas en una base real: no valida que una columna exista o que
 ```bash
 npx supabase db lint --linked --level error --schema public   # funciones con columnas o tipos inexistentes (sin --schema también revisa las internas de PostGIS, que traen avisos propios)
 npx supabase db advisors --linked             # revisión de seguridad y rendimiento de Supabase
-npm run test:db                               # 188 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación, ataques desde dentro países y divisas elegidos por la gerencia y uso y soporte
+npm run test:db                               # 223 pruebas funcionales: privacidad, aislamiento, administración, equipos, trabajo diario, zonas oficiales, etapas, exportación, ataques desde dentro, países y divisas elegidos por la gerencia, uso y soporte, y presupuesto de IA
 npm run test:db -- --con supabase/migrations/<nueva>.sql   # ensaya una migración con todas las pruebas SIN aplicarla
 ```
 
@@ -227,7 +230,7 @@ así se aplica a la base real solo lo que ya pasó todas las pruebas.
 `npm run test:db` crea datos ficticios, actúa como usuarios con sesión y sin sesión, y termina con un
 error forzado que deshace todo: la base queda exactamente como estaba.
 
-**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0029 el 27-09-2026**; **0030 el 29-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
+**Aplicadas el 25-09-2026** (0001 a 0014) en el proyecto de Supabase; **0015 a 0019 el 26-09-2026**; **0020 a 0029 el 27-09-2026**; **0030 el 29-09-2026**; **0031 el 30-09-2026**. Regla nueva: toda tabla lleva permisos explícitos para `authenticated` **y** `service_role` (la 0016 deja los futuros por defecto). Desde ahora **ninguna migración
 aplicada se edita**: cada cambio va en una nueva. El lint contra la base encontró un error que la revisión
 local no podía ver (la exportación, corregida en 0013).
 

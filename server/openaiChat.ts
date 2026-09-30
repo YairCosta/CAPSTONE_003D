@@ -6,6 +6,7 @@
 // Se llama con fetch, sin SDK: la clave (OPENAI_API_KEY) vive solo en el servidor.
 
 import type { Content, FunctionDeclaration, Part } from '@google/genai';
+import { estimateUsage, type ModelUsage } from './aiPricing.ts';
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
@@ -30,7 +31,13 @@ export interface ModelStep {
   parts: Part[];
   functionCalls: { id?: string; name: string; args: Record<string, unknown> }[];
   text: string;
+  /** Lo que gastó la llamada (solo OpenAI): con esto se calcula el costo y se aplica el presupuesto */
+  usage?: ModelUsage;
 }
+
+// Tope de la respuesta del modelo, razonamiento incluido. Un lead o una búsqueda caben de sobra; el tope
+// evita que una respuesta desbocada cueste de más.
+export const MAX_OUTPUT_TOKENS = 1500;
 
 // ------------------------------------------------------------------ herramientas
 // Gemini describe los tipos en mayúsculas (Type.STRING); OpenAI usa JSON Schema en minúsculas.
@@ -138,26 +145,64 @@ export class OpenAiError extends Error {
   }
 }
 
+interface OpenAiResponse {
+  choices?: { message?: { content?: string | null; tool_calls?: OpenAiToolCall[] } }[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+  };
+  error?: { message?: string; code?: string };
+}
+
+/** Los modelos GPT-5 razonan antes de responder, y ese razonamiento se cobra como salida: se pide el mínimo */
+const admiteRazonamiento = (model: string) => /^gpt-5/i.test(model.trim());
+
 export async function callOpenAi(options: {
   apiKey: string;
   model: string;
   messages: OpenAiMessage[];
   tools: OpenAiTool[];
+  /** "minimal", "low"…: cuánto razona el modelo antes de responder. Solo los GPT-5; menos razonamiento, menos costo. */
+  reasoningEffort?: string;
   fetchImpl?: typeof fetch;
 }): Promise<ModelStep> {
   const doFetch = options.fetchImpl ?? fetch;
-  // Sin temperatura: los modelos de razonamiento de OpenAI solo aceptan el valor por defecto
-  const response = await doFetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${options.apiKey}` },
-    body: JSON.stringify({ model: options.model, messages: options.messages, tools: options.tools, tool_choice: 'auto' }),
-  });
-  const data = (await response.json().catch(() => ({}))) as {
-    choices?: { message?: { content?: string | null; tool_calls?: OpenAiToolCall[] } }[];
-    error?: { message?: string; code?: string };
+  const pedir = (conRazonamiento: boolean) => {
+    // Sin temperatura: los modelos de razonamiento de OpenAI solo aceptan el valor por defecto
+    const cuerpo = JSON.stringify({
+      model: options.model,
+      messages: options.messages,
+      tools: options.tools,
+      tool_choice: 'auto',
+      max_completion_tokens: MAX_OUTPUT_TOKENS,
+      ...(conRazonamiento && options.reasoningEffort && admiteRazonamiento(options.model) ? { reasoning_effort: options.reasoningEffort } : {}),
+    });
+    return doFetch(OPENAI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${options.apiKey}` },
+      body: cuerpo,
+    }).then(async (response) => ({ response, cuerpo, data: (await response.json().catch(() => ({}))) as OpenAiResponse }));
   };
+
+  let { response, cuerpo, data } = await pedir(true);
+  // Si OpenAI rechaza el nivel de razonamiento pedido, se reintenta una vez con el suyo por defecto
+  if (response.status === 400 && /reasoning/i.test(data.error?.message ?? '') && options.reasoningEffort) {
+    ({ response, cuerpo, data } = await pedir(false));
+  }
   if (!response.ok) throw new OpenAiError(response.status, data.error?.message ?? `HTTP ${response.status}`, data.error?.code);
-  return fromOpenAiMessage(data.choices?.[0]?.message);
+
+  const paso = fromOpenAiMessage(data.choices?.[0]?.message);
+  const uso = data.usage;
+  paso.usage =
+    uso && typeof uso.prompt_tokens === 'number'
+      ? {
+          inputTokens: uso.prompt_tokens,
+          cachedInputTokens: uso.prompt_tokens_details?.cached_tokens ?? 0,
+          outputTokens: uso.completion_tokens ?? 0,
+        }
+      : estimateUsage(cuerpo.length, JSON.stringify(data.choices?.[0]?.message ?? {}).length);
+  return paso;
 }
 
 export function describeOpenAiError(error: unknown, model: string): { status: number; message: string } {
