@@ -134,8 +134,7 @@ Salida real de los cuatro comandos ([texto completo](evidencia/pruebas-automatic
 | Pipeline | [app-02-pipeline.png](evidencia/app-02-pipeline.png) |
 | Gerencia · Catálogo | [app-03-gerencia-catalogo.png](evidencia/app-03-gerencia-catalogo.png) |
 | Auditoría | [app-04-auditoria.png](evidencia/app-04-auditoria.png) |
-| Administración | [app-05-administracion.png](evidencia/app-05-administracion.png) |
-| Gerencia · Usuarios (CRM de Empresa Piloto) | [app-06-gerencia-usuarios.png](evidencia/app-06-gerencia-usuarios.png) |
+| Gerencia · Usuarios | [app-06-gerencia-usuarios.png](evidencia/app-06-gerencia-usuarios.png) |
 
 ---
 

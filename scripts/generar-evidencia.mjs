@@ -174,7 +174,6 @@ const MODULOS = [
   ['user-gerente-demo', 'Pipeline', 'app-02-pipeline.png', null],
   ['user-gerente-demo', 'Gerencia', 'app-03-gerencia-catalogo.png', 'Catálogo'],
   ['user-gerente-demo', 'Auditoría', 'app-04-auditoria.png', null],
-  ['user-admin', 'Administración', 'app-05-administracion.png', null],
   // CRM de la empresa con la que se pilotea: usuarios administrados por su propio gerente
   ['user-gerente-demo', 'Gerencia', 'app-06-gerencia-usuarios.png', 'Usuarios'],
 ];
