@@ -1,6 +1,6 @@
 # 2. Metodología de trabajo
 
-> Versión formal en Word, con plantilla de gestión de proyectos: [01_Metodologia_Declarada_y_Justificada.docx](../Archivos%20Word%20y%20PDF/01_Metodologia_Declarada_y_Justificada.docx)
+> Versión formal en Word, con plantilla de gestión de proyectos: [01_Metodologia_Declarada_y_Justificada.docx](../Archivos%20Word/01_Metodologia_Declarada_y_Justificada.docx)
 
 **Metodología declarada: marco ágil, en su variante Kanban/Scrumban, adaptada a un equipo de una persona.**
 
@@ -8,7 +8,7 @@
 
 | Situación del proyecto | Consecuencia |
 |---|---|
-| Los requisitos cambiaron durante el desarrollo (entró en juego la Ley 21.719, el cliente pidió más países y control del gasto de IA) | Un plan cerrado de requisitos habría quedado obsoleto; el backlog se repriorizó en cada iteración |
+| Los requisitos cambiaron durante el desarrollo (entró en juego la Ley 21.719, el cliente pidió más países y control del gasto de IA) | Un plan cerrado de requisitos habría quedado obsoleto; el backlog se volvió a priorizar en cada iteración |
 | Hay un cliente piloto que usa el producto en producción | Conviene entregar incrementos pequeños y verificados, no una sola entrega al final |
 | Cada `push` a la rama principal publica la aplicación (Vercel) | Integración y entrega continuas: cada cambio debe dejar la app funcionando |
 | Un solo desarrollador | Un tablero Kanban con límite de trabajo en curso basta; no hay equipo que coordinar con reuniones diarias |

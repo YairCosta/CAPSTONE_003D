@@ -1,6 +1,6 @@
 # 14. Evidencia de retrospectivas
 
-> Versión formal en Word, con plantilla de gestión de proyectos: [06_Retrospectivas.docx](../Archivos%20Word%20y%20PDF/06_Retrospectivas.docx)
+> Versión formal en Word, con plantilla de gestión de proyectos: [06_Retrospectivas.docx](../Archivos%20Word/06_Retrospectivas.docx)
 
 Qué salió mal, por qué y qué se cambió en el proceso en cada iteración. Se registran solo hechos que quedaron documentados
 en el repositorio (`docs/BASE_DE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/ASISTENTE_IA.md` y el historial de Git). Cada mejora

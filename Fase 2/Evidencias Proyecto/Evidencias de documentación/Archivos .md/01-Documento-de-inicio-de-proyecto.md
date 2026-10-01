@@ -1,6 +1,6 @@
 # 1. Documento de inicio de proyecto
 
-> Versión formal en Word, con plantilla de gestión de proyectos: [00_Acta_de_Inicio_del_Proyecto.docx](../Archivos%20Word%20y%20PDF/00_Acta_de_Inicio_del_Proyecto.docx)
+> Versión formal en Word, con plantilla de gestión de proyectos: [00_Acta_de_Inicio_del_Proyecto.docx](../Archivos%20Word/00_Acta_de_Inicio_del_Proyecto.docx)
 
 **Proyecto:** Revela · **Autor:** Yair Hamir Costa Pérez · **Asignatura:** CAPSTONE (APT122), sección 003D, Duoc UC
 

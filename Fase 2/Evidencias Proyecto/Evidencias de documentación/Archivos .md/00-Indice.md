@@ -1,6 +1,6 @@
 # Evidencias de documentación · Proyecto Revela
 
-> Esta carpeta (`Archivos .md`) guarda la fuente en Markdown. Los entregables formales en Word están en [Archivos Word y PDF](../Archivos%20Word%20y%20PDF/).
+> Esta carpeta (`Archivos .md`) guarda la fuente en Markdown. Los entregables formales en Word están en [Archivos Word](../Archivos%20Word/).
 
 Documentación del proyecto según el *Instructivo CAPSTONE*: artefactos de la metodología ágil y los elementos
 obligatorios independientes de la metodología.

@@ -1,6 +1,6 @@
 # 3. Product Vision
 
-> Versión formal en Word, con plantilla de gestión de proyectos: [02_Product_Vision.docx](../Archivos%20Word%20y%20PDF/02_Product_Vision.docx)
+> Versión formal en Word, con plantilla de gestión de proyectos: [02_Product_Vision.docx](../Archivos%20Word/02_Product_Vision.docx)
 
 ## Visión
 

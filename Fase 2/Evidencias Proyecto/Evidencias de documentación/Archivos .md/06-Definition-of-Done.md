@@ -1,6 +1,6 @@
 # 6. Definition of Done
 
-> Versión formal en Word, con plantilla de gestión de proyectos: [05_Definition_of_Done.docx](../Archivos%20Word%20y%20PDF/05_Definition_of_Done.docx)
+> Versión formal en Word, con plantilla de gestión de proyectos: [05_Definition_of_Done.docx](../Archivos%20Word/05_Definition_of_Done.docx)
 
 Un cambio está **terminado** cuando cumple todo lo que sigue. Es la lista que se aplica antes de cada commit
 (está escrita también en `CLAUDE.md`, "Al terminar un cambio").

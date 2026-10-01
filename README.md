@@ -126,7 +126,7 @@ Componentes, comunicación entre servicios y decisiones de arquitectura en
 
 La documentación de la asignatura está en [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/LEEME.md), en dos carpetas según el formato:
 
-- **[Archivos Word y PDF](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word%20y%20PDF/):** los entregables formales, con plantilla de gestión de proyectos (acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas). Se van agregando a medida que se piden.
+- **[Archivos Word](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/):** los entregables formales, con plantilla de gestión de proyectos (acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas). Se van agregando a medida que se piden.
 - **[Archivos .md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/):** la fuente en Markdown, legible directo en GitHub: inicio de proyecto, metodología, backlog, arquitectura, modelo de datos, UML, requisitos no funcionales, pruebas, manual técnico, innovación y retrospectivas ([índice](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/00-Indice.md)).
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 

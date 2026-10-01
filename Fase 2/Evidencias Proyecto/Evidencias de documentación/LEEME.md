@@ -4,12 +4,10 @@ La documentación del proyecto se guarda en dos carpetas, según el formato:
 
 | Carpeta | Qué contiene |
 |---|---|
-| [`Archivos Word y PDF`](Archivos%20Word%20y%20PDF/) | **Los entregables formales** (archivos físicos), con plantilla de gestión de proyectos. Se van armando a medida que la docente los pide |
+| [`Archivos Word`](Archivos%20Word/) | **Los entregables formales** (archivos Word), con plantilla de gestión de proyectos. Se van armando a medida que la docente los pide |
 | [`Archivos .md`](Archivos%20.md/) | **La fuente en Markdown** (`.md`): los 14 documentos del instructivo, legibles directo en GitHub, con diagramas Mermaid. Empieza por el [índice](Archivos%20.md/00-Indice.md) |
 
-## Entregables en Word y PDF
-
-Cada documento tiene su versión editable en Word (`.docx`) y una copia en PDF, que GitHub muestra directo en el navegador.
+## Entregables en Word
 
 | Archivo | Documento |
 |---|---|
