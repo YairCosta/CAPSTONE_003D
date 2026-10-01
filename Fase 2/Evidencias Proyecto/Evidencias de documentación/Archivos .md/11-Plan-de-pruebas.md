@@ -22,9 +22,9 @@ Las pruebas son **automáticas**, se escriben junto con el cambio y se corren an
 
 ## 11.2 Evidencia
 
-- Salida real de las suites: [`docs/evidencia/pruebas-automaticas.txt`](../../../docs/evidencia/pruebas-automaticas.txt) y su captura
-  [`pruebas-automaticas.png`](../../../docs/evidencia/pruebas-automaticas.png), generadas con `node scripts/generar-evidencia.mjs`.
-- Capturas de la aplicación en ejecución: [`docs/evidencia/`](../../../docs/evidencia/).
+- Salida real de las suites: [`docs/evidencia/pruebas-automaticas.txt`](../../../../docs/evidencia/pruebas-automaticas.txt) y su captura
+  [`pruebas-automaticas.png`](../../../../docs/evidencia/pruebas-automaticas.png), generadas con `node scripts/generar-evidencia.mjs`.
+- Capturas de la aplicación en ejecución: [`docs/evidencia/`](../../../../docs/evidencia/).
 - Medición de rendimiento del 30-09-2026 (línea base):
 
 | Medición | Resultado | Umbral |

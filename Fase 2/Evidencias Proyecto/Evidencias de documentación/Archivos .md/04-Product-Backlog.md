@@ -1,5 +1,7 @@
 # 4. Product Backlog priorizado
 
+> Versión formal en Word, con plantilla de gestión de proyectos: [03_Product_Backlog.docx](../Archivos%20Word%20y%20PDF/03_Product_Backlog.docx)
+
 Historias de usuario ordenadas por prioridad (P1 = imprescindible para el MVP). **Estado** a la fecha de la entrega
 (30-09-2026). La columna *Evidencia* dice dónde comprobarlo.
 

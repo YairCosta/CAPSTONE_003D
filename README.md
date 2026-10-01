@@ -28,7 +28,7 @@ gerentes comerciales y quienes operan la plataforma.
 
 **Qué problema resuelve.** Las empresas no saben *dónde* cierran sus negocios ni qué productos rinden en cada zona, y llevar los
 datos personales de sus leads en planillas es incompatible con la Ley 21.719 (vigente desde el 01-12-2026). Ver
-[`Fase 2/…/01-Documento-de-inicio-de-proyecto.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/01-Documento-de-inicio-de-proyecto.md).
+[`Fase 2/…/01-Documento-de-inicio-de-proyecto.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/01-Documento-de-inicio-de-proyecto.md).
 
 ## Tecnologías
 
@@ -63,7 +63,7 @@ docker compose up --build
 
 Abre <http://localhost:8080/?demo>. Para conectar una base de Supabase propia, copia `.env.example` como `.env` y completa los
 valores. Detalle, variables de entorno, publicación en Vercel y procedimiento de la base de datos en el
-[Manual técnico](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/12-Manual-tecnico-y-despliegue.md).
+[Manual técnico](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/12-Manual-tecnico-y-despliegue.md).
 
 ### Pruebas
 
@@ -77,7 +77,7 @@ npm run test:rendimiento
 ```
 
 Son 727 comprobaciones automáticas más 6 mediciones de rendimiento; `npm run test:db` además prueba la base real de Supabase
-(requiere acceso al proyecto). Ver el [Plan de pruebas](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/11-Plan-de-pruebas.md).
+(requiere acceso al proyecto). Ver el [Plan de pruebas](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/11-Plan-de-pruebas.md).
 
 ## Integrantes y roles
 
@@ -93,7 +93,7 @@ proyecto se pilotea con una empresa de servicios de Chile y Perú, que participa
 **Ágil, en su variante Kanban/Scrumban, adaptada a un equipo de una persona:** iteraciones cortas (1 a 3 días) que terminan con algo
 publicado, Product Backlog priorizado con historias de usuario, Definition of Done verificable, retrospectiva al cerrar cada
 iteración y pruebas automáticas en cada una. Cada `push` a la rama principal publica la aplicación. Justificación y
-artefactos en [02-Metodologia.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/02-Metodologia.md).
+artefactos en [02-Metodologia.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/02-Metodologia.md).
 
 ## Arquitectura de la solución
 
@@ -105,7 +105,7 @@ Vault) y consultar tipos de cambio. La clave secreta de Supabase vive solo en es
 ![Arquitectura de Revela](docs/diagramas/arquitectura-revela.png)
 
 Componentes, comunicación entre servicios y decisiones de arquitectura en
-[07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/07-Arquitectura.md).
+[07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/07-Arquitectura.md).
 
 ## Estructura del repositorio
 
@@ -124,9 +124,10 @@ Componentes, comunicación entre servicios y decisiones de arquitectura en
 
 ## Documentación
 
-- Documentos del instructivo (inicio de proyecto, metodología, backlog, arquitectura, modelo de datos, UML, requisitos no
-  funcionales, pruebas, manual técnico, innovación y retrospectivas):
-  [índice](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/00-Indice.md).
+La documentación de la asignatura está en [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/LEEME.md), en dos carpetas según el formato:
+
+- **[Archivos Word y PDF](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word%20y%20PDF/):** los entregables formales, con plantilla de gestión de proyectos (acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas). Se van agregando a medida que se piden.
+- **[Archivos .md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/):** la fuente en Markdown, legible directo en GitHub: inicio de proyecto, metodología, backlog, arquitectura, modelo de datos, UML, requisitos no funcionales, pruebas, manual técnico, innovación y retrospectivas ([índice](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/00-Indice.md)).
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 
 ## Estado

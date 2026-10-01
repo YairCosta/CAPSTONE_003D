@@ -1,8 +1,15 @@
 # 14. Evidencia de retrospectivas
 
-Al cerrar cada bloque de trabajo se revisó qué salió bien, qué falló y qué se cambió en el proceso. Se registran solo
-hechos que quedaron documentados en el repositorio (`docs/BASE_DE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/ASISTENTE_IA.md`
-y el historial de Git). Cada mejora se incorporó al proceso o al código.
+> Versión formal en Word, con plantilla de gestión de proyectos: [06_Retrospectivas.docx](../Archivos%20Word%20y%20PDF/06_Retrospectivas.docx)
+
+Qué salió mal, por qué y qué se cambió en el proceso en cada iteración. Se registran solo hechos que quedaron documentados
+en el repositorio (`docs/BASE_DE_DATOS.md`, `docs/SEGURIDAD.md`, `docs/ASISTENTE_IA.md` y el historial de Git). Cada mejora
+se incorporó al proceso o al código.
+
+> **Nota de transparencia.** Las retrospectivas de las iteraciones 2 a 4 se redactaron el 01-10-2026 a partir del historial
+> de Git y de los documentos del proyecto: los hechos y las mejoras son reales, pero no se registraron en una reunión al
+> cierre de cada iteración. La iteración 1 reúne el trabajo previo al primer commit y no tiene retrospectiva propia. La
+> iteración 5 se completa al cerrarla (06-10-2026).
 
 ## Retrospectiva de la Iteración 2 · 26-09-2026 (base de datos real)
 
@@ -39,3 +46,9 @@ y el historial de Git). Cada mejora se incorporó al proceso o al código.
 
 **Regla que queda:** antes de publicar algo nuevo se buscan claves y datos de personas reales, también en el historial, y
 se revisan a mano las imágenes.
+
+## Retrospectiva de cierre de la Iteración 5 · a completar el 06-10-2026
+
+| ¿Qué salió bien? | ¿Qué no salió bien? | ¿Qué cambiaremos? |
+|---|---|---|
+|  |  |  |

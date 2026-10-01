@@ -71,7 +71,7 @@ el servidor. Ninguna clave se escribe en el código. Plantilla completa: `.env.e
    tal como quedaría.
 4. En Supabase → Authentication → URL Configuration, poner la dirección publicada (Site URL y Redirect URLs).
 
-Detalle y decisiones: [`docs/DESPLIEGUE.md`](../../../docs/DESPLIEGUE.md).
+Detalle y decisiones: [`docs/DESPLIEGUE.md`](../../../../docs/DESPLIEGUE.md).
 
 ## 12.5 Base de datos (Supabase)
 
@@ -86,7 +86,7 @@ npm run test:db                                            # verifica todo de nu
 
 Reglas: nunca se edita una migración aplicada (siempre una nueva); un cambio destructivo va en migraciones separadas; toda
 tabla de datos lleva `company_id`, RLS, índice, `COMMENT ON` y un trigger de coherencia. Procedimiento completo en
-[`docs/BASE_DE_DATOS.md`](../../../docs/BASE_DE_DATOS.md).
+[`docs/BASE_DE_DATOS.md`](../../../../docs/BASE_DE_DATOS.md).
 
 ## 12.6 Pruebas
 

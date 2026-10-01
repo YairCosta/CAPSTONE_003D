@@ -2,7 +2,7 @@
 
 ## 7.1 Diagrama de arquitectura
 
-![Arquitectura de Revela](../../../docs/diagramas/arquitectura-revela.png)
+![Arquitectura de Revela](../../../../docs/diagramas/arquitectura-revela.png)
 
 La misma arquitectura, en un diagrama editable:
 

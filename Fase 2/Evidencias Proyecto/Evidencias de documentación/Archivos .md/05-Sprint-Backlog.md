@@ -1,5 +1,7 @@
 # 5. Sprint Backlog (iteraciones)
 
+> Versión formal en Word, con plantilla de gestión de proyectos: [04_Sprint_Backlog.docx](../Archivos%20Word%20y%20PDF/04_Sprint_Backlog.docx)
+
 Qué se desarrolló en cada iteración, reconstruido desde el historial real de Git (`git log`). Cada fila es un commit.
 
 > **Nota de trazabilidad.** El repositorio de código se inició el 23-09-2026 con un primer commit que trae el producto

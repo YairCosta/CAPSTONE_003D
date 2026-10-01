@@ -1,5 +1,7 @@
 # Evidencias de documentación · Proyecto Revela
 
+> Esta carpeta (`Archivos .md`) guarda la fuente en Markdown. Los entregables formales en Word están en [Archivos Word y PDF](../Archivos%20Word%20y%20PDF/).
+
 Documentación del proyecto según el *Instructivo CAPSTONE*: artefactos de la metodología ágil y los elementos
 obligatorios independientes de la metodología.
 
@@ -21,4 +23,4 @@ obligatorios independientes de la metodología.
 | 14 | [Evidencia de retrospectivas](14-Retrospectivas.md) | Qué mejoró el proceso en cada iteración |
 
 La documentación técnica de fondo (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue…)
-está en la carpeta [`docs/`](../../../docs/) del repositorio.
+está en la carpeta [`docs/`](../../../../docs/) del repositorio.

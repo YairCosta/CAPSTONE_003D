@@ -2,7 +2,7 @@
 
 Base relacional: **PostgreSQL 17 con PostGIS** en Supabase. 25 tablas en el esquema `public` (más el almacén de
 secretos Vault de Supabase), definidas por **32 migraciones** versionadas en `supabase/migrations/`.
-El glosario completo, el orden de las tablas y las reglas están en [`docs/BASE_DE_DATOS.md`](../../../docs/BASE_DE_DATOS.md).
+El glosario completo, el orden de las tablas y las reglas están en [`docs/BASE_DE_DATOS.md`](../../../../docs/BASE_DE_DATOS.md).
 
 ## 8.1 Diagrama entidad-relación
 
@@ -145,4 +145,4 @@ erDiagram
 
 La clave de OpenAI de cada empresa **no está en ninguna tabla en claro**: `company_ai_keys` guarda solo un puntero al
 secreto en Vault y los últimos 4 caracteres, y las personas con sesión no pueden leerla ni escribirla. Ver
-[`docs/SEGURIDAD.md`](../../../docs/SEGURIDAD.md) §7.
+[`docs/SEGURIDAD.md`](../../../../docs/SEGURIDAD.md) §7.

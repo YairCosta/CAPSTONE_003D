@@ -40,7 +40,7 @@ flowchart LR
     S --> CU16
 ```
 
-*Versión anterior del diagrama (cuando el producto se llamaba GeoCRM):* [`docs/diagrama-casos-de-uso-geocrm.png`](../../../docs/diagrama-casos-de-uso-geocrm.png).
+*Versión anterior del diagrama (cuando el producto se llamaba GeoCRM):* [`docs/diagrama-casos-de-uso-geocrm.png`](../../../../docs/diagrama-casos-de-uso-geocrm.png).
 
 ## 9.2 Diagrama de clases (dominio principal)
 
@@ -202,6 +202,6 @@ sequenceDiagram
 
 ## 9.5 Diagrama de componentes
 
-![Componentes de Revela](../../../docs/diagramas/componentes-revela.png)
+![Componentes de Revela](../../../../docs/diagramas/componentes-revela.png)
 
 Descripción de cada componente en [07-Arquitectura.md](07-Arquitectura.md) §7.2.
