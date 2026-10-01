@@ -8,7 +8,7 @@ Revela hace y cómo se comprueba.
 
 Las empresas B2B que venden en varios países de América Latina no saben **dónde** cierran sus negocios ni **qué**
 productos se venden en cada zona, y gestionar los datos personales de sus leads con planillas es incompatible con la
-Ley 21.719 (vigente desde el 01-12-2026). Ver [01-Documento-de-inicio-de-proyecto.md](01-Documento-de-inicio-de-proyecto.md).
+Ley 21.719 (vigente desde el 01-12-2026). Ver [Acta de inicio](../Archivos%20Word/00_Acta_de_Inicio_del_Proyecto.docx).
 
 ## ¿Qué hace diferente a la solución?
 

@@ -1,7 +1,7 @@
 # 11. Plan de pruebas y evidencias
 
 Las pruebas son **automáticas**, se escriben junto con el cambio y se corren antes de cada publicación (ver
-[Definition of Done](06-Definition-of-Done.md)). Resultado de la última corrida completa: **30-09-2026, todo en verde**.
+[Definition of Done](../Archivos%20Word/05_Definition_of_Done.docx)). Resultado de la última corrida completa: **30-09-2026, todo en verde**.
 
 ## 11.1 Suites y qué prueban
 

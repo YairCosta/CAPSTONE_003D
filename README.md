@@ -28,7 +28,7 @@ gerentes comerciales y quienes operan la plataforma.
 
 **Qué problema resuelve.** Las empresas no saben *dónde* cierran sus negocios ni qué productos rinden en cada zona, y llevar los
 datos personales de sus leads en planillas es incompatible con la Ley 21.719 (vigente desde el 01-12-2026). Ver
-[`Fase 2/…/01-Documento-de-inicio-de-proyecto.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/01-Documento-de-inicio-de-proyecto.md).
+[el acta de inicio](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/00_Acta_de_Inicio_del_Proyecto.docx).
 
 ## Tecnologías
 
@@ -93,7 +93,7 @@ proyecto se pilotea con una empresa de servicios de Chile y Perú, que participa
 **Ágil, en su variante Kanban/Scrumban, adaptada a un equipo de una persona:** iteraciones cortas (1 a 3 días) que terminan con algo
 publicado, Product Backlog priorizado con historias de usuario, Definition of Done verificable, retrospectiva al cerrar cada
 iteración y pruebas automáticas en cada una. Cada `push` a la rama principal publica la aplicación. Justificación y
-artefactos en [02-Metodologia.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/02-Metodologia.md).
+artefactos en [el documento de metodología](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/01_Metodologia_Declarada_y_Justificada.docx).
 
 ## Arquitectura de la solución
 
@@ -124,10 +124,10 @@ Componentes, comunicación entre servicios y decisiones de arquitectura en
 
 ## Documentación
 
-La documentación de la asignatura está en [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/LEEME.md), en dos carpetas según el formato:
+En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
-- **[Archivos Word](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/):** los entregables formales, con plantilla de gestión de proyectos (acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas). Se van agregando a medida que se piden.
-- **[Archivos .md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/):** la fuente en Markdown, legible directo en GitHub: inicio de proyecto, metodología, backlog, arquitectura, modelo de datos, UML, requisitos no funcionales, pruebas, manual técnico, innovación y retrospectivas ([índice](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/00-Indice.md)).
+- [`Archivos Word`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
+- [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 
 ## Estado
