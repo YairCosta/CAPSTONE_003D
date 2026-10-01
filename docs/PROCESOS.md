@@ -19,7 +19,7 @@ Las imágenes son PNG a 4x (de 7.000 a 9.800 px de ancho), para que no se pixele
 
 | Símbolo | Qué es |
 |---|---|
-| Círculo verde delgado | Evento de inicio (con sobre: empieza por un mensaje, como una solicitud del titular) |
+| Círculo verde delgado | Evento de inicio. Con sobre: empieza porque llega algo de afuera (un interesado, un contrato, un pedido al asistente o una solicitud del titular) |
 | Círculo rojo grueso | Evento de fin |
 | Círculo doble con reloj o sobre | Evento de espera: pasa un plazo (temporizador) o llega algo (mensaje) |
 | Rectángulo con persona | Tarea de una persona (tarea de usuario) |

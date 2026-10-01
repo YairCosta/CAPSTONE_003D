@@ -33,7 +33,7 @@ const PROCESOS = [
       { id: 'gerente', nombre: 'Gerente' },
     ],
     nodos: [
-      { id: 'inicio', tipo: 'inicio', lane: 'vendedor', col: 0, nombre: 'Aparece una empresa interesada' },
+      { id: 'inicio', tipo: 'inicioMensaje', lane: 'vendedor', col: 0, nombre: 'Aparece una empresa interesada' },
       { id: 'capturar', tipo: 'tareaUsuario', lane: 'vendedor', col: 1, nombre: 'Capturar lead con país, zona, productos, origen y base del dato' },
       { id: 'validar', tipo: 'tareaServicio', lane: 'sistema', col: 2, nombre: 'Validar CRM, país habilitado, zona del país y moneda' },
       { id: 'gValido', tipo: 'compuerta', lane: 'sistema', col: 3, nombre: '¿Datos válidos?' },
@@ -149,7 +149,7 @@ const PROCESOS = [
       { id: 'invitado', nombre: 'Persona invitada' },
     ],
     nodos: [
-      { id: 'contrata', tipo: 'inicio', lane: 'admin', col: 0, nombre: 'Una empresa contrata Revela' },
+      { id: 'contrata', tipo: 'inicioMensaje', lane: 'admin', col: 0, nombre: 'Una empresa contrata Revela' },
       { id: 'crear', tipo: 'tareaUsuario', lane: 'admin', col: 1, nombre: 'Crear el CRM: nombre, plan, país base y países' },
       { id: 'sembrar', tipo: 'tareaServicio', lane: 'sistema', col: 2, nombre: 'Copiar las zonas oficiales de sus países y las etapas' },
       { id: 'invitarGerente', tipo: 'tareaUsuario', lane: 'admin', col: 3, nombre: 'Invitar al gerente del cliente' },
@@ -188,7 +188,7 @@ const PROCESOS = [
       { id: 'crm', nombre: 'CRM (navegador y base de datos)' },
     ],
     nodos: [
-      { id: 'pide', tipo: 'inicio', lane: 'usuario', col: 0, nombre: 'Pide al asistente buscar empresas' },
+      { id: 'pide', tipo: 'inicioMensaje', lane: 'usuario', col: 0, nombre: 'Pide al asistente buscar empresas' },
       { id: 'verificar', tipo: 'tareaServicio', lane: 'servidor', col: 1, nombre: 'Verificar la sesión de CRM y el límite de consultas' },
       { id: 'gSesion', tipo: 'compuerta', lane: 'servidor', col: 2, nombre: '¿Sesión válida?' },
       { id: 'sinSesion', tipo: 'fin', lane: 'usuario', col: 3, nombre: 'Se le pide iniciar sesión' },

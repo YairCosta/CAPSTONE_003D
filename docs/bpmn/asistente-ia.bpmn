@@ -26,6 +26,7 @@
     </bpmn:laneSet>
     <bpmn:startEvent id="Nodo_pide" name="Pide al asistente buscar empresas">
       <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Mensaje_pide" />
     </bpmn:startEvent>
     <bpmn:serviceTask id="Nodo_verificar" name="Verificar la sesión de CRM y el límite de consultas">
       <bpmn:incoming>Flujo_1</bpmn:incoming>

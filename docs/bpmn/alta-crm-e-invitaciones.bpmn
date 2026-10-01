@@ -30,6 +30,7 @@
     </bpmn:laneSet>
     <bpmn:startEvent id="Nodo_contrata" name="Una empresa contrata Revela">
       <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Mensaje_contrata" />
     </bpmn:startEvent>
     <bpmn:userTask id="Nodo_crear" name="Crear el CRM: nombre, plan, país base y países">
       <bpmn:incoming>Flujo_1</bpmn:incoming>

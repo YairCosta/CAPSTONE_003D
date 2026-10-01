@@ -29,6 +29,7 @@
     </bpmn:laneSet>
     <bpmn:startEvent id="Nodo_inicio" name="Aparece una empresa interesada">
       <bpmn:outgoing>Flujo_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Mensaje_inicio" />
     </bpmn:startEvent>
     <bpmn:userTask id="Nodo_capturar" name="Capturar lead con país, zona, productos, origen y base del dato">
       <bpmn:incoming>Flujo_1</bpmn:incoming>
