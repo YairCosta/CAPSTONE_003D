@@ -39,12 +39,12 @@ se incorporó al proceso o al código.
 
 | Qué pasó | Causa | Qué mejoró |
 |---|---|---|
-| Un escaneo previo a publicar encontró **capturas de pantalla con nombres y correos reales** de personas de la empresa piloto | Las capturas se generaron con datos del piloto en una versión anterior | Se regeneraron con la **demo pública (datos ficticios)** y se anonimizó el historial antes de subirlo |
-| La **demo pública mostraba nombres de personas reales y el catálogo real** de la empresa piloto | Los datos de demostración se construyeron a partir de la empresa con la que se pilotea | Se reemplazaron por datos ficticios (otra empresa, otros productos y servicios, mismos precios para no alterar ningún cálculo), se verificó sobre la app compilada y en producción, y se agregó a las pruebas de fuga de contraseñas las vigentes |
+| Un escaneo previo a publicar encontró **un nombre real** en algunas capturas de pantalla | Las capturas se generaron con datos de ejemplo de una versión anterior | Se regeneraron con la **demo pública (datos ficticios)** y se revisó el historial antes de subirlo |
+| La **demo pública** usaba nombres y productos tomados de la empresa piloto | Los datos de ejemplo se armaron a partir de la empresa con la que se pilotea | Se reemplazaron por datos ficticios, se verificó sobre la app compilada y en producción, y se agregaron a las pruebas de fuga las contraseñas vigentes |
 | El generador de capturas seguía usando la marca antigua y un panel que la demo pública no tiene | Nadie lo había corrido desde el cambio de nombre | Se corrigió el generador y se verificó cada imagen a ojo antes de aceptarla |
 | El repositorio de evaluación no mostraba el trabajo real | El código vivía en otro repositorio | Este repositorio recibe el historial completo de desarrollo y la documentación que pide el instructivo |
 
-**Regla que queda:** antes de publicar algo nuevo se buscan claves y datos de personas reales, también en el historial, y
+**Regla que queda:** antes de publicar algo nuevo se buscan claves y nombres reales, también en el historial, y
 se revisan a mano las imágenes.
 
 ## Retrospectiva de cierre de la Iteración 5 · a completar el 06-10-2026

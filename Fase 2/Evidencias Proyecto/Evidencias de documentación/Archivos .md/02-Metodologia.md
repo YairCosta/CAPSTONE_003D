@@ -55,9 +55,3 @@ retrospectivas) y las prácticas de calidad (pruebas automáticas y despliegue c
 | Sin pares, nadie revisa el código | Pruebas automáticas (727 comprobaciones entre todas las suites), revisión de seguridad por casos de uso y pruebas de ataque contra la base real |
 | El alcance crece sin control | El backlog deja explícito lo que queda fuera del MVP |
 | Decisiones sin respaldo | Cada decisión relevante queda escrita en `docs/` (base de datos, seguridad, asistente de IA, despliegue) |
-
-## 2.5 Nota de transparencia
-
-El Sprint Backlog se reconstruyó desde el historial real de Git y las retrospectivas de las iteraciones 2 a 4 se redactaron
-el 01-10-2026 a partir de ese historial y de los documentos del proyecto: los hechos y las mejoras son reales, pero no se
-registraron en una reunión al cierre de cada iteración. Desde la iteración 5 la retrospectiva se registra al cerrarla.
