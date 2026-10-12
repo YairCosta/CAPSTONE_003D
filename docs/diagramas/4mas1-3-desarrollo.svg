@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="740" viewBox="0 0 1300 740">
+<defs><marker id="p64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker><marker id="p3730A3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3730A3"/></marker><marker id="p047857" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#047857"/></marker><marker id="pB45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B45309"/></marker><marker id="pB91C1C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B91C1C"/></marker></defs>
+<rect width="1300" height="740" fill="#FFFFFF"/>
+<text x="650" y="34" font-size="23" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Vista de desarrollo · organización del código</text>
+<text x="650" y="58" font-size="13.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Capas y paquetes, de la interfaz a la base de datos</text>
+<rect x="24" y="82" width="640" height="112" rx="12" fill="#E0E7FF" stroke="#A5B4FC" stroke-width="1.5"/>
+<text x="38" y="105" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">INTERFAZ · src/</text>
+<text x="650" y="105" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">React 19 + TypeScript + Tailwind</text>
+<rect x="38" y="120" width="196" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="136" y="137.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">App.tsx</text>
+<text x="136" y="156.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">orquesta sesión, perfil y</text>
+<text x="136" y="171.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">módulos</text>
+<rect x="246" y="120" width="196" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="344" y="137.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">components/</text>
+<text x="344" y="156.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">KPI y mapa, Pipeline, Contacto,</text>
+<text x="344" y="171.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Gerencia, asistente</text>
+<rect x="454" y="120" width="196" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="552" y="145" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">modulos.ts</text>
+<text x="552" y="164" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">carga cada módulo al abrirlo</text>
+<rect x="24" y="222" width="640" height="112" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="38" y="245" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">LÓGICA PURA · src/lib/ y src/data/</text>
+<text x="650" y="245" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">se prueba sin navegador</text>
+<rect x="38" y="260" width="144" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="110" y="277.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">tenantGuards</text>
+<text x="110" y="296.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">ninguna escritura cruza</text>
+<text x="110" y="311.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">de CRM</text>
+<rect x="194" y="260" width="144" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="266" y="277.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">permissions</text>
+<text x="266" y="296.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">roles y derechos del</text>
+<text x="266" y="311.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">titular (privacy)</text>
+<rect x="350" y="260" width="144" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="422" y="285" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">plan · money</text>
+<text x="422" y="304" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">vencimiento y monedas</text>
+<rect x="506" y="260" width="144" height="60" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="578" y="285" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">countries.ts</text>
+<text x="578" y="304" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">19 países y sus zonas</text>
+<rect x="24" y="362" width="640" height="100" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="38" y="385" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">ACCESO A DATOS · src/lib/db/</text>
+<text x="650" y="385" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">demo en memoria o Supabase</text>
+<rect x="38" y="400" width="196" height="48" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="136" y="419" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">mappers · auth</text>
+<text x="136" y="438" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">filas ⇄ objetos</text>
+<rect x="246" y="400" width="196" height="48" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="344" y="419" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">supabaseClient</text>
+<text x="344" y="438" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">clave pública</text>
+<rect x="454" y="400" width="196" height="48" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="552" y="419" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">dataSource</text>
+<text x="552" y="438" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">demo o Supabase</text>
+<rect x="704" y="82" width="276" height="480" rx="12" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1.5"/>
+<text x="718" y="105" font-size="13.5" font-weight="700" fill="#B45309" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVIDOR · server/</text>
+<text x="966" y="105" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">una función de Vercel</text>
+<rect x="720" y="116" width="244" height="76" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="842" y="141.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">api.ts</text>
+<text x="842" y="160.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">arma la API desde el entorno y verifica</text>
+<text x="842" y="175.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">la sesión</text>
+<rect x="720" y="204" width="244" height="76" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="842" y="237" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">aiChat · openaiChat</text>
+<text x="842" y="256" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">asistente: herramientas y GPT</text>
+<rect x="720" y="292" width="244" height="76" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="842" y="317.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">leadSearch · places*</text>
+<text x="842" y="336.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Google Places por CRM y su límite</text>
+<text x="842" y="351.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">mensual</text>
+<rect x="720" y="380" width="244" height="76" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="842" y="405.5" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">aiKeys · aiBudget</text>
+<text x="842" y="424.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">clave y presupuesto de OpenAI de cada</text>
+<text x="842" y="439.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">CRM</text>
+<rect x="720" y="468" width="244" height="76" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="842" y="500.5" font-size="12" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">adminUsers · exchangeRates</text>
+<text x="842" y="518.5" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">invitaciones y tipos de cambio</text>
+<rect x="24" y="590" width="956" height="120" rx="12" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1.5"/>
+<text x="38" y="613" font-size="13.5" font-weight="700" fill="#047857" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">BASE DE DATOS · supabase/migrations/</text>
+<text x="966" y="613" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">34 migraciones aplicadas</text>
+<rect x="40" y="628" width="296" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="188" y="657.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">tablas, RLS y triggers</text>
+<text x="188" y="676.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">aislamiento entre CRMs</text>
+<rect x="350" y="628" width="296" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="498" y="657.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">funciones y pg_cron</text>
+<text x="498" y="676.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">claves en Vault, cupo y suspensión</text>
+<rect x="660" y="628" width="296" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="808" y="657.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">PostGIS</text>
+<text x="808" y="676.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">zonas con contorno</text>
+<rect x="24" y="482" width="400" height="80" rx="9" fill="#FFFFFF" stroke="#3730A3" stroke-width="1.6" />
+<text x="224" y="509.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Regla del repositorio</text>
+<text x="224" y="528.75" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">todo lo que se pueda probar sin navegador va en src/lib como</text>
+<text x="224" y="544.25" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">función pura, no dentro de un componente</text>
+<path d="M344 194 L344 220" fill="none" stroke="#3730A3" stroke-width="1.8"  marker-end="url(#p3730A3)"/>
+<path d="M664 152 L702 152" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#pB45309)"/>
+<rect x="658.2" y="129" width="51.599999999999994" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="684" y="142" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">/api/*</text>
+<path d="M664 168 L684 168 L684 412 L666 412" fill="none" stroke="#3730A3" stroke-width="1.8"  marker-end="url(#p3730A3)"/>
+<rect x="661.5" y="287" width="45" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="684" y="300" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">datos</text>
+<path d="M560 462 L560 588" fill="none" stroke="#047857" stroke-width="1.8"  marker-end="url(#p047857)"/>
+<rect x="429.9" y="517" width="124.19999999999999" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="492" y="530" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">supabase-js + RLS</text>
+<path d="M842 562 L842 588" fill="none" stroke="#047857" stroke-width="1.8"  marker-end="url(#p047857)"/>
+<rect x="851.1" y="565" width="97.8" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="900" y="578" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">clave secreta</text>
+<rect x="1010" y="82" width="266" height="628" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="1024" y="105" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">CALIDAD · scripts/</text>
+<text x="1262" y="105" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">antes de cada push</text>
+<rect x="1028" y="114" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="140" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:tenant</text>
+<text x="1143" y="158.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">78 · aislamiento entre CRMs</text>
+<rect x="1028" y="184" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="202.75" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:ai</text>
+<text x="1143" y="221.25" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">69 · asistente con OpenAI y Google</text>
+<text x="1143" y="235.75" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">simulados</text>
+<rect x="1028" y="254" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="280" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:supabase</text>
+<text x="1143" y="298.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">57 · capa de datos</text>
+<rect x="1028" y="324" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="350" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:plan</text>
+<text x="1143" y="368.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">12 · vencimiento y avisos</text>
+<rect x="1028" y="394" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="420" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:sql</text>
+<text x="1143" y="438.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">107 · sintaxis y convenciones</text>
+<rect x="1028" y="464" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="490" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:db</text>
+<text x="1143" y="508.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">335 · base real, con ataques</text>
+<rect x="1028" y="534" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="560" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:e2e</text>
+<text x="1143" y="578.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">148 · punta a punta con Chrome</text>
+<rect x="1028" y="604" width="230" height="62" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1143" y="630" font-size="12.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="Consolas, 'Courier New', monospace">test:vercel · test:bundle</text>
+<text x="1143" y="648.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">27 + 8 · lo publicado, sin claves</text>
+<text x="1143" y="700" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Cifras de la última corrida</text>
+</svg>

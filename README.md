@@ -95,6 +95,8 @@ publicado, Product Backlog priorizado con historias de usuario, Definition of Do
 iteración y pruebas automáticas en cada una. Cada `push` a la rama principal publica la aplicación. Justificación y
 artefactos en [el documento de metodología](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/01_Metodologia_Declarada_y_Justificada.docx).
 
+**Tablero Scrumban (GitHub Projects, público):** <https://github.com/users/YairCosta/projects/1>, con tres estados (Pendiente, En curso, Hecho) y vinculado a este repositorio.
+
 ## Arquitectura de la solución
 
 Una aplicación React (archivos estáticos en Vercel) que habla **directo con Supabase** con la sesión de cada persona —la
@@ -106,6 +108,18 @@ Vault) y consultar tipos de cambio. La clave secreta de Supabase vive solo en es
 
 Componentes, comunicación entre servicios y decisiones de arquitectura en
 [07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/07-Arquitectura.md).
+
+### Arquitectura 4+1 (Kruchten)
+
+Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/07_Arquitectura_4mas1.docx). Las imágenes las genera un script del repositorio de producción (`npm run diagramas:4mas1`), a partir de la estructura real del proyecto:
+
+| Vista | Imagen |
+|---|---|
+| Lógica: qué se guarda y cómo se relaciona | [4mas1-1-logica.png](docs/diagramas/4mas1-1-logica.png) |
+| De procesos: quién hace qué, en orden | [4mas1-2-procesos.png](docs/diagramas/4mas1-2-procesos.png) |
+| De desarrollo: cómo está organizado el código | [4mas1-3-desarrollo.png](docs/diagramas/4mas1-3-desarrollo.png) |
+| Física: dónde corre cada pieza | [4mas1-4-fisica.png](docs/diagramas/4mas1-4-fisica.png) |
+| Escenarios (+1): quién usa Revela y para qué | [4mas1-5-escenarios.png](docs/diagramas/4mas1-5-escenarios.png) |
 
 ## Estructura del repositorio
 
@@ -126,7 +140,8 @@ Componentes, comunicación entre servicios y decisiones de arquitectura en
 
 En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
-- [`Archivos Word`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
+- [`Archivos Word`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas (REV-00 a REV-06), más la [arquitectura 4+1](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/07_Arquitectura_4mas1.docx) (REV-07), la [justificación de la innovación y del piloto](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/08_Justificacion_Innovacion_y_Piloto.docx) (REV-08) y el [índice de evidencias](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/09_Indice_de_Evidencias.docx) (REV-09).
+- [`Capturas de evidencia`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Capturas%20de%20evidencia/): las capturas que cita el índice de evidencias, con su fecha y el comando que las produce.
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 

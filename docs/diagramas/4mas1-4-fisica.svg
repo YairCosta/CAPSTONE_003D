@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="790" viewBox="0 0 1300 790">
+<defs><marker id="p64748B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker><marker id="p3730A3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3730A3"/></marker><marker id="p047857" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#047857"/></marker><marker id="pB45309" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B45309"/></marker><marker id="pB91C1C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B91C1C"/></marker></defs>
+<rect width="1300" height="790" fill="#FFFFFF"/>
+<text x="650" y="34" font-size="23" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Vista física · dónde corre cada cosa</text>
+<text x="650" y="58" font-size="13.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Despliegue real en Vercel y Supabase, con los servicios externos que usa</text>
+<rect x="24" y="80" width="250" height="420" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="38" y="103" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">DISPOSITIVO</text>
+
+<rect x="44" y="120" width="210" height="130" rx="9" fill="#E0E7FF" stroke="#3730A3" stroke-width="1.6" />
+<text x="149" y="165" font-size="14.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Navegador de la persona</text>
+<text x="149" y="185.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">app de una página (React) y mapa</text>
+<text x="149" y="201" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Leaflet; los datos de la demo</text>
+<text x="149" y="216.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">viven solo en esa pestaña</text>
+<rect x="44" y="280" width="210" height="90" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="149" y="305" font-size="14.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Sesión de Supabase</text>
+<text x="149" y="325.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">token en el navegador; la</text>
+<text x="149" y="341" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">contraseña la guarda Supabase</text>
+<text x="149" y="356.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Auth con hash</text>
+<rect x="316" y="80" width="330" height="420" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="330" y="103" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">VERCEL</text>
+<text x="632" y="103" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">publica con cada push a main</text>
+<rect x="336" y="120" width="290" height="96" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="481" y="155.75" font-size="14.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Archivos estáticos</text>
+<text x="481" y="176.25" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">la app compilada, con caché larga y política</text>
+<text x="481" y="191.75" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">de contenido (CSP)</text>
+<rect x="336" y="244" width="290" height="150" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="481" y="299" font-size="14.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Función de Node · /api</text>
+<text x="481" y="319.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">/api/ai (asistente, claves y límites por CRM)</text>
+<text x="481" y="335" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">· /api/rates (tipos de cambio) · /api/admin</text>
+<text x="481" y="350.5" font-size="12.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">(invitaciones)</text>
+<text x="481" y="430" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Variable secreta: clave de servicio de Supabase</text>
+<text x="481" y="450" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Sin claves de IA ni de Places: son de cada CRM</text>
+<rect x="688" y="80" width="588" height="200" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="702" y="103" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SERVICIOS EXTERNOS</text>
+
+<rect x="704" y="108" width="178" height="66" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="793" y="136.25" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">OpenAI</text>
+<text x="793" y="155.25" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">GPT: asistente</text>
+<rect x="894" y="108" width="178" height="66" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="983" y="129" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Google Places</text>
+<text x="983" y="148" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">opcional: empresas reales, con</text>
+<text x="983" y="162.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">la clave del CRM</text>
+<rect x="1084" y="108" width="178" height="66" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="1173" y="128.25" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Banco Central y</text>
+<text x="1173" y="144.25" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">open.er-api</text>
+<text x="1173" y="163.25" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">tipos de cambio</text>
+<rect x="704" y="184" width="178" height="66" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="793" y="205" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Esri</text>
+<text x="793" y="224" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">teselas del mapa base, desde</text>
+<text x="793" y="238.5" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">el navegador</text>
+<rect x="894" y="184" width="178" height="66" rx="9" fill="#FFFFFF" stroke="#64748B" stroke-width="1.6" stroke-dasharray="6 5"/>
+<text x="983" y="212.25" font-size="13" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Flow</text>
+<text x="983" y="231.25" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pagos (por construir)</text>
+<rect x="688" y="300" width="588" height="200" rx="12" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1.5"/>
+<text x="702" y="323" font-size="13.5" font-weight="700" fill="#047857" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">SUPABASE · São Paulo</text>
+<text x="1262" y="323" font-size="12" font-weight="400" fill="#475569" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif">un solo proyecto</text>
+<rect x="706" y="334" width="270" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="841" y="363.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Auth</text>
+<text x="841" y="382.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">login, invitaciones y contraseñas</text>
+<rect x="990" y="334" width="270" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="1125" y="355.75" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">PostgreSQL + PostGIS</text>
+<text x="1125" y="375.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">datos de todos los CRMs, aislados por RLS y</text>
+<text x="1125" y="390.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">triggers</text>
+<rect x="706" y="412" width="270" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="841" y="433.75" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Vault</text>
+<text x="841" y="453.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">claves de OpenAI y de Google de cada CRM,</text>
+<text x="841" y="468.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">cifradas</text>
+<rect x="990" y="412" width="270" height="68" rx="9" fill="#FFFFFF" stroke="#047857" stroke-width="1.6" />
+<text x="1125" y="441.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pg_cron</text>
+<text x="1125" y="460.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">suspensión nocturna de planes vencidos</text>
+<path d="M256 168 L334 168" fill="none" stroke="#64748B" stroke-width="1.8"  marker-end="url(#p64748B)"/>
+<rect x="273.5" y="145" width="45" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="296" y="158" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">HTTPS</text>
+<path d="M256 325 L334 325" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#pB45309)"/>
+<rect x="237.2" y="302" width="117.6" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="296" y="315" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">/api/* con token</text>
+<path d="M150 372 L150 540 L900 540 L900 502" fill="none" stroke="#047857" stroke-width="1.8"  marker-end="url(#p047857)"/>
+<rect x="415" y="519" width="210" height="18" rx="5" fill="#FFFFFF" opacity="0.96"/>
+<text x="520" y="532" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">datos directos con token + RLS</text>
+<path d="M628 300 L668 300 L668 180 L686 180" fill="none" stroke="#B45309" stroke-width="1.8"  marker-end="url(#pB45309)"/>
+<path d="M628 360 L686 360" fill="none" stroke="#047857" stroke-width="1.8"  marker-end="url(#p047857)"/>
+<rect x="24" y="568" width="1252" height="176" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="38" y="591" font-size="13.5" font-weight="700" fill="#3730A3" text-anchor="start" font-family="'Segoe UI', system-ui, sans-serif">CÓMO LLEGA EL CÓDIGO A PRODUCCIÓN</text>
+
+<rect x="46" y="616" width="206" height="98" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="149" y="660.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Equipo de desarrollo</text>
+<text x="149" y="679.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">pruebas locales: test:ai, test:db…</text>
+<path d="M252 665 L290 665" fill="none" stroke="#3730A3" stroke-width="1.8"  marker-end="url(#p3730A3)"/>
+<rect x="292" y="616" width="206" height="98" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="395" y="660.25" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">GitHub · repo privado</text>
+<text x="395" y="679.75" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">push a main</text>
+<path d="M498 665 L536 665" fill="none" stroke="#3730A3" stroke-width="1.8"  marker-end="url(#p3730A3)"/>
+<rect x="538" y="616" width="206" height="98" rx="9" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6" />
+<text x="641" y="652.75" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Vercel</text>
+<text x="641" y="672.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">compila y publica solo; si falla,</text>
+<text x="641" y="687.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">vuelta atrás con un clic</text>
+<path d="M744 665 L782 665" fill="none" stroke="#3730A3" stroke-width="1.8"  marker-end="url(#p3730A3)"/>
+<rect x="784" y="616" width="206" height="98" rx="9" fill="#D1FAE5" stroke="#047857" stroke-width="1.6" />
+<text x="887" y="652.75" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Supabase</text>
+<text x="887" y="672.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">las migraciones se aplican antes</text>
+<text x="887" y="687.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">con db push</text>
+<rect x="1030" y="616" width="206" height="98" rx="9" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.6" />
+<text x="1133" y="652.75" font-size="13.5" font-weight="650" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Landing</text>
+<text x="1133" y="672.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">proyecto de Vercel aparte,</text>
+<text x="1133" y="687.25" font-size="12" font-weight="400" fill="#475569" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">estático</text>
+<text x="650" y="772" font-size="12.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif">Orden de publicación: primero la migración y después el código, porque la app nueva puede leer columnas que la base vieja no tiene.</text>
+</svg>
