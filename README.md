@@ -28,7 +28,7 @@ gerentes comerciales y quienes operan la plataforma.
 
 **Qué problema resuelve.** Las empresas no saben *dónde* cierran sus negocios ni qué productos rinden en cada zona, y llevar los
 datos personales de sus leads en planillas es incompatible con la Ley 21.719 (vigente desde el 01-12-2026). Ver
-[el acta de inicio](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/00_Acta_de_Inicio_del_Proyecto.docx).
+[el acta de inicio](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/00_Acta_de_Inicio_del_Proyecto.docx).
 
 ## Tecnologías
 
@@ -93,7 +93,7 @@ proyecto se pilotea con una empresa de servicios de Chile y Perú, que participa
 **Ágil, en su variante Kanban/Scrumban, adaptada a un equipo de una persona:** iteraciones cortas (1 a 3 días) que terminan con algo
 publicado, Product Backlog priorizado con historias de usuario, Definition of Done verificable, retrospectiva al cerrar cada
 iteración y pruebas automáticas en cada una. Cada `push` a la rama principal publica la aplicación. Justificación y
-artefactos en [el documento de metodología](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/01_Metodologia_Declarada_y_Justificada.docx).
+artefactos en [el documento de metodología](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/01_Metodologia_Declarada_y_Justificada.docx).
 
 **Tablero Scrumban (GitHub Projects, público):** <https://github.com/users/YairCosta/projects/1>, con tres estados (Pendiente, En curso, Hecho) y vinculado a este repositorio.
 
@@ -140,7 +140,7 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 
 En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
-- [`Archivos Word`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20Word/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
+- [`Entrega 06-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
 - [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1.
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
