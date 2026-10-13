@@ -109,17 +109,18 @@ Vault) y consultar tipos de cambio. La clave secreta de Supabase vive solo en es
 Componentes, comunicación entre servicios y decisiones de arquitectura en
 [07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/07-Arquitectura.md).
 
-### Arquitectura 4+1 (Kruchten)
+### Arquitectura 4+1 (Kruchten), en notación UML
 
-Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/07_Arquitectura_4mas1.docx). Las imágenes las genera un script del repositorio de producción (`npm run diagramas:4mas1`), a partir de la estructura real del proyecto:
+Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/07_Arquitectura_4mas1.docx). Cada diagrama usa UML 2 y se genera desde el repositorio con `npm run diagramas:uml`:
 
-| Vista | Imagen |
-|---|---|
-| Lógica: qué se guarda y cómo se relaciona | [4mas1-1-logica.png](docs/diagramas/4mas1-1-logica.png) |
-| De procesos: quién hace qué, en orden | [4mas1-2-procesos.png](docs/diagramas/4mas1-2-procesos.png) |
-| De desarrollo: cómo está organizado el código | [4mas1-3-desarrollo.png](docs/diagramas/4mas1-3-desarrollo.png) |
-| Física: dónde corre cada pieza | [4mas1-4-fisica.png](docs/diagramas/4mas1-4-fisica.png) |
-| Escenarios (+1): quién usa Revela y para qué | [4mas1-5-escenarios.png](docs/diagramas/4mas1-5-escenarios.png) |
+| Vista | Diagrama UML | Imagen |
+|---|---|---|
+| Lógica: qué datos maneja y cómo se relacionan | Clases | [uml-1-clases.png](docs/diagramas/uml-1-clases.png) |
+| De procesos: qué ocurre en ejecución | Secuencia | [uml-2-secuencia.png](docs/diagramas/uml-2-secuencia.png) |
+| De procesos: ciclo de vida del lead | Estados | [uml-6-estados.png](docs/diagramas/uml-6-estados.png) |
+| De desarrollo: cómo está organizado el código | Componentes | [uml-3-componentes.png](docs/diagramas/uml-3-componentes.png) |
+| Física: dónde corre cada pieza | Despliegue | [uml-4-despliegue.png](docs/diagramas/uml-4-despliegue.png) |
+| Escenarios (+1): quién usa Revela y para qué | Casos de uso | [uml-5-casos-de-uso.png](docs/diagramas/uml-5-casos-de-uso.png) |
 
 ## Estructura del repositorio
 
@@ -141,7 +142,7 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
 - [`Entrega 06-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
-- [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1.
+- [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1 con diagramas UML.
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="770" viewBox="0 0 1500 770"><defs>
+<marker id="abierta" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1 1L11 6L1 11" fill="none" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="solida" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L12 6L0 12z" fill="#334155"/></marker>
+<marker id="hueca" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto"><path d="M1 1L13 7L1 13z" fill="#fff" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="rombo" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#334155" stroke="#334155" stroke-width="1"/></marker>
+<marker id="romboHueco" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#fff" stroke="#334155" stroke-width="1.6"/></marker>
+</defs><rect width="1500" height="770" fill="#FFFFFF"/>
+<rect x="8" y="8" width="1484" height="754" fill="#FFFFFF" stroke="#334155" stroke-width="2.2"/>
+<polygon points="8,8 354.8,8 354.8,32 340.8,46 8,46" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<text x="22" y="34" font-size="18" font-weight="800" fill="#3730A3" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">deployment</text><text x="144" y="34" font-size="18" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Dónde corre cada pieza</text>
+<polygon points="50,130 66,114 426,114 410,130" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="410,130 426,114 426,444 410,460" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="50" y="130" width="360" height="330" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="64" y="154" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«device»</text>
+<text x="64" y="180" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Computador o celular</text>
+<rect x="76" y="210" width="308" height="210" fill="#F1F5F9" stroke="#334155" stroke-width="2"/>
+<text x="90" y="236" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«execution environment»</text>
+<text x="90" y="262" font-size="18" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Navegador web</text>
+<polygon points="96,300 350,300 364,314 364,390 96,390" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M350 300 L350 314 L364 314" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="108" y="322" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«artifact»</text>
+<text x="108" y="346" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Aplicación web (React)</text>
+<polygon points="630,100 646,84 1066,84 1050,100" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="1050,100 1066,84 1066,354 1050,370" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="630" y="100" width="420" height="270" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="644" y="124" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«execution environment»</text>
+<text x="644" y="150" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Vercel</text>
+<polygon points="654,190 820,190 834,204 834,278 654,278" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M820 190 L820 204 L834 204" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="666" y="212" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«artifact»</text>
+<text x="666" y="236" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Archivos de la app</text>
+<polygon points="852,190 1008,190 1022,204 1022,278 852,278" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M1008 190 L1008 204 L1022 204" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="864" y="212" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«artifact»</text>
+<text x="864" y="236" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Función /api</text>
+<text x="654" y="322" font-size="14.5" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Se publica sola con cada cambio aprobado</text>
+<polygon points="630,470 646,454 1066,454 1050,470" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="1050,470 1066,454 1066,669 1050,685" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="630" y="470" width="420" height="215" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="644" y="494" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«execution environment»</text>
+<text x="644" y="520" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Supabase (São Paulo)</text>
+<polygon points="654,560 758,560 772,574 772,656 654,656" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M758 560 L758 574 L772 574" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="666" y="582" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«database»</text>
+<text x="666" y="606" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">PostgreSQL</text>
+<polygon points="784,560 862,560 876,574 876,656 784,656" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M862 560 L862 574 L876 574" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="796" y="582" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«artifact»</text>
+<text x="796" y="606" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Auth</text>
+<polygon points="888,560 1012,560 1026,574 1026,656 888,656" fill="#fff" stroke="#334155" stroke-width="2"/>
+<path d="M1012 560 L1012 574 L1026 574" fill="none" stroke="#334155" stroke-width="1.8"/>
+<text x="900" y="582" font-size="13" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«artifact»</text>
+<text x="900" y="606" font-size="16.5" font-weight="600" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Vault</text>
+<polygon points="1190,100 1206,84 1476,84 1460,100" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="1460,100 1476,84 1476,194 1460,210" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="1190" y="100" width="270" height="110" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="1204" y="124" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«web service»</text>
+<text x="1204" y="150" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">OpenAI</text>
+<polygon points="1190,290 1206,274 1476,274 1460,290" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="1460,290 1476,274 1476,404 1460,420" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="1190" y="290" width="270" height="130" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="1204" y="314" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«web service»</text>
+<text x="1204" y="340" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Tipos de cambio</text>
+<text x="1204" y="374" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Banco Central y open.er-api</text>
+<polygon points="1190,500 1206,484 1476,484 1460,500" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<polygon points="1460,500 1476,484 1476,614 1460,630" fill="#E2E8F0" stroke="#334155" stroke-width="2.2"/>
+<rect x="1190" y="500" width="270" height="130" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="1204" y="524" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«web service»</text>
+<text x="1204" y="550" font-size="20" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Mapa base (Esri)</text>
+<text x="1204" y="584" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">teselas del mapa</text>
+<path d="M426 250 L630 250" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="491.9" y="217" width="72.19999999999999" height="26" fill="#fff"/>
+<text x="528" y="236" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»</text>
+<text x="528" y="274" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">app y API</text>
+<path d="M426 400 L540 400 L540 580 L630 580" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="548.9" y="541" width="72.19999999999999" height="26" fill="#fff"/>
+<text x="585" y="560" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»</text>
+<text x="585" y="614" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">login y datos</text>
+<path d="M840 370 L840 470" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="963.9" y="407" width="72.19999999999999" height="26" fill="#fff"/>
+<text x="1000" y="426" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»</text>
+<text x="1000" y="448" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">sesión y datos</text>
+<path d="M1066 170 L1190 160" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="1091.9" y="121" width="72.19999999999999" height="26" fill="#fff"/>
+<text x="1128" y="140" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»</text>
+<path d="M1066 270 L1128 270 L1128 352 L1190 352" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="1091.9" y="293" width="72.19999999999999" height="26" fill="#fff"/>
+<text x="1128" y="312" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»</text>
+<path d="M230 460 L230 730 L1325 730 L1325 630" fill="none" stroke="#334155" stroke-width="2"   />
+<rect x="696.6" y="703" width="166.79999999999998" height="26" fill="#fff"/>
+<text x="780" y="722" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">«HTTPS»  mapa base</text>
+</svg>

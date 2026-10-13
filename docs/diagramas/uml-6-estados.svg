@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="640" viewBox="0 0 1500 640"><defs>
+<marker id="abierta" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1 1L11 6L1 11" fill="none" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="solida" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L12 6L0 12z" fill="#334155"/></marker>
+<marker id="hueca" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto"><path d="M1 1L13 7L1 13z" fill="#fff" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="rombo" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#334155" stroke="#334155" stroke-width="1"/></marker>
+<marker id="romboHueco" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#fff" stroke="#334155" stroke-width="1.6"/></marker>
+</defs><rect width="1500" height="640" fill="#FFFFFF"/>
+<rect x="8" y="8" width="1484" height="624" fill="#FFFFFF" stroke="#334155" stroke-width="2.2"/>
+<polygon points="8,8 307.8,8 307.8,32 293.8,46 8,46" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<text x="22" y="34" font-size="18" font-weight="800" fill="#3730A3" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">stm</text><text x="67" y="34" font-size="18" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Ciclo de vida de un lead</text>
+<circle cx="62" cy="312" r="13" fill="#334155"/>
+<path d="M75 312 L108 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="108" y="270" width="176" height="84" rx="22" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="196" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Nuevo lead</text>
+<text x="196" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 10 %</text>
+<rect x="336" y="270" width="176" height="84" rx="22" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="424" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Toma de contacto</text>
+<text x="424" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 25 %</text>
+<rect x="564" y="270" width="176" height="84" rx="22" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="652" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Calificado</text>
+<text x="652" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 45 %</text>
+<rect x="792" y="270" width="176" height="84" rx="22" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="880" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Propuesta</text>
+<text x="880" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 70 %</text>
+<rect x="1020" y="270" width="176" height="84" rx="22" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<text x="1108" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Pendiente de pago</text>
+<text x="1108" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 90 %</text>
+<rect x="1248" y="270" width="176" height="84" rx="22" fill="#D1FAE5" stroke="#047857" stroke-width="2.4"/>
+<text x="1336" y="308" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Cerrado (ganado)</text>
+<text x="1336" y="332" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 100 %</text>
+<path d="M284 312 L336 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="248" y="242" width="124" height="22" fill="#fff"/>
+<text x="310" y="259" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">registra contacto</text>
+<path d="M512 312 L564 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="476" y="242" width="124" height="22" fill="#fff"/>
+<text x="538" y="259" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">califica</text>
+<path d="M740 312 L792 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="704" y="242" width="124" height="22" fill="#fff"/>
+<text x="766" y="259" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">envía propuesta</text>
+<path d="M968 312 L1020 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="932" y="242" width="124" height="22" fill="#fff"/>
+<text x="994" y="259" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">acepta</text>
+<path d="M1196 312 L1248 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="1160" y="242" width="124" height="22" fill="#fff"/>
+<text x="1222" y="259" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">paga</text>
+<path d="M1424 312 L1447 312" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<circle cx="1462" cy="312" r="14" fill="none" stroke="#334155" stroke-width="2.4"/><circle cx="1462" cy="312" r="8" fill="#334155"/>
+<rect x="666" y="70" width="200" height="84" rx="22" fill="#FFE4E6" stroke="#9F1239" stroke-width="2.4"/>
+<text x="766" y="108" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Perdido / descartado</text>
+<text x="766" y="132" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">prob. 0 %</text>
+<path d="M196 196 L1108 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M196 220 L196 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M424 220 L424 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M652 220 L652 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M880 220 L880 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M1108 220 L1108 196" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M196 220 L196 270" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M424 220 L424 270" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M652 220 L652 270" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M880 220 L880 270" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M1108 220 L1108 270" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M766 196 L766 154" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#abierta)" />
+<text x="204" y="188" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">desde cualquier etapa abierta</text>
+<path d="M866 112 L1462 112 L1462 298" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#solida)" />
+<rect x="616" y="500" width="300" height="84" rx="22" fill="#FEF3C7" stroke="#B45309" stroke-width="2.4"/>
+<text x="766" y="538" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Anonimizado</text>
+<text x="766" y="562" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">datos personales borrados, la operación queda</text>
+<path d="M196 430 L1336 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M196 354 L196 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M424 354 L424 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M652 354 L652 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M880 354 L880 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M1108 354 L1108 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M1336 354 L1336 430" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6"  />
+<path d="M766 430 L766 500" fill="none" stroke="#B45309" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#abierta)" />
+<text x="204" y="454" font-size="14.5" font-weight="400" fill="#B45309" text-anchor="start" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">prospecto sin contacto en 30 días, o a pedido del titular</text>
+<polygon points="1010,500 1470,500 1470,590 1030,590 1010,570" fill="#F1F5F9" stroke="#334155" stroke-width="1.8"/>
+<text x="1026" y="530" font-size="15" font-weight="400" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Con una solicitud del titular pendiente, el lead</text>
+<text x="1026" y="554" font-size="15" font-weight="400" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">queda bloqueado: no se edita ni avanza. Solo el</text>
+<text x="1026" y="578" font-size="15" font-weight="400" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">gerente la resuelve.</text>
+</svg>

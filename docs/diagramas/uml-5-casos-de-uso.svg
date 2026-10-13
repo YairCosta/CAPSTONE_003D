@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="790" viewBox="0 0 1500 790"><defs>
+<marker id="abierta" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1 1L11 6L1 11" fill="none" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="solida" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L12 6L0 12z" fill="#334155"/></marker>
+<marker id="hueca" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" orient="auto"><path d="M1 1L13 7L1 13z" fill="#fff" stroke="#334155" stroke-width="1.8"/></marker>
+<marker id="rombo" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#334155" stroke="#334155" stroke-width="1"/></marker>
+<marker id="romboHueco" viewBox="0 0 18 12" refX="1" refY="6" markerWidth="18" markerHeight="12" orient="auto-start-reverse"><path d="M1 6L9 1L17 6L9 11z" fill="#fff" stroke="#334155" stroke-width="1.6"/></marker>
+</defs><rect width="1500" height="790" fill="#FFFFFF"/>
+<rect x="8" y="8" width="1484" height="774" fill="#FFFFFF" stroke="#334155" stroke-width="2.2"/>
+<polygon points="8,8 524,8 524,32 510,46 8,46" fill="#F1F5F9" stroke="#334155" stroke-width="2.2"/>
+<text x="22" y="34" font-size="18" font-weight="800" fill="#3730A3" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">uc</text><text x="56" y="34" font-size="18" font-weight="700" fill="#0F172A" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Quién usa Revela y para qué (escenarios E1 a E5)</text>
+<rect x="300" y="70" width="920" height="670" fill="#FAFAFF" stroke="#334155" stroke-width="2.2"/>
+<text x="320" y="102" font-size="19" font-weight="800" fill="#3730A3" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Revela</text>
+<ellipse cx="500" cy="170" rx="165" ry="31" fill="#E0E7FF" stroke="#3730A3" stroke-width="2.2"/>
+<text x="500" y="176" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Buscar empresas con el asistente</text>
+<circle cx="351" cy="147" r="15" fill="#3730A3"/>
+<text x="351" y="152.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E1</text>
+<ellipse cx="500" cy="260" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="500" y="266" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Capturar un lead con su origen</text>
+<circle cx="351" cy="237" r="15" fill="#3730A3"/>
+<text x="351" y="242.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E2</text>
+<ellipse cx="500" cy="350" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="500" y="356" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Mover el lead por el pipeline</text>
+<ellipse cx="500" cy="450" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="500" y="456" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Ver el mapa y los KPI por zona</text>
+<ellipse cx="500" cy="545" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="500" y="551" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Resolver solicitudes del titular</text>
+<circle cx="351" cy="522" r="15" fill="#3730A3"/>
+<text x="351" y="527.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E3</text>
+<ellipse cx="500" cy="640" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="500" y="646" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Fijar presupuesto y clave de IA</text>
+<circle cx="351" cy="617" r="15" fill="#3730A3"/>
+<text x="351" y="622.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E5</text>
+<ellipse cx="930" cy="170" rx="150" ry="28" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="930" y="176" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Revisar el presupuesto del mes</text>
+<ellipse cx="930" cy="280" rx="150" ry="28" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="930" y="286" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Guardar la empresa como lead</text>
+<ellipse cx="930" cy="420" rx="165" ry="31" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="930" y="426" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Pedir acceso o supresión de datos</text>
+<circle cx="781" cy="397" r="15" fill="#3730A3"/>
+<text x="781" y="402.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E3</text>
+<ellipse cx="930" cy="515" rx="150" ry="28" fill="#fff" stroke="#334155" stroke-width="2.2"/>
+<text x="930" y="521" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Crear o suspender un CRM</text>
+<ellipse cx="930" cy="610" rx="170" ry="31" fill="#FEF3C7" stroke="#B45309" stroke-width="2.2"/>
+<text x="930" y="616" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Suspender el CRM con plan vencido</text>
+<circle cx="776" cy="587" r="15" fill="#3730A3"/>
+<text x="776" y="592.5" font-size="13.5" font-weight="800" fill="#fff" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">E4</text>
+<ellipse cx="930" cy="700" rx="170" ry="31" fill="#FEF3C7" stroke="#B45309" stroke-width="2.2"/>
+<text x="930" y="706" font-size="16.5" font-weight="400" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Anonimizar prospectos a los 30 días</text>
+<circle cx="110" cy="210" r="14" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<path d="M110 224 L110 256 M86 235 L134 235 M110 256 L92 284 M110 256 L128 284" stroke="#334155" stroke-width="2.4" fill="none"/>
+<text x="110" y="308" font-size="17.5" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Usuario base</text>
+<text x="110" y="328" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">agente de ventas</text>
+<circle cx="110" cy="530" r="14" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<path d="M110 544 L110 576 M86 555 L134 555 M110 576 L92 604 M110 576 L128 604" stroke="#334155" stroke-width="2.4" fill="none"/>
+<text x="110" y="628" font-size="17.5" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Gerente</text>
+<text x="110" y="648" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">administra su CRM</text>
+<circle cx="1360" cy="300" r="14" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<path d="M1360 314 L1360 346 M1336 325 L1384 325 M1360 346 L1342 374 M1360 346 L1378 374" stroke="#334155" stroke-width="2.4" fill="none"/>
+<text x="1360" y="398" font-size="17.5" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Titular</text>
+<text x="1360" y="418" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">dueño de los datos</text>
+<circle cx="1360" cy="480" r="14" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<path d="M1360 494 L1360 526 M1336 505 L1384 505 M1360 526 L1342 554 M1360 526 L1378 554" stroke="#334155" stroke-width="2.4" fill="none"/>
+<text x="1360" y="578" font-size="17.5" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Administrador</text>
+<text x="1360" y="598" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">de la plataforma</text>
+<circle cx="1360" cy="640" r="14" fill="#fff" stroke="#334155" stroke-width="2.4"/>
+<path d="M1360 654 L1360 686 M1336 665 L1384 665 M1360 686 L1342 714 M1360 686 L1378 714" stroke="#334155" stroke-width="2.4" fill="none"/>
+<text x="1360" y="738" font-size="17.5" font-weight="700" fill="#0F172A" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">Tarea automática</text>
+<text x="1360" y="758" font-size="14" font-weight="400" fill="#475569" text-anchor="middle" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">pg_cron</text>
+<path d="M134 235 L335 170" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M134 235 L335 260" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M134 235 L335 350" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M134 555 L335 450" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M134 555 L335 545" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M134 555 L335 640" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M110 478 L110 340" fill="none" stroke="#334155" stroke-width="2"  marker-end="url(#hueca)" />
+<text x="126" y="404" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">además hace todo</text>
+<text x="126" y="422" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start" font-style="normal" font-family="'Segoe UI', system-ui, sans-serif">lo del usuario base</text>
+<path d="M1336 325 L1095 420" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M1336 505 L1080 515" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M1336 665 L1100 610" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M1336 665 L1100 700" fill="none" stroke="#334155" stroke-width="1.8"   />
+<path d="M665 170 L780 170" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#abierta)" />
+<text x="752" y="150" font-size="14.5" font-weight="400" fill="#475569" text-anchor="middle" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">«include»</text>
+<path d="M780 280 L730 280 L730 200 L644 187" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#abierta)" />
+<text x="722" y="246" font-size="14.5" font-weight="400" fill="#475569" text-anchor="end" font-style="italic" font-family="'Segoe UI', system-ui, sans-serif">«extend»</text>
+</svg>
