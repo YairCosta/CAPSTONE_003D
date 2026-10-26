@@ -143,6 +143,7 @@ En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidenci
 
 - [`Entrega 06-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
 - [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1 con diagramas UML.
+- Presentaciones: [Fase 1](Fase%201/Evidencias%20Grupales/Presentación%20Proyecto.pptx) (definición, avance y roadmap) y [Fase 2](Fase%202/Evidencias%20Proyecto/Presentación%20Proyecto.pptx) (arquitectura 4+1 con UML y evidencias). La guía de definición del proyecto (1.5) está en [`Fase 1/Evidencias Grupales`](Fase%201/Evidencias%20Grupales/).
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 
