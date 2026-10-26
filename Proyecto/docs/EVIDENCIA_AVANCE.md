@@ -83,7 +83,7 @@ Las 7 etapas con su probabilidad de cierre y su SLA, las transiciones que las di
 
 Empresas cliente y productos (activo / desactivado / eliminado), el CRM completo (activo / suspendido y plan Nacional / Internacional), el usuario del CRM (activo / desactivado y su perfil), la ubicación y el valor del lead, los seguimientos de la agenda (agendado / atrasado / atendido) y las entradas del historial de auditoría.
 
-La presentación de esta entrega está en [`Presentacion_Revela_Avance.pptx`](Presentacion_Revela_Avance.pptx).
+Las presentaciones del proyecto están en [`Fase 1/Evidencias Grupales`](../../Fase%201/Evidencias%20Grupales/) y [`Fase 2/Evidencias Proyecto`](../../Fase%202/Evidencias%20Proyecto/).
 
 ---
 

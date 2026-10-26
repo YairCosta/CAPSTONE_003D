@@ -16,3 +16,12 @@ carpeta `Proyecto/`** para que `npx supabase db push` las encuentre; no se dupli
 `COMMENT ON` y un trigger que valida que sus referencias son del mismo CRM; el lead se ubica por zona, nunca por coordenada.
 
 La clave de OpenAI de cada empresa se guarda **cifrada en Supabase Vault** (migración 0032); ninguna tabla la tiene en claro.
+
+## Diagramas y capturas
+
+| Archivo | Qué muestra |
+|---|---|
+| [`Diagrama_entidad_relacion.png`](Diagrama_entidad_relacion.png) | Tablas y relaciones principales (desde las llaves foráneas de las migraciones) |
+| [`Migraciones_versionadas.png`](Migraciones_versionadas.png) | Las migraciones de esta copia, en el orden en que se aplican |
+
+![Diagrama entidad-relación](Diagrama_entidad_relacion.png)

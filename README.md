@@ -133,8 +133,9 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 
 ```text
 .
-├─ Fase 1/     Definición del proyecto: evidencias individuales (1.1 a 1.3) y grupales (presentación y guía 1.5)
-├─ Fase 2/     Desarrollo del proyecto: presentación, documentación y evidencias de sistema
+├─ Fase 1/     Definición del proyecto: individuales (1.1 a 1.3) y grupales (presentación, 1.4, guía 1.5 y planilla)
+├─ Fase 2/     Desarrollo del proyecto: individuales (2.1), grupales (guía 2.4 y planillas) y Evidencias Proyecto
+│              (presentación, documentación, y evidencias de sistema: aplicación y base de datos)
 ├─ Fase 3/     Presentación final del proyecto (se completa al cierre del semestre)
 └─ Proyecto/   Código de la aplicación (copia de muestra)
    ├─ src/                  Interfaz (React + TypeScript) y lógica de negocio pura (src/lib)
@@ -151,10 +152,13 @@ privado.
 
 ## Documentación
 
+Las guías de la Fase 2 están en [`Fase 2/Evidencias Grupales`](Fase%202/Evidencias%20Grupales/) (2.4) y [`Fase 2/Evidencias Individuales`](Fase%202/Evidencias%20Individuales/) (2.1). Las capturas de la aplicación, la prueba en Docker y el diagrama entidad-relación, en [`Fase 2/Evidencias Proyecto/Evidencias de sistema`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/).
+
 En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
 - [`Entrega 06-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2006-10-2026/): acta de inicio, metodología, Product Vision, Product Backlog, Sprint Backlog, Definition of Done y retrospectivas.
 - [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1 con diagramas UML.
+- [`Arquitectura 4+1 (UML)`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Arquitectura%204%2B1%20%28UML%29/) y [`Diagramas BPMN`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Diagramas%20BPMN/): los diagramas como imágenes.
 - Presentaciones: [Fase 1](Fase%201/Evidencias%20Grupales/Presentación%20Proyecto.pptx) (definición, avance y roadmap) y [Fase 2](Fase%202/Evidencias%20Proyecto/Presentación%20Proyecto.pptx) (arquitectura 4+1 con UML y evidencias). La guía de definición del proyecto (1.5) está en [`Fase 1/Evidencias Grupales`](Fase%201/Evidencias%20Grupales/).
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
 - Documentación técnica de fondo: [`Proyecto/docs/`](Proyecto/docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
