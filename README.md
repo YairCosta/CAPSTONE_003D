@@ -134,7 +134,7 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 ```text
 .
 ├─ Fase 1/     Definición del proyecto: individuales (1.1 a 1.3) y grupales (presentación, 1.4, guía 1.5 y planilla)
-├─ Fase 2/     Desarrollo del proyecto: individuales (2.1), grupales (guía 2.4 y planillas) y Evidencias Proyecto
+├─ Fase 2/     Desarrollo del proyecto: individuales (2.1 y 2.2), grupales (guía 2.4 y planillas) y Evidencias Proyecto
 │              (presentación, documentación, y evidencias de sistema: aplicación y base de datos)
 ├─ Fase 3/     Presentación final del proyecto (se completa al cierre del semestre)
 └─ Proyecto/   Código de la aplicación (copia de muestra)
@@ -152,7 +152,7 @@ privado.
 
 ## Documentación
 
-Las guías de la Fase 2 están en [`Fase 2/Evidencias Grupales`](Fase%202/Evidencias%20Grupales/) (2.4) y [`Fase 2/Evidencias Individuales`](Fase%202/Evidencias%20Individuales/) (2.1). Las capturas de la aplicación, la prueba en Docker y el diagrama entidad-relación, en [`Fase 2/Evidencias Proyecto/Evidencias de sistema`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/).
+Las guías de la Fase 2 están en [`Fase 2/Evidencias Grupales`](Fase%202/Evidencias%20Grupales/) (2.4) y [`Fase 2/Evidencias Individuales`](Fase%202/Evidencias%20Individuales/) (diario 2.1 y autoevaluación 2.2). Las capturas de la aplicación, la prueba en Docker y el diagrama entidad-relación, en [`Fase 2/Evidencias Proyecto/Evidencias de sistema`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/).
 
 En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/):
 
