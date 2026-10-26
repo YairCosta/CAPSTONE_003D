@@ -24,7 +24,7 @@ Las pruebas son **automáticas**, se escriben junto con el cambio y se corren an
 
 - Salida real de las suites: [`docs/evidencia/pruebas-automaticas.txt`](../../../../Proyecto/docs/evidencia/pruebas-automaticas.txt) y su captura
   [`pruebas-automaticas.png`](../../../../Proyecto/docs/evidencia/pruebas-automaticas.png), generadas con `node scripts/generar-evidencia.mjs`.
-- Capturas de la aplicación en ejecución: [`docs/evidencia/`](../../../../Proyecto/docs/evidencia/).
+- Capturas de la aplicación en ejecución (26-10-2026): [`Evidencias de sistema · Aplicación`](../../Evidencias%20de%20sistema/Aplicaci%C3%B3n/LEEME.md).
 - Medición de rendimiento del 30-09-2026 (línea base):
 
 | Medición | Resultado | Umbral |

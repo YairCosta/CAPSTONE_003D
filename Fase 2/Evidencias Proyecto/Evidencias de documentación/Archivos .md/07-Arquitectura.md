@@ -2,7 +2,9 @@
 
 ## 7.1 Diagrama de arquitectura
 
-![Arquitectura de Revela](../../../../Proyecto/docs/diagramas/arquitectura-revela.png)
+![Diagrama de despliegue (UML) de Revela](../../../../Proyecto/docs/diagramas/uml-4-despliegue.png)
+
+Las cinco vistas de la arquitectura 4+1, con sus diagramas UML, están en [`Arquitectura 4+1 (UML)`](../Arquitectura%204%2B1%20%28UML%29/) y explicadas en [07_Arquitectura_4mas1.docx](../Entrega%2013-10-2026/07_Arquitectura_4mas1.docx).
 
 La misma arquitectura, en un diagrama editable:
 

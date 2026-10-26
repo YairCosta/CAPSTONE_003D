@@ -81,6 +81,7 @@ npm run build && npm run test:bundle && npm run test:vercel
 npm run dev            # en otra terminal
 npm run test:e2e
 npm run test:rendimiento
+npm run test:docker    # con el contenedor levantado (docker compose up -d)
 ```
 
 En esta copia de muestra son 727 comprobaciones automáticas más 6 mediciones de rendimiento (el repositorio de producción, más reciente, tiene 848 en 10 suites); `npm run test:db` además prueba la base real de Supabase
@@ -111,7 +112,7 @@ seguridad la imponen RLS y triggers en la base— y con una **única función `/
 verificar sesiones, invitar usuarios, hacer de proxy del asistente de IA (con la clave de OpenAI de cada empresa, cifrada en
 Vault) y consultar tipos de cambio. La clave secreta de Supabase vive solo en ese servidor.
 
-![Arquitectura de Revela](Proyecto/docs/diagramas/arquitectura-revela.png)
+![Diagrama de despliegue (UML) de Revela](Proyecto/docs/diagramas/uml-4-despliegue.png)
 
 Componentes, comunicación entre servicios y decisiones de arquitectura en
 [07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/07-Arquitectura.md).

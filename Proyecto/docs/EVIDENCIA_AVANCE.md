@@ -1,5 +1,7 @@
 # Revela · Evidencia de avance
 
+> **Documento histórico** (avance de septiembre de 2026, antes de conectar la base real). Los diagramas vigentes, en notación UML, están en `Fase 2/Evidencias Proyecto/Evidencias de documentación/Arquitectura 4+1 (UML)/`.
+
 **Estudiante:** Yair Costa · **Profesora:** Rocío Contreras · **Sección:** 003D
 **Proyecto:** CRM SaaS multi-tenant con inteligencia geográfica (Duoc UC)
 

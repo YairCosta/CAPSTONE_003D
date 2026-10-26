@@ -202,7 +202,7 @@ sequenceDiagram
 
 ## 9.5 Diagrama de componentes
 
-![Componentes de Revela](../../../../Proyecto/docs/diagramas/componentes-revela.png)
+![Diagrama de componentes (UML) de Revela](../../../../Proyecto/docs/diagramas/uml-3-componentes.png)
 
 Descripción de cada componente en [07-Arquitectura.md](07-Arquitectura.md) §7.2.
 
