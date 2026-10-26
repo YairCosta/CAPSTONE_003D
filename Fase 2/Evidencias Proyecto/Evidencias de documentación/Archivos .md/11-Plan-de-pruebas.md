@@ -18,7 +18,7 @@ Las pruebas son **automáticas**, se escriben junto con el cambio y se corren an
 | Seguridad y despliegue | `npm run test:vercel` | La app y la API tal como quedarían en Vercel: rutas, sesión obligatoria, CSP sin violaciones | 24 | Chrome |
 | **Rendimiento** | `npm run test:rendimiento` | Carga de la app (LCP, peso del JavaScript) y latencia de la API | 6 mediciones | Chrome y la app en marcha |
 
-**Total: 727 comprobaciones automáticas** (más 6 mediciones de rendimiento).
+**Total: 727 comprobaciones automáticas** (más 6 mediciones de rendimiento) en esta copia de muestra; el repositorio de producción, más reciente, tiene 848 en 10 suites.
 
 ## 11.2 Evidencia
 

@@ -83,7 +83,7 @@ npm run test:e2e
 npm run test:rendimiento
 ```
 
-Son 727 comprobaciones automáticas más 6 mediciones de rendimiento; `npm run test:db` además prueba la base real de Supabase
+En esta copia de muestra son 727 comprobaciones automáticas más 6 mediciones de rendimiento (el repositorio de producción, más reciente, tiene 848 en 10 suites); `npm run test:db` además prueba la base real de Supabase
 (requiere acceso al proyecto). Ver el [Plan de pruebas](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/11-Plan-de-pruebas.md).
 
 ## Integrantes y roles
@@ -140,7 +140,7 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 └─ Proyecto/   Código de la aplicación (copia de muestra)
    ├─ src/                  Interfaz (React + TypeScript) y lógica de negocio pura (src/lib)
    ├─ server/               API: asistente de IA, tipos de cambio, invitaciones (Vercel y Docker)
-   ├─ supabase/migrations/  Esquema de la base de datos (32 migraciones)
+   ├─ supabase/migrations/  Esquema de la base de datos (32 migraciones en esta copia; 34 en producción)
    ├─ scripts/              Pruebas automáticas y generadores de evidencia
    ├─ datos/zonas/          Zonas oficiales procesadas
    ├─ docs/                 Documentación técnica (base de datos, seguridad, IA, Ley 21.719, BPMN, despliegue…)

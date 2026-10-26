@@ -1,7 +1,7 @@
 # 8. Modelo de datos
 
 Base relacional: **PostgreSQL 17 con PostGIS** en Supabase. 25 tablas en el esquema `public` (más el almacén de
-secretos Vault de Supabase), definidas por **32 migraciones** versionadas en `supabase/migrations/`.
+secretos Vault de Supabase), definidas por **32 migraciones** versionadas en `supabase/migrations/` (en esta copia de muestra; la base de producción tiene 34).
 El glosario completo, el orden de las tablas y las reglas están en [`docs/BASE_DE_DATOS.md`](../../../../Proyecto/docs/BASE_DE_DATOS.md).
 
 ## 8.1 Diagrama entidad-relación
