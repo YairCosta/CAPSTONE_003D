@@ -45,9 +45,12 @@ datos personales de sus leads en planillas es incompatible con la Ley 21.719 (vi
 
 ## Cómo ejecutarlo localmente
 
+El código está en la carpeta [`Proyecto/`](Proyecto/); todos los comandos se ejecutan dentro de ella.
+
 ### Con Node (desarrollo)
 
 ```bash
+cd Proyecto
 npm ci
 npm run dev
 ```
@@ -58,16 +61,18 @@ ni claves. Requiere Node.js 22.
 ### Con Docker
 
 ```bash
+cd Proyecto
 docker compose up --build
 ```
 
-Abre <http://localhost:8080/?demo>. Para conectar una base de Supabase propia, copia `.env.example` como `.env` y completa los
+Abre <http://localhost:8080/?demo>. Para conectar una base de Supabase propia, copia `Proyecto/.env.example` como `Proyecto/.env` y completa los
 valores. Detalle, variables de entorno, publicación en Vercel y procedimiento de la base de datos en el
 [Manual técnico](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/12-Manual-tecnico-y-despliegue.md).
 
 ### Pruebas
 
 ```bash
+cd Proyecto
 npx tsc -b && npm run lint
 npm run test:tenant && npm run test:export && npm run test:ai && npm run test:supabase && npm run test:sql
 npm run build && npm run test:bundle && npm run test:vercel
@@ -104,7 +109,7 @@ seguridad la imponen RLS y triggers en la base— y con una **única función `/
 verificar sesiones, invitar usuarios, hacer de proxy del asistente de IA (con la clave de OpenAI de cada empresa, cifrada en
 Vault) y consultar tipos de cambio. La clave secreta de Supabase vive solo en ese servidor.
 
-![Arquitectura de Revela](docs/diagramas/arquitectura-revela.png)
+![Arquitectura de Revela](Proyecto/docs/diagramas/arquitectura-revela.png)
 
 Componentes, comunicación entre servicios y decisiones de arquitectura en
 [07-Arquitectura.md](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/07-Arquitectura.md).
@@ -115,27 +120,32 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 
 | Vista | Diagrama UML | Imagen |
 |---|---|---|
-| Lógica: qué datos maneja y cómo se relacionan | Clases | [uml-1-clases.png](docs/diagramas/uml-1-clases.png) |
-| De procesos: qué ocurre en ejecución | Secuencia | [uml-2-secuencia.png](docs/diagramas/uml-2-secuencia.png) |
-| De procesos: ciclo de vida del lead | Estados | [uml-6-estados.png](docs/diagramas/uml-6-estados.png) |
-| De desarrollo: cómo está organizado el código | Componentes | [uml-3-componentes.png](docs/diagramas/uml-3-componentes.png) |
-| Física: dónde corre cada pieza | Despliegue | [uml-4-despliegue.png](docs/diagramas/uml-4-despliegue.png) |
-| Escenarios (+1): quién usa Revela y para qué | Casos de uso | [uml-5-casos-de-uso.png](docs/diagramas/uml-5-casos-de-uso.png) |
+| Lógica: qué datos maneja y cómo se relacionan | Clases | [uml-1-clases.png](Proyecto/docs/diagramas/uml-1-clases.png) |
+| De procesos: qué ocurre en ejecución | Secuencia | [uml-2-secuencia.png](Proyecto/docs/diagramas/uml-2-secuencia.png) |
+| De procesos: ciclo de vida del lead | Estados | [uml-6-estados.png](Proyecto/docs/diagramas/uml-6-estados.png) |
+| De desarrollo: cómo está organizado el código | Componentes | [uml-3-componentes.png](Proyecto/docs/diagramas/uml-3-componentes.png) |
+| Física: dónde corre cada pieza | Despliegue | [uml-4-despliegue.png](Proyecto/docs/diagramas/uml-4-despliegue.png) |
+| Escenarios (+1): quién usa Revela y para qué | Casos de uso | [uml-5-casos-de-uso.png](Proyecto/docs/diagramas/uml-5-casos-de-uso.png) |
 
 ## Estructura del repositorio
 
 ```text
 .
-├─ src/                  Interfaz (React + TypeScript) y lógica de negocio pura (src/lib)
-├─ server/               API: asistente de IA, tipos de cambio, invitaciones (Vercel y Docker)
-├─ supabase/migrations/  Esquema de la base de datos (32 migraciones)
-├─ scripts/              Pruebas automáticas y generadores de evidencia
-├─ datos/zonas/          Zonas oficiales procesadas
-├─ docs/                 Documentación técnica (base de datos, seguridad, IA, Ley 21.719, BPMN, despliegue…)
-├─ Dockerfile, docker-compose.yml
-├─ Fase 1/               Evidencias de la Fase 1 (individuales y grupales)
-└─ Fase 2/               Evidencias del proyecto: documentación y evidencias de sistema
+├─ Fase 1/     Definición del proyecto: evidencias individuales (1.1 a 1.3) y grupales (presentación y guía 1.5)
+├─ Fase 2/     Desarrollo del proyecto: presentación, documentación y evidencias de sistema
+├─ Fase 3/     Presentación final del proyecto (se completa al cierre del semestre)
+└─ Proyecto/   Código de la aplicación (copia de muestra)
+   ├─ src/                  Interfaz (React + TypeScript) y lógica de negocio pura (src/lib)
+   ├─ server/               API: asistente de IA, tipos de cambio, invitaciones (Vercel y Docker)
+   ├─ supabase/migrations/  Esquema de la base de datos (32 migraciones)
+   ├─ scripts/              Pruebas automáticas y generadores de evidencia
+   ├─ datos/zonas/          Zonas oficiales procesadas
+   ├─ docs/                 Documentación técnica (base de datos, seguridad, IA, Ley 21.719, BPMN, despliegue…)
+   └─ Dockerfile, docker-compose.yml, .env.example
 ```
+
+El código de `Proyecto/` es una copia de muestra para la evaluación; la aplicación publicada se desarrolla en un repositorio
+privado.
 
 ## Documentación
 
@@ -145,12 +155,12 @@ En [`Fase 2/Evidencias Proyecto/Evidencias de documentación`](Fase%202/Evidenci
 - [`Entrega 13-10-2026`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Entrega%2013-10-2026/): arquitectura 4+1 con diagramas UML.
 - Presentaciones: [Fase 1](Fase%201/Evidencias%20Grupales/Presentación%20Proyecto.pptx) (definición, avance y roadmap) y [Fase 2](Fase%202/Evidencias%20Proyecto/Presentación%20Proyecto.pptx) (arquitectura 4+1 con UML y evidencias). La guía de definición del proyecto (1.5) está en [`Fase 1/Evidencias Grupales`](Fase%201/Evidencias%20Grupales/).
 - [`Archivos .md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/): arquitectura, modelo de datos, UML, requisitos no funcionales, plan de pruebas, manual técnico e innovación.
-- Documentación técnica de fondo: [`docs/`](docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
+- Documentación técnica de fondo: [`Proyecto/docs/`](Proyecto/docs/) (base de datos, seguridad, asistente de IA, Ley 21.719, procesos BPMN, despliegue).
 
 ## Estado
 
 Publicada en Vercel y conectada a Supabase, en piloto con una empresa real. Pasó una revisión de seguridad por casos de uso el
-27-09-2026 ([`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) §5). La demo pública se abre sin contraseña con `?demo`.
+27-09-2026 ([`Proyecto/docs/SEGURIDAD.md`](Proyecto/docs/SEGURIDAD.md) §5). La demo pública se abre sin contraseña con `?demo`.
 
 > Este repositorio es la copia de evaluación del proyecto: incluye el historial de desarrollo, con los datos de la empresa
 > piloto reemplazados por datos de demostración.

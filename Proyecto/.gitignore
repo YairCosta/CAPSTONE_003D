@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+# Salida para Vercel (npm run build:vercel): se genera en cada publicación
+.vercel
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Capturas de fallos de pruebas e2e
+e2e-fallo-*.png
+
+# Claves y secretos (nunca al repositorio)
+.env
+.env.local
+.env.*.local
+
+# Fuentes oficiales de las zonas (se descargan; solo se versiona el resultado procesado). El SQL
+# generado tampoco: queda dentro de la migración que lo carga.
+datos/zonas/fuentes/
+datos/zonas/zone_catalog.sql
+datos/zonas/sql/
+# De los países de geoBoundaries solo se versiona la migración (el dato); Chile y Perú, además su
+# GeoJSON, que usan las pruebas
+datos/zonas/zonas-*.geojson
+!datos/zonas/zonas-cl.geojson
+!datos/zonas/zonas-pe.geojson
+
+# Las presentaciones de la tesis son entregas personales: no se versionan
+docs/*.pptx

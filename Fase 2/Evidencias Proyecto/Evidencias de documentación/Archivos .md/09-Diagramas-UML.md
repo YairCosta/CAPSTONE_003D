@@ -40,7 +40,7 @@ flowchart LR
     S --> CU16
 ```
 
-*Versión anterior del diagrama (cuando el producto se llamaba GeoCRM):* [`docs/diagrama-casos-de-uso-geocrm.png`](../../../../docs/diagrama-casos-de-uso-geocrm.png).
+*Versión anterior del diagrama (cuando el producto se llamaba GeoCRM):* [`docs/diagrama-casos-de-uso-geocrm.png`](../../../../Proyecto/docs/diagrama-casos-de-uso-geocrm.png).
 
 ## 9.2 Diagrama de clases (dominio principal)
 
@@ -202,7 +202,7 @@ sequenceDiagram
 
 ## 9.5 Diagrama de componentes
 
-![Componentes de Revela](../../../../docs/diagramas/componentes-revela.png)
+![Componentes de Revela](../../../../Proyecto/docs/diagramas/componentes-revela.png)
 
 Descripción de cada componente en [07-Arquitectura.md](07-Arquitectura.md) §7.2.
 
@@ -213,10 +213,10 @@ siguientes los genera `npm run diagramas:uml` en el repositorio de producción (
 
 | Diagrama | Qué muestra | Imagen |
 |---|---|---|
-| Clases | El dominio: el lead, sus personas, seguimientos, qué se vende y la solicitud del titular | [uml-1-clases.png](../../../../docs/diagramas/uml-1-clases.png) |
-| Secuencia | Buscar empresas con el asistente y guardar un lead | [uml-2-secuencia.png](../../../../docs/diagramas/uml-2-secuencia.png) |
-| Estados | El ciclo de vida del lead, hasta el plazo de 30 días | [uml-6-estados.png](../../../../docs/diagramas/uml-6-estados.png) |
-| Componentes | Subsistemas del repositorio y sus dependencias | [uml-3-componentes.png](../../../../docs/diagramas/uml-3-componentes.png) |
-| Despliegue | Navegador, Vercel, Supabase y los servicios externos | [uml-4-despliegue.png](../../../../docs/diagramas/uml-4-despliegue.png) |
-| Casos de uso | Actores y los escenarios E1 a E5 | [uml-5-casos-de-uso.png](../../../../docs/diagramas/uml-5-casos-de-uso.png) |
+| Clases | El dominio: el lead, sus personas, seguimientos, qué se vende y la solicitud del titular | [uml-1-clases.png](../../../../Proyecto/docs/diagramas/uml-1-clases.png) |
+| Secuencia | Buscar empresas con el asistente y guardar un lead | [uml-2-secuencia.png](../../../../Proyecto/docs/diagramas/uml-2-secuencia.png) |
+| Estados | El ciclo de vida del lead, hasta el plazo de 30 días | [uml-6-estados.png](../../../../Proyecto/docs/diagramas/uml-6-estados.png) |
+| Componentes | Subsistemas del repositorio y sus dependencias | [uml-3-componentes.png](../../../../Proyecto/docs/diagramas/uml-3-componentes.png) |
+| Despliegue | Navegador, Vercel, Supabase y los servicios externos | [uml-4-despliegue.png](../../../../Proyecto/docs/diagramas/uml-4-despliegue.png) |
+| Casos de uso | Actores y los escenarios E1 a E5 | [uml-5-casos-de-uso.png](../../../../Proyecto/docs/diagramas/uml-5-casos-de-uso.png) |
 
