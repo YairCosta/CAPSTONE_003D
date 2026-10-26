@@ -42,10 +42,10 @@ comando: `docker-compose.yml` los toma solos.
 
 Comandos útiles: `docker compose logs -f`, `docker compose down`. La imagen trae un `HEALTHCHECK` sobre `/api/ai/status`.
 
-> **Estado de verificación del Docker.** El equipo de desarrollo no tiene Docker instalado, por lo que **la imagen no se
-> construyó allí**. Sí se probó el servidor que contiene (`node server/docker.ts` sobre la app compilada): entrega la app y
-> las rutas de la aplicación, atiende la API, rechaza métodos no permitidos y no sirve archivos fuera de `dist/`. La
-> primera construcción de la imagen debe hacerse en una máquina con Docker.
+> **Estado de verificación del Docker.** La imagen se construyó y probó el **26-10-2026** con Docker Desktop 29.9 en Windows:
+> se construye en menos de un minuto (474 MB), el contenedor queda sano según su `HEALTHCHECK` y `npm run test:docker`
+> comprueba que respondan la página, la demo, la API de tipos de cambio y la del asistente (6 de 6). Evidencia en
+> [Evidencias de sistema · Aplicación](../../Evidencias%20de%20sistema/Aplicaci%C3%B3n/LEEME.md).
 
 ## 12.3 Variables de entorno
 

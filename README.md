@@ -65,7 +65,9 @@ cd Proyecto
 docker compose up --build
 ```
 
-Abre <http://localhost:8080/?demo>. Para conectar una base de Supabase propia, copia `Proyecto/.env.example` como `Proyecto/.env` y completa los
+Abre <http://localhost:8080/?demo>. Probado el 26-10-2026: la imagen se construye en menos de un minuto y `npm run test:docker`
+comprueba la app, la demo y la API ([evidencia](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicaci%C3%B3n/LEEME.md)).
+Para conectar una base de Supabase propia, copia `Proyecto/.env.example` como `Proyecto/.env` y completa los
 valores. Detalle, variables de entorno, publicación en Vercel y procedimiento de la base de datos en el
 [Manual técnico](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Archivos%20.md/12-Manual-tecnico-y-despliegue.md).
 

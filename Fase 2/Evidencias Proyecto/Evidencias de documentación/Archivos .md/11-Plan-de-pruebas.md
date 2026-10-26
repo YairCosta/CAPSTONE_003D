@@ -68,4 +68,4 @@ sin esas credenciales; su resultado queda en la evidencia.
 - No se mide la **cobertura de código** (no hay herramienta de cobertura configurada).
 - No hay pruebas unitarias de los componentes visuales: se cubren con el e2e y con la lógica pura de `src/lib/`.
 - No hay prueba de **carga con muchos usuarios simultáneos** ni pruebas de penetración externas.
-- La imagen Docker no se construyó en el equipo de desarrollo (no tiene Docker): se probó el servidor que contiene.
+- La imagen Docker se probó a mano el 26-10-2026 (`npm run test:docker`, 6 de 6 comprobaciones): no hay una prueba que la construya sola en cada cambio.
