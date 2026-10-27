@@ -137,7 +137,7 @@ Las cinco vistas, con su explicación, están en [07_Arquitectura_4mas1.docx](Fa
 ├─ Fase 1/     Definición del proyecto: individuales (1.1 a 1.3) y grupales (presentación, 1.4, guía 1.5 y planilla)
 ├─ Fase 2/     Desarrollo del proyecto: individuales (2.1 y 2.2), grupales (guía 2.4 y planillas) y Evidencias Proyecto
 │              (presentación, documentación, y evidencias de sistema: aplicación y base de datos)
-├─ Fase 3/     Presentación final del proyecto (grupal) y diario de reflexión 3.1 (al cierre del semestre)
+├─ Fase 3/     Presentación final del proyecto (se completa al cierre del semestre)
 └─ Proyecto/   Código de la aplicación (copia de muestra)
    ├─ src/                  Interfaz (React + TypeScript) y lógica de negocio pura (src/lib)
    ├─ server/               API: asistente de IA, tipos de cambio, invitaciones (Vercel y Docker)
